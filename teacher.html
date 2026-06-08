@@ -835,6 +835,54 @@ async function _fmtStudent(sid, classExercises) {
   };
 }
 
+// ===== 账号初始化 =====
+function initAccount() {
+  try {
+    var raw = localStorage.getItem('typing2_account');
+    if (raw) { var d = JSON.parse(raw); if (d.role === 'teacher') AccountUser = d; }
+  } catch(e) {}
+  updateAccountUI();
+  if (AccountUser.token) { refreshTeacherData(); }
+}
+
+function saveAccount() {
+  localStorage.setItem('typing2_account', JSON.stringify(AccountUser));
+}
+
+function updateAccountUI() {
+  var label = document.getElementById('label-username');
+  var avatar = document.querySelector('#btn-account .avatar');
+  if (AccountUser.token) {
+    label.textContent = AccountUser.username;
+    avatar.textContent = AccountUser.role === 'teacher' ? '👩‍🏫' : '👤';
+  } else {
+    label.textContent = '未登录';
+    avatar.textContent = '👤';
+  }
+}
+
+function showAccountModal(tab) {
+  document.getElementById('modal-account').classList.remove('hidden');
+  switchAccountTab(tab || 'login');
+}
+
+function hideAccountModal() {
+  document.getElementById('modal-account').classList.add('hidden');
+}
+
+function switchAccountTab(tab) {
+  var tabs = document.querySelectorAll('#account-tabs .account-tab');
+  tabs.forEach(function(t) { t.classList.toggle('active', t.dataset.form === tab); });
+  document.getElementById('account-form-login').classList.toggle('hidden', tab !== 'login');
+  document.getElementById('account-form-register').classList.toggle('hidden', tab !== 'register');
+  document.getElementById('login-error').style.display = 'none';
+  document.getElementById('reg-error').style.display = 'none';
+  if (tab === 'login') {
+    document.getElementById('login-as-student').checked = false;
+    document.getElementById('login-as-teacher').checked = true;
+  }
+}
+
 // ===== API 兼容层 (教师端) =====
 async function accountAPI(method, path, body) {
   var uid = AccountUser ? AccountUser.userId : '';
