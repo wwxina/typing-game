@@ -2625,7 +2625,7 @@ async function accountAPI(path, body) {
       if (!cls.data) throw new Error("无效的邀请码");
       var c=cls.data;var sids=(c.student_ids||[]).slice();
       if(sids.indexOf(uid)>=0) throw new Error("您已在此班级中");
-      sids.push(uid);await __db.from("classes").update({student_ids:sids}).eq("id",c.id);
+      sids.push(uid);await __db.from("classes").eq("id",c.id).update({student_ids:sids});
       var r2=await __db.from("user_data").select("class_ids,teacher_exercises").eq("user_id",uid).maybeSingle();
       var cids=(r2.data&&r2.data.class_ids)?r2.data.class_ids.slice():[];
       if(cids.indexOf(c.id)<0)cids.push(c.id);
@@ -2643,9 +2643,9 @@ async function accountAPI(path, body) {
     }
     if (path === "/api/class/leave") {
       var r=await __db.from("classes").select("*").eq("id",body.classId).maybeSingle();
-      if(r.data){var sids=(r.data.student_ids||[]).slice();var idx=sids.indexOf(uid);if(idx>=0){sids.splice(idx,1);await __db.from("classes").update({student_ids:sids}).eq("id",r.data.id);}}
+      if(r.data){var sids=(r.data.student_ids||[]).slice();var idx=sids.indexOf(uid);if(idx>=0){sids.splice(idx,1);await __db.from("classes").eq("id",r.data.id).update({student_ids:sids});}}
       var r2=await __db.from("user_data").select("*").eq("user_id",uid).maybeSingle();
-      if(r2.data){var nc=(r2.data.class_ids||[]).filter(function(id){return id!==body.classId;});var ne=(r2.data.teacher_exercises||[]).filter(function(e){return e.classId!==body.classId;});await __db.from("user_data").update({class_ids:nc,teacher_exercises:ne,updated_at:Date.now()}).eq("user_id",uid);}
+      if(r2.data){var nc=(r2.data.class_ids||[]).filter(function(id){return id!==body.classId;});var ne=(r2.data.teacher_exercises||[]).filter(function(e){return e.classId!==body.classId;});await __db.from("user_data").eq("user_id",uid).update({class_ids:nc,teacher_exercises:ne,updated_at:Date.now()});}
       return {success:true};
     }
     if (path === "/api/health") return {ok:true,time:Date.now()};
