@@ -1,0 +1,2511 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>教师工作台 - 宠物打字</title>
+<style>
+/* ===== CSS VARIABLES ===== */
+:root {
+  --font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-base: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 22px;
+  --font-size-2xl: 28px;
+  --line-height: 1.65;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-full: 9999px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.08);
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s ease;
+}
+
+[data-theme="ocean"] {
+  --color-bg: #F0F7FA;
+  --color-surface: #E3F1F7;
+  --color-border: #C5DFF0;
+  --color-border-hover: #9CC4DD;
+  --color-text-primary: #1B3A4B;
+  --color-text-secondary: #4A7C96;
+  --color-text-muted: #7BA3B8;
+  --color-accent: #0EA5E9;
+  --color-accent-light: #E0F5FF;
+  --color-accent-dark: #0284C7;
+  --color-success: #10B981;
+  --color-success-light: #ECFDF5;
+  --color-error: #EF4444;
+  --color-error-light: #FEF2F2;
+  --color-warning: #F59E0B;
+}
+[data-theme="forest"] {
+  --color-bg: #F5F9F4; --color-surface: #E8F0E4; --color-border: #C8D8C0;
+  --color-border-hover: #9DB88D; --color-text-primary: #1E2F1A; --color-text-secondary: #5C7A50;
+  --color-text-muted: #8AA380; --color-accent: #4ADE80; --color-accent-light: #ECFDF3;
+  --color-accent-dark: #16A34A; --color-success: #22C55E; --color-success-light: #F0FAE8;
+  --color-error: #DC2626; --color-error-light: #FEF2F2; --color-warning: #F59E0B;
+}
+[data-theme="space"] {
+  --color-bg: #0F0B1A; --color-surface: #1A1530; --color-border: #2D2650;
+  --color-border-hover: #4A3D75; --color-text-primary: #E8E4F0; --color-text-secondary: #9B8FC0;
+  --color-text-muted: #6E5F9E; --color-accent: #A78BFA; --color-accent-light: #2D2040;
+  --color-accent-dark: #7C3AED; --color-success: #34D399; --color-success-light: #0A2F20;
+  --color-error: #F87171; --color-error-light: #2F0A0A; --color-warning: #FBBF24;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3); --shadow-md: 0 4px 12px rgba(0,0,0,0.3); --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
+}
+[data-theme="candy"] {
+  --color-bg: #FFF5F7; --color-surface: #FFF0F3; --color-border: #F5D0D8;
+  --color-border-hover: #E8A8B5; --color-text-primary: #4A1528; --color-text-secondary: #9B4E63;
+  --color-text-muted: #C97D8E; --color-accent: #F472B6; --color-accent-light: #FDE6F0;
+  --color-accent-dark: #DB2777; --color-success: #34D399; --color-success-light: #ECFDF5;
+  --color-error: #F87171; --color-error-light: #FEF2F2; --color-warning: #FBBF24;
+}
+
+/* ===== RESET ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font-family); font-size: var(--font-size-base);
+  line-height: var(--line-height); color: var(--color-text-primary);
+  background: var(--color-bg); min-height: 100vh;
+}
+button { font-family: inherit; cursor: pointer; border: none; background: none; }
+input, textarea { font-family: inherit; font-size: inherit; }
+.hidden { display: none !important; }
+
+/* ===== APP CONTAINER ===== */
+.app-container { max-width: 960px; margin: 0 auto; padding: var(--space-md); }
+
+/* ===== HEADER ===== */
+.app-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-md) 0; gap: var(--space-md); flex-wrap: wrap;
+}
+.header-left { display: flex; align-items: center; gap: var(--space-md); }
+.app-title { font-size: var(--font-size-xl); font-weight: 700; color: var(--color-accent); }
+.nav-tabs { display: flex; gap: var(--space-xs); }
+.nav-tab {
+  padding: var(--space-sm) var(--space-md); border-radius: var(--radius-full);
+  font-size: var(--font-size-sm); color: var(--color-text-secondary);
+  transition: all var(--transition-fast); white-space: nowrap;
+  border: 1px solid var(--color-border);
+}
+.nav-tab:hover { background: var(--color-accent-light); color: var(--color-accent-dark); border-color: var(--color-accent); }
+.nav-tab.active { background: var(--color-accent); color: #fff; border-color: var(--color-accent); font-weight: 600; }
+.header-right { display: flex; align-items: center; gap: var(--space-sm); }
+.btn-account {
+  display: flex; align-items: center; gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md); border-radius: var(--radius-full);
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  font-size: var(--font-size-sm); color: var(--color-text-primary);
+  transition: all var(--transition-fast);
+}
+.btn-account:hover { border-color: var(--color-accent); background: var(--color-accent-light); }
+.btn-account .avatar { font-size: var(--font-size-lg); }
+.btn-account .username { max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* 账号下拉菜单 */
+.account-wrap { position: relative; }
+.account-dropdown {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 100;
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-lg);
+  min-width: 140px; overflow: hidden;
+}
+.account-dropdown.hidden { display: none; }
+@keyframes dropdownIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+.dropdown-item {
+  display: block; width: 100%; padding: var(--space-sm) var(--space-md);
+  font-size: var(--font-size-sm); color: var(--color-text-primary);
+  text-align: left; transition: background var(--transition-fast);
+}
+.dropdown-item:hover { background: var(--color-accent-light); }
+.dropdown-item.danger { color: var(--color-error); }
+
+/* ===== ACCOUNT MODAL ===== */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+  animation: fadeInOverlay 0.2s ease;
+}
+@keyframes fadeInOverlay { from { opacity: 0; } to { opacity: 1; } }
+.account-card {
+  background: var(--color-surface); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg); width: 380px; max-width: 95vw;
+  padding: var(--space-xl); position: relative;
+  animation: fadeInUp 0.25s ease;
+}
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+.account-close {
+  position: absolute; top: var(--space-md); right: var(--space-md);
+  font-size: 20px; color: var(--color-text-muted); width: 32px; height: 32px;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  transition: all var(--transition-fast);
+}
+.account-close:hover { background: var(--color-border); color: var(--color-text-primary); }
+.account-tabs { display: flex; gap: 0; margin-bottom: var(--space-lg); border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--color-border); }
+.account-tab {
+  flex: 1; padding: var(--space-sm) var(--space-md); text-align: center;
+  font-size: var(--font-size-sm); font-weight: 600; color: var(--color-text-secondary);
+  background: var(--color-bg); transition: all var(--transition-fast);
+}
+.account-tab.active { background: var(--color-accent); color: #fff; }
+.form-group { margin-bottom: var(--space-md); }
+.form-label { display: block; font-size: var(--font-size-sm); color: var(--color-text-secondary); margin-bottom: var(--space-xs); }
+.form-input {
+  width: 100%; padding: var(--space-sm) var(--space-md); font-size: var(--font-size-base);
+  border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+  background: var(--color-bg); color: var(--color-text-primary);
+  transition: border-color var(--transition-fast);
+}
+.form-input:focus { outline: none; border-color: var(--color-accent); }
+.form-error { font-size: var(--font-size-xs); color: var(--color-error); margin-top: var(--space-xs); display: none; }
+.form-check { display: flex; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-md); }
+.form-check input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--color-accent); }
+.form-check label { font-size: var(--font-size-sm); color: var(--color-text-secondary); }
+
+/* ===== BUTTONS ===== */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md); font-size: var(--font-size-sm);
+  border-radius: var(--radius-full); font-weight: 600;
+  transition: all var(--transition-fast); white-space: nowrap;
+}
+.btn-primary { background: var(--color-accent); color: #fff; }
+.btn-primary:hover { background: var(--color-accent-dark); }
+.btn-secondary { background: var(--color-surface); color: var(--color-text-primary); border: 1px solid var(--color-border); }
+.btn-secondary:hover { border-color: var(--color-accent); color: var(--color-accent); }
+.btn-danger { background: var(--color-error); color: #fff; }
+.btn-danger:hover { opacity: 0.85; }
+.btn-outline { background: transparent; color: var(--color-accent); border: 1px solid var(--color-accent); }
+.btn-outline:hover { background: var(--color-accent-light); }
+.btn-sm { padding: var(--space-xs) var(--space-sm); font-size: var(--font-size-xs); border-radius: var(--radius-sm); }
+.btn-lg { padding: var(--space-md) var(--space-xl); font-size: var(--font-size-lg); }
+.btn-block { width: 100%; justify-content: center; }
+
+/* ===== CARDS ===== */
+.card {
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg); padding: var(--space-lg);
+  box-shadow: var(--shadow-sm);
+}
+.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-md); flex-wrap: wrap; gap: var(--space-sm); }
+.card-title { font-size: var(--font-size-lg); font-weight: 700; }
+
+/* ===== CLASS CARD ===== */
+.class-info-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-md); margin-bottom: var(--space-lg);
+}
+.class-info-item {
+  background: var(--color-bg); border-radius: var(--radius-md);
+  padding: var(--space-md); text-align: center;
+}
+.class-info-item .label { font-size: var(--font-size-xs); color: var(--color-text-muted); margin-bottom: var(--space-xs); }
+.class-info-item .value { font-size: var(--font-size-xl); font-weight: 700; color: var(--color-accent); }
+.invite-code {
+  font-family: monospace; font-size: var(--font-size-2xl); font-weight: 800;
+  letter-spacing: 0.15em; color: var(--color-accent); cursor: pointer;
+  padding: var(--space-sm) var(--space-md); border-radius: var(--radius-md);
+  background: var(--color-accent-light); display: inline-block;
+  transition: all var(--transition-fast); user-select: all;
+}
+.invite-code:hover { background: var(--color-accent); color: #fff; }
+.invite-code-sm {
+  font-family: monospace; font-size: 13px; font-weight: 700;
+  letter-spacing: 0.1em; color: var(--color-accent); cursor: pointer;
+  padding: 2px 8px; border-radius: 4px; background: var(--color-accent-light);
+  transition: all var(--transition-fast); user-select: none;
+}
+.invite-code-sm:hover { background: var(--color-accent); color: #fff; }
+.class-row-active { background: #e0f2fe; }
+
+/* ===== TABLES ===== */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: var(--space-sm) var(--space-md); text-align: left; font-size: var(--font-size-sm); }
+th { color: var(--color-text-muted); font-weight: 600; border-bottom: 2px solid var(--color-border); white-space: nowrap; }
+td { border-bottom: 1px solid var(--color-border); }
+tr:hover td { background: var(--color-bg); }
+.speed-fast { color: var(--color-success); font-weight: 700; }
+.speed-mid { color: var(--color-warning); font-weight: 700; }
+.speed-slow { color: var(--color-error); font-weight: 700; }
+
+/* ===== EXERCISE LIST ===== */
+.exercise-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-md); border: 1px solid var(--color-border);
+  border-radius: var(--radius-md); margin-bottom: var(--space-sm);
+  background: var(--color-bg); gap: var(--space-md); flex-wrap: wrap;
+}
+.exercise-info { flex: 1; min-width: 200px; }
+.exercise-info .ex-title { font-weight: 600; }
+.exercise-info .ex-meta { font-size: var(--font-size-xs); color: var(--color-text-muted); }
+.exercise-text-preview {
+  font-size: var(--font-size-xs); color: var(--color-text-secondary);
+  max-height: 40px; overflow: hidden; margin-top: var(--space-xs);
+}
+.exercise-actions { display: flex; gap: var(--space-sm); flex-shrink: 0; }
+
+/* ===== DASHBOARD SUMMARY ===== */
+.summary-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-md); margin-bottom: var(--space-lg);
+}
+.summary-card {
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg); padding: var(--space-lg); text-align: center;
+}
+.summary-card .summary-icon { font-size: 32px; margin-bottom: var(--space-sm); }
+.summary-card .summary-value { font-size: var(--font-size-2xl); font-weight: 700; color: var(--color-accent); }
+.summary-card .summary-label { font-size: var(--font-size-xs); color: var(--color-text-muted); }
+
+/* ===== SECTION HEADER ===== */
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-lg); flex-wrap: wrap; gap: var(--space-sm); }
+.section-title { font-size: var(--font-size-xl); font-weight: 700; }
+
+/* ===== FORMS (Teacher) ===== */
+.form-textarea {
+  width: 100%; padding: var(--space-sm) var(--space-md); font-size: var(--font-size-base);
+  border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+  background: var(--color-bg); color: var(--color-text-primary);
+  resize: vertical; min-height: 100px; line-height: var(--line-height);
+  transition: border-color var(--transition-fast);
+}
+.form-textarea:focus { outline: none; border-color: var(--color-accent); }
+.form-inline { display: flex; gap: var(--space-sm); align-items: flex-end; flex-wrap: wrap; }
+
+/* ===== EMPTY STATE ===== */
+.empty-state {
+  text-align: center; padding: var(--space-2xl) var(--space-md);
+  color: var(--color-text-muted);
+}
+.empty-state .empty-icon { font-size: 48px; margin-bottom: var(--space-md); }
+.empty-state .empty-text { font-size: var(--font-size-lg); margin-bottom: var(--space-md); }
+
+/* ===== TOAST ===== */
+.toast-container {
+  position: fixed; top: var(--space-lg); left: 50%; transform: translateX(-50%);
+  z-index: 9999; display: flex; flex-direction: column; align-items: center; gap: var(--space-sm);
+}
+.toast-msg {
+  background: var(--color-text-primary); color: var(--color-bg);
+  padding: var(--space-sm) var(--space-lg); border-radius: var(--radius-full);
+  font-size: var(--font-size-sm); box-shadow: var(--shadow-lg);
+  animation: toastSlideIn 0.3s ease, toastSlideOut 0.3s ease 2.5s forwards;
+  pointer-events: none;
+}
+@keyframes toastSlideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes toastSlideOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-20px); } }
+
+/* ===== THEME SWITCHER ===== */
+.theme-btn {
+  width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 18px; background: var(--color-surface); border: 1px solid var(--color-border);
+  cursor: pointer; transition: all var(--transition-fast);
+}
+.theme-btn:hover { border-color: var(--color-accent); }
+.theme-popup {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 100;
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-lg);
+  padding: var(--space-sm); display: none; gap: var(--space-sm);
+}
+.theme-popup.show { display: flex; }
+.theme-wrap { position: relative; }
+.theme-option {
+  width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
+  border: 2px solid transparent; transition: all var(--transition-fast);
+}
+.theme-option:hover, .theme-option.active { border-color: var(--color-accent); }
+.theme-swatch-ocean { background: linear-gradient(135deg, #0EA5E9, #E0F5FF); }
+.theme-swatch-forest { background: linear-gradient(135deg, #4ADE80, #ECFDF3); }
+.theme-swatch-space { background: linear-gradient(135deg, #A78BFA, #1A1530); }
+.theme-swatch-candy { background: linear-gradient(135deg, #F472B6, #FFF0F3); }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 600px) {
+  .app-header { flex-direction: column; align-items: stretch; }
+  .header-left { flex-direction: column; align-items: stretch; }
+  .nav-tabs { overflow-x: auto; }
+  .class-info-grid { grid-template-columns: 1fr 1fr; }
+  .summary-grid { grid-template-columns: 1fr 1fr; }
+  .exercise-item { flex-direction: column; align-items: stretch; }
+  .exercise-actions { justify-content: flex-end; }
+}
+</style>
+</head>
+<body data-theme="ocean">
+
+<!-- 主题切换器 -->
+<div style="display:flex;justify-content:flex-end;padding:8px 16px 0;">
+  <div class="theme-wrap">
+    <button class="theme-btn" id="btn-theme" title="切换主题">🎨</button>
+    <div class="theme-popup" id="theme-popup">
+      <button class="theme-option theme-swatch-ocean active" data-theme="ocean" title="海洋"></button>
+      <button class="theme-option theme-swatch-forest" data-theme="forest" title="森林"></button>
+      <button class="theme-option theme-swatch-space" data-theme="space" title="星空"></button>
+      <button class="theme-option theme-swatch-candy" data-theme="candy" title="糖果"></button>
+    </div>
+  </div>
+</div>
+
+<div class="app-container">
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="header-left">
+      <span class="app-title">📚 教师工作台</span>
+      <nav class="nav-tabs" id="nav-tabs">
+        <button class="nav-tab active" data-tab="class">🏫 班级管理</button>
+        <button class="nav-tab" data-tab="exercise">📝 练习分发</button>
+        <button class="nav-tab" data-tab="dashboard">📊 学情看板</button>
+        <button class="nav-tab" data-tab="pet">🐱 宠物排行</button>
+        <button class="nav-tab" data-tab="quickform" id="nav-quickform">📈 数据大屏</button>
+      </nav>
+    </div>
+    <div class="header-right">
+      <div class="account-wrap">
+        <button class="btn-account" id="btn-account">
+          <span class="avatar">👤</span>
+          <span class="username" id="label-username">未登录</span>
+          <span>▾</span>
+        </button>
+        <div class="account-dropdown hidden" id="account-dropdown">
+          <button class="dropdown-item danger" id="btn-logout">退出登录</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ACCOUNT MODAL -->
+  <div class="modal-overlay hidden" id="modal-account">
+    <div class="account-card">
+      <button class="account-close" id="btn-account-close">✕</button>
+      <div class="account-tabs" id="account-tabs">
+        <button class="account-tab active" data-form="login">登录</button>
+        <button class="account-tab" data-form="register">注册</button>
+      </div>
+      <!-- Login Form -->
+      <form id="account-form-login">
+        <div class="form-group">
+          <label class="form-label">用户名</label>
+          <input class="form-input" type="text" id="login-username" placeholder="请输入用户名" autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label class="form-label">密码</label>
+          <input class="form-input" type="password" id="login-password" placeholder="请输入密码" autocomplete="current-password">
+        </div>
+        <div class="form-check" style="margin-bottom:4px;">
+          <input type="checkbox" id="login-as-student">
+          <label for="login-as-student">🎒 我是学生</label>
+        </div>
+        <div class="form-check" style="margin-bottom:8px;">
+          <input type="checkbox" id="login-as-teacher" checked>
+          <label for="login-as-teacher">👨‍🏫 我是老师</label>
+        </div>
+        <div class="form-error" id="login-error"></div>
+        <button type="submit" class="btn btn-primary btn-block btn-lg">登 录</button>
+      </form>
+      <!-- Register Form -->
+      <form class="hidden" id="account-form-register">
+        <div class="form-group">
+          <label class="form-label">用户名</label>
+          <input class="form-input" type="text" id="reg-username" placeholder="2-20个字符" autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label class="form-label">密码</label>
+          <input class="form-input" type="password" id="reg-password" placeholder="3-50个字符" autocomplete="new-password">
+        </div>
+        <div class="form-check">
+          <input type="checkbox" id="reg-is-teacher">
+          <label for="reg-is-teacher">我是老师（注册教师账号）</label>
+        </div>
+        <div class="form-error" id="reg-error"></div>
+        <button type="submit" class="btn btn-primary btn-block btn-lg">注 册</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 班级切换器 -->
+  <div id="class-switcher-bar" class="hidden" style="background:var(--color-surface);border-bottom:1px solid var(--color-border);padding:8px var(--space-lg);display:flex;align-items:center;gap:var(--space-md);">
+    <span style="font-weight:600;white-space:nowrap;">当前班级：</span>
+    <select id="class-switcher-select" style="padding:6px 12px;border:1px solid var(--color-border);border-radius:8px;font-size:14px;background:var(--color-bg);color:var(--color-text);cursor:pointer;max-width:280px;"></select>
+    <span id="class-switcher-info" style="font-size:12px;color:var(--color-text-muted);"></span>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div id="tab-content" style="margin-top:var(--space-lg);">
+
+    <!-- TAB 1: 班级管理 -->
+    <div id="tab-class">
+      <!-- 创建班级表单（始终可见） -->
+      <div class="card" style="margin-bottom:var(--space-lg);">
+        <div style="display:flex;gap:var(--space-md);align-items:flex-end;flex-wrap:wrap;">
+          <div style="flex:1;min-width:200px;">
+            <label class="form-label">创建新班级</label>
+            <input class="form-input" type="text" id="input-class-name" placeholder="输入班级名称，如：三年一班" style="width:100%;">
+          </div>
+          <button class="btn btn-primary" id="btn-create-class" style="height:42px;">➕ 创建</button>
+        </div>
+        <div id="create-class-error" style="color:var(--color-error);font-size:var(--font-size-xs);margin-top:var(--space-sm);"></div>
+      </div>
+
+      <!-- 班级列表表格 -->
+      <div class="card">
+        <div class="section-header" style="padding-top:0;">
+          <h3 class="section-title">📋 班级列表</h3>
+          <button class="btn btn-secondary btn-sm" id="btn-refresh-classes">🔄 刷新</button>
+        </div>
+        <div id="class-table-empty" class="empty-state">
+          <div class="empty-icon">🏫</div>
+          <div class="empty-text">还没有创建班级</div>
+        </div>
+        <div class="table-wrap" id="class-table-wrap" style="display:none;">
+          <table>
+            <thead>
+              <tr><th>班级名称</th><th>学生</th><th>练习</th><th>邀请码</th><th>操作</th></tr>
+            </thead>
+            <tbody id="class-table-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 展开的学生详情 -->
+      <div id="class-detail-section" class="card hidden" style="margin-top:var(--space-lg);">
+        <div class="section-header" style="padding-top:0;">
+          <h3 class="section-title" id="class-detail-title">👨‍🎓 学生列表</h3>
+          <button class="btn btn-secondary btn-sm" id="btn-close-detail">✕ 收起</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>学号</th><th>姓名</th><th>练习次数</th><th>QF提交</th><th>教师练习</th><th>平均速度</th><th>最高速度</th><th>操作</th></tr>
+            </thead>
+            <tbody id="class-detail-tbody"></tbody>
+          </table>
+        </div>
+        <div id="class-detail-empty" class="empty-state hidden">
+          <div class="empty-icon">📭</div>
+          <div class="empty-text">还没有学生加入</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: 练习分发 -->
+    <div id="tab-exercise" class="hidden">
+      <div class="card" style="margin-bottom:var(--space-lg);">
+        <div class="card-header"><h3 class="card-title">➕ 创建练习</h3></div>
+        <div class="form-group">
+          <label class="form-label">练习标题</label>
+          <input class="form-input" type="text" id="input-ex-title" placeholder="如：期中默写、古诗填空">
+        </div>
+        <div class="form-group">
+          <label class="form-label">练习文本</label>
+          <textarea class="form-textarea" id="input-ex-text" placeholder="输入练习文本，每行一个练习内容..."></textarea>
+          <div style="margin-top:var(--space-sm);">
+            <input type="file" id="input-ex-file" accept=".txt" style="display:none;">
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-import-txt">📂 导入TXT文件</button>
+            <span id="import-file-name" style="color:var(--color-text-muted);font-size:var(--font-size-xs);margin-left:var(--space-sm);"></span>
+          </div>
+        </div>
+        <div class="form-error" id="create-ex-error"></div>
+        <button class="btn btn-primary" id="btn-create-exercise">创建练习</button>
+      </div>
+
+      <div class="section-header">
+        <h3 class="section-title">📋 已创建练习</h3>
+        <button class="btn btn-secondary btn-sm" id="btn-refresh-exercises">🔄 刷新</button>
+      </div>
+      <div id="exercise-list"></div>
+      <div id="exercise-empty" class="empty-state">
+        <div class="empty-icon">📝</div>
+        <div class="empty-text">还没有创建练习</div>
+      </div>
+    </div>
+
+    <!-- TAB 3: 学情看板 -->
+    <div id="tab-dashboard" class="hidden">
+      <div class="summary-grid" id="dashboard-summary">
+        <div class="summary-card">
+          <div class="summary-icon">👨‍🎓</div>
+          <div class="summary-value" id="sum-students">0</div>
+          <div class="summary-label">班级人数</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-icon">⚡</div>
+          <div class="summary-value" id="sum-avg-speed">0</div>
+          <div class="summary-label">平均速度（字/分）</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-icon">🎯</div>
+          <div class="summary-value" id="sum-avg-acc">0%</div>
+          <div class="summary-label">平均正确率</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-icon">📝</div>
+          <div class="summary-value" id="sum-total-practice">0</div>
+          <div class="summary-label">总练习次数</div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <h3 class="section-title">📊 学生详情</h3>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-secondary btn-sm" id="btn-export-csv">📥 导出CSV</button>
+          <button class="btn btn-secondary btn-sm" id="btn-refresh-dashboard">🔄 刷新</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table id="dashboard-table">
+            <thead>
+              <tr>
+                <th>学号</th><th>姓名</th><th>练习次数</th><th>QF提交</th><th>教师练习</th><th>平均速度</th><th>最高速度</th><th>正确率</th><th>⭐</th><th>宠物</th>
+              </tr>
+            </thead>
+            <tbody id="dashboard-tbody"></tbody>
+          </table>
+        </div>
+        <div id="dashboard-empty" class="empty-state hidden">
+          <div class="empty-icon">📭</div>
+          <div class="empty-text">还没有学生数据</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: 宠物排行 -->
+    <div id="tab-pet" class="hidden">
+      <div class="card" style="margin-bottom:var(--space-lg);">
+        <div class="section-header" style="padding-top:0;">
+          <h3 class="section-title">🐱 宠物排行榜</h3>
+          <button class="btn btn-secondary btn-sm" id="btn-refresh-pet">🔄 刷新</button>
+        </div>
+        <div class="pet-rank-tabs" style="display:flex;gap:8px;margin-bottom:var(--space-md);flex-wrap:wrap;">
+          <button class="btn btn-sm pet-rank-tab active" data-rank="xp">🏆 经验排行</button>
+          <button class="btn btn-sm pet-rank-tab" data-rank="star" style="background:var(--color-bg);color:var(--color-text);">⭐ 星星排行</button>
+          <button class="btn btn-sm pet-rank-tab" data-rank="pet" style="background:var(--color-bg);color:var(--color-text);">🐾 宠物收集</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>排名</th><th>学号</th><th>姓名</th><th>经验值</th><th>星星</th><th>领养</th><th>满级</th><th>最高阶段</th><th>练习次数</th></tr>
+            </thead>
+            <tbody id="pet-ranking-tbody"></tbody>
+          </table>
+        </div>
+        <div id="pet-ranking-empty" class="empty-state hidden">
+          <div class="empty-icon">📭</div>
+          <div class="empty-text">还没有宠物数据</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: QuickForm 数据大屏 -->
+    <div id="tab-quickform" class="hidden">
+      <!-- 汇总卡片 -->
+      <div class="summary-grid" id="qf-summary">
+        <div class="summary-card">
+          <div class="summary-icon">📬</div>
+          <div class="summary-value" id="qf-total-subs">0</div>
+          <div class="summary-label">提交总数</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-icon">👨‍🎓</div>
+          <div class="summary-value" id="qf-unique-students">0</div>
+          <div class="summary-label">学生人数</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-icon">⚡</div>
+          <div class="summary-value" id="qf-avg-speed">0</div>
+          <div class="summary-label">平均速度（字/分）</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-icon">🎯</div>
+          <div class="summary-value" id="qf-avg-acc">0%</div>
+          <div class="summary-label">平均正确率</div>
+        </div>
+      </div>
+
+      <!-- 控制栏 -->
+      <div class="section-header">
+        <h3 class="section-title">📋 学生练习记录</h3>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span style="font-size:12px;color:var(--color-text-muted);" id="qf-status">⏳ 等待数据...</span>
+          <button class="btn btn-secondary btn-sm" id="btn-refresh-qf">🔄 立即刷新</button>
+        </div>
+      </div>
+
+      <!-- 学生汇总表 -->
+      <div class="card" style="margin-bottom:var(--space-lg);">
+        <h4 style="font-size:14px;font-weight:600;margin-bottom:8px;">👤 学生汇总</h4>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>姓名</th><th>学号</th><th>练习次数</th><th>平均速度</th><th>最高速度</th><th>平均正确率</th><th>星星</th><th>经验值</th><th>最后提交</th></tr>
+            </thead>
+            <tbody id="qf-student-tbody"></tbody>
+          </table>
+        </div>
+        <div id="qf-student-empty" class="empty-state hidden">
+          <div class="empty-icon">📭</div>
+          <div class="empty-text">还没有学生提交数据</div>
+        </div>
+      </div>
+
+      <!-- 最近提交 -->
+      <div class="card">
+        <h4 style="font-size:14px;font-weight:600;margin-bottom:8px;">🕐 最近提交</h4>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>姓名</th><th>练习标题</th><th>速度</th><th>正确率</th><th>用时</th><th>总字数</th><th>星星</th><th>提交时间</th></tr>
+            </thead>
+            <tbody id="qf-recent-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 编辑学生信息弹窗 -->
+<div class="modal-overlay hidden" id="modal-edit-student">
+  <div class="edit-student-card" style="background:#fff;border-radius:16px;padding:28px 24px 20px;max-width:420px;width:92%;position:relative;box-shadow:0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h3 style="margin:0;font-size:18px;font-weight:700;color:#1a1a1a;">✏️ 编辑学生信息</h3>
+      <button id="btn-edit-st-close" style="width:32px;height:32px;border-radius:50%;background:#f5f5f5;color:#666;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;" onmouseover="this.style.background='#e5e5e5'" onmouseout="this.style.background='#f5f5f5'">✕</button>
+    </div>
+    <input type="hidden" id="edit-st-id">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:12px 14px;background:#f8f9fa;border-radius:10px;">
+      <div style="width:40px;height:40px;border-radius:50%;background:#e8f0fe;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">👤</div>
+      <div>
+        <div style="font-size:15px;font-weight:600;color:#1a1a1a;" id="edit-st-name-label">-</div>
+        <div style="font-size:12px;color:#999;">当前学号：<span id="edit-st-sno-label">-</span></div>
+      </div>
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="display:block;font-size:13px;font-weight:600;color:#555;margin-bottom:4px;">学号</label>
+      <input type="text" id="edit-st-sno" placeholder="请输入学号" style="width:100%;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;outline:none;transition:border-color 0.15s;" onfocus="this.style.borderColor='#4a90d9'" onblur="this.style.borderColor='#e0e0e0'">
+    </div>
+    <div style="margin-bottom:8px;">
+      <label style="display:block;font-size:13px;font-weight:600;color:#555;margin-bottom:4px;">用户名</label>
+      <input type="text" id="edit-st-username" placeholder="2-20个字符" style="width:100%;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;outline:none;transition:border-color 0.15s;" onfocus="this.style.borderColor='#4a90d9'" onblur="this.style.borderColor='#e0e0e0'">
+    </div>
+    <p class="form-error hidden" id="edit-st-error" style="color:#e74c3c;font-size:13px;margin:4px 0 8px;"></p>
+    <button class="btn btn-primary" id="btn-edit-st-save" style="width:100%;padding:11px;font-size:15px;font-weight:600;border-radius:10px;margin-bottom:16px;">💾 保存修改</button>
+    <div style="border-top:1px solid #f0f0f0;padding-top:14px;display:flex;gap:10px;">
+      <button id="btn-edit-st-resetpwd" style="flex:1;padding:9px;border:1.5px solid #e0e0e0;border-radius:8px;background:#fff;color:#555;font-size:13px;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='#fff'">🔑 重置密码</button>
+      <button id="btn-edit-st-remove" style="flex:1;padding:9px;border:1.5px solid #fde8e8;border-radius:8px;background:#fff;color:#e74c3c;font-size:13px;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.background='#fef5f5'" onmouseout="this.style.background='#fff'">✕ 移除学生</button>
+    </div>
+  </div>
+</div>
+
+<!-- 学生趋势弹窗 -->
+<div class="modal-overlay hidden" id="modal-trend">
+  <div class="trend-card" style="background:var(--color-bg);border-radius:var(--radius-lg);padding:var(--space-lg);max-width:700px;width:95%;max-height:85vh;overflow-y:auto;position:relative;box-shadow:var(--shadow-lg);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-md);">
+      <h3 id="trend-title" style="margin:0;">📈 练习趋势</h3>
+      <button id="btn-trend-close" style="font-size:20px;line-height:1;padding:4px 8px;">✕</button>
+    </div>
+    <canvas id="trend-canvas" width="650" height="300" style="width:100%;max-width:650px;display:block;margin:0 auto;"></canvas>
+    <div id="trend-empty" class="empty-state hidden">
+      <div class="empty-icon">📭</div>
+      <div class="empty-text">该学生还没有练习记录</div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ===== 配置 (Supabase 直连) =====
+const ACCOUNT_API = true;
+var _syncInProgress = false;
+
+// Supabase 客户端
+// Supabase REST API 轻量封装（零依赖，替代 200KB supabase-js SDK）
+var _SB_URL='https://brgyyohuagoxodqbvgdc.supabase.co/rest/v1';
+var _SB_KEY='sb_publishable_ttaTO8y3ww7EjENHkj5rng_Wa1YQ8Oo';
+function _sbFetch(method,table,queryStr,body,extraHeaders){
+  var h={'apikey':_SB_KEY,'Authorization':'Bearer '+_SB_KEY,'Content-Type':'application/json'};
+  if(extraHeaders)Object.assign(h,extraHeaders);
+  var opts={method:method,headers:h};
+  if(body)opts.body=JSON.stringify(body);
+  return fetch(_SB_URL+'/'+table+(queryStr||''),opts).then(function(r){
+    if(r.status===404&&extraHeaders&&extraHeaders['Accept']==='application/vnd.pgrst.object+json')return{data:null,error:null};
+    if(!r.ok)return r.text().then(function(t){return{data:null,error:{message:'HTTP '+r.status+': '+t}};});
+    return r.json().then(function(j){return{data:j,error:null};}).catch(function(){return{data:null,error:null};});
+  }).catch(function(e){return{data:null,error:{message:e.message||'网络错误'}};});
+}
+
+var __db={from:function(table){return _chain(table);}};
+function _chain(table){
+  var s='*',q='',n=0,_ms=false;
+  var c={
+    select:function(x){s=x||'*';return c;},
+    eq:function(k,v){q+=(q?'&':'?')+k+'=eq.'+encodeURIComponent(v);return c;},
+    limit:function(x){n=x;return c;},
+    maybeSingle:function(){_ms=true;return c;},
+    insert:function(data){return _sbFetch('POST',table,'',data);},
+    upsert:function(data){return _sbFetch('POST',table,'',data,{'Prefer':'resolution=merge-duplicates'});},
+    update:function(data){return _sbFetch('PATCH',table,q,data);},
+    delete:function(){return _sbFetch('DELETE',table,q);},
+    then:function(resolve,reject){
+      var qs=(s!=='*'?'?select='+s:'')+q+(n?'&limit='+n:'');
+      _sbFetch('GET',table,qs,null,_ms?{'Accept':'application/vnd.pgrst.object+json'}:null).then(function(r){resolve(r);},function(e){reject(e);});
+    }
+  };
+  return c;
+}
+
+// 密码哈希 (SHA-256)
+async function _hashPassword(pwd, uname) {
+  var e = new TextEncoder();
+  var b = await crypto.subtle.digest('SHA-256', e.encode(pwd + '::' + uname));
+  return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,'0')}).join('');
+}
+
+// 简单 Token
+function _makeToken(userId, username, role) {
+  return btoa(JSON.stringify({u:userId, n:username, r:role, e:Date.now()+2592000000}));
+}
+
+// 解析查询参数
+function _parseQ(path) {
+  var q = {}, i = path.indexOf('?');
+  if (i < 0) return {path: path, query: q};
+  path.slice(i+1).split('&').forEach(function(p){
+    var kv = p.split('=');
+    q[decodeURIComponent(kv[0])] = decodeURIComponent(kv[1] || '');
+  });
+  return {path: path.slice(0,i), query: q};
+}
+
+// 学生信息格式化 (教师端用)
+async function _fmtStudent(sid, classExercises) {
+  var r1 = await __db.from('user_data').select('*').eq('user_id', sid).maybeSingle();
+  var r2 = await __db.from('profiles').select('*').eq('user_id', sid).maybeSingle();
+  var ud = r1.data, pf = r2.data;
+  var recs = ud ? (ud.records || []) : [];
+  var pet = ud ? (ud.pet || {}) : {};
+  var te = ud ? (ud.teacher_exercises || []) : [];
+  var total = recs.length, ts=0, ta=0, ms=0;
+  recs.forEach(function(r){ ts+=r.speed||0; ta+=r.accuracy||0; if(r.speed>ms) ms=r.speed; });
+  var ds={}; recs.forEach(function(r){ var d=(r.date||'').slice(0,10); if(d) ds[d]=true; });
+  var pets=pet.pets||[], ap=pets.filter(function(p){return p.adopted;}), mp=pets.filter(function(p){return p.maxLevel;}), hs=0;
+  pets.forEach(function(p){ if(p.stage>hs) hs=p.stage; });
+  // 练习完成情况
+  var exs = classExercises || [];
+  var exTotal = exs.length, exCompleted = 0;
+  if (exTotal > 0) {
+    var exMap = {};
+    te.forEach(function(e){ exMap[e.exerciseId] = e; });
+    exs.forEach(function(ex){ if (exMap[ex.id] && exMap[ex.id].completed) exCompleted++; });
+  }
+  var exerciseProgress = {completed:exCompleted, total:exTotal};
+  var exerciseStatus = {};
+  if (exTotal > 0) {
+    var exMap2 = {};
+    te.forEach(function(e){ exMap2[e.exerciseId]=e; });
+    exs.forEach(function(ex){
+      var st = exMap2[ex.id];
+      exerciseStatus[ex.id] = {title:ex.title, completed:st?st.completed:false, bestSpeed:st?(st.bestSpeed||0):0, bestAccuracy:st?(st.bestAccuracy||0):0, stars:st?(st.stars||0):0};
+    });
+  }
+  return {
+    userId: sid, username: pf?pf.username:sid, studentNo: (pf&&pf.student_no)||'',
+    totalPractices: total, avgSpeed: total>0?Math.round(ts/total):0, maxSpeed: ms,
+    avgAccuracy: total>0?Math.round(ta/total):0, activeDays: Object.keys(ds).length,
+    lastPracticeAt: recs.length>0?recs[recs.length-1].time:0,
+    totalChars: recs.reduce(function(s,r){return s+(r.totalChars||0)},0),
+    pet: {totalXP:pet.totalXP||0,stars:pet.stars||0,adoptedCount:ap.length,maxLevelCount:mp.length,highestStage:hs},
+    exerciseProgress: exerciseProgress, exerciseStatus: exerciseStatus
+  };
+}
+
+// ===== API 兼容层 (教师端) =====
+async function accountAPI(method, path, body) {
+  var uid = AccountUser ? AccountUser.userId : '';
+  var pq = _parseQ(path);
+  var q = pq.query;
+  path = pq.path;
+
+  try {
+    // ======== 注册 ========
+    if (path === '/api/register' && method === 'POST') {
+      var un = body.username, pw = body.password, role = body.role||'student', sno = body.studentNo||'';
+      if (!un||!pw) throw new Error('用户名和密码不能为空');
+      if (un.length<2||un.length>20) throw new Error('用户名需要2-20个字符');
+      if (pw.length<3||pw.length>50) throw new Error('密码需要3-50个字符');
+      if (role==='student'&&!sno) throw new Error('学号不能为空');
+      var r = await __db.from('profiles').select('user_id').eq('username',un).maybeSingle();
+      if (r.data) throw new Error('用户名已被注册');
+      var nid = 'u_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
+      var hash = await _hashPassword(pw, un);
+      await __db.from('profiles').insert({user_id:nid, username:un, password_hash:hash, role:role, student_no:sno, created_at:Date.now()});
+      var initPet = {currentPet:0,food:0,totalXP:0,stars:0,ownedAccessories:[],pets:[],daily:{date:'',completed:[false,false,false],practiceCount:0,gotThreeStars:false,totalChars:0,challengeCount:0}};
+      var ptypes=[{type:'cat',name:'小橘猫'},{type:'dog',name:'小黄狗'},{type:'bunny',name:'小兔子'},{type:'panda',name:'小熊猫'},{type:'fox',name:'小狐狸'}];
+      ptypes.forEach(function(t){initPet.pets.push({type:t.type,name:t.name,stage:0,xp:0,adopted:false,maxLevel:false,accessory:null});});
+      await __db.from('user_data').insert({user_id:nid,pet:initPet,scores:{},records:[],theme:'ocean',class_ids:[],teacher_exercises:[],student_no:sno,updated_at:Date.now()});
+      return {token:_makeToken(nid,un,role),userId:nid,username:un,role:role};
+    }
+
+    // ======== 登录 ========
+    if (path === '/api/login' && method === 'POST') {
+      var r = await __db.from('profiles').select('*').eq('username',body.username).maybeSingle();
+      if (!r.data) throw new Error('用户名不存在');
+      var h = await _hashPassword(body.password, body.username);
+      if (h !== r.data.password_hash) throw new Error('密码错误');
+      var u = r.data;
+      return {token:_makeToken(u.user_id,u.username,u.role),userId:u.user_id,username:u.username,role:u.role||'student',studentNo:u.student_no||''};
+    }
+
+    // ======== 班级列表 ========
+    if (path === '/api/class/list') {
+      var r = await __db.from('classes').select('*').eq('teacher_id',uid);
+      var list = [];
+      if (r.data) r.data.forEach(function(c){
+        list.push({classId:c.id, name:c.name, studentCount:(c.student_ids||[]).length, exerciseCount:(c.exercises||[]).length, inviteCode:c.invite_code});
+      });
+      return {classes:list};
+    }
+
+    // ======== 创建班级 ========
+    if (path === '/api/class/create' && method === 'POST') {
+      if (!body.name||body.name.length<2||body.name.length>30) throw new Error('班级名称需要2-30个字符');
+      var r = await __db.from('classes').select('id').eq('teacher_id',uid).eq('name',body.name).maybeSingle();
+      if (r.data) throw new Error('班级名称已存在');
+      var cid = 'class_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
+      var code = '';
+      var chars='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+      for(var i=0;i<6;i++) code+=chars[Math.floor(Math.random()*chars.length)];
+      await __db.from('classes').insert({id:cid, name:body.name, teacher_id:uid, invite_code:code, student_ids:[], exercises:[], created_at:Date.now()});
+      return {classId:cid, inviteCode:code};
+    }
+
+    // ======== 删除班级 ========
+    if (path === '/api/class/delete' && method === 'POST') {
+      var r = await __db.from('classes').select('*').eq('id',body.classId).eq('teacher_id',uid).maybeSingle();
+      if (!r.data) throw new Error('无权操作此班级');
+      var cls = r.data;
+      for(var i=0;i<(cls.student_ids||[]).length;i++){
+        var sid=cls.student_ids[i];
+        var r2=await __db.from('user_data').select('*').eq('user_id',sid).maybeSingle();
+        if(r2.data){
+          var nc=(r2.data.class_ids||[]).filter(function(id){return id!==cls.id;});
+          var ne=(r2.data.teacher_exercises||[]).filter(function(e){return e.classId!==cls.id;});
+          await __db.from('user_data').update({class_ids:nc,teacher_exercises:ne,updated_at:Date.now()}).eq('user_id',sid);
+        }
+      }
+      await __db.from('classes').delete().eq('id',cls.id);
+      return {success:true};
+    }
+
+    // ======== 班级信息 ========
+    if (path === '/api/class/info') {
+      var cid = q.classId;
+      if (!cid) {
+        var r0 = await __db.from('classes').select('id').eq('teacher_id',uid).limit(1).maybeSingle();
+        if (!r0.data) throw new Error('尚未创建班级');
+        cid = r0.data.id;
+      }
+      var r = await __db.from('classes').select('*').eq('id',cid).eq('teacher_id',uid).maybeSingle();
+      if (!r.data) throw new Error('班级不存在');
+      var cls = r.data;
+      var exs = cls.exercises || [];
+      var students = [];
+      for(var i=0;i<(cls.student_ids||[]).length;i++)
+        students.push(await _fmtStudent(cls.student_ids[i], exs));
+      return {classId:cls.id, name:cls.name, inviteCode:cls.invite_code, students:students, exercises:exs, studentCount:(cls.student_ids||[]).length};
+    }
+
+    // ======== 移除学生 ========
+    if (path === '/api/class/remove-student' && method === 'POST') {
+      if (!body.studentId) throw new Error('缺少学生ID');
+      var cid = body.classId;
+      if (!cid) {
+        var r0 = await __db.from('classes').select('id').eq('teacher_id',uid).limit(1).maybeSingle();
+        if (!r0.data) throw new Error('尚未创建班级');
+        cid = r0.data.id;
+      }
+      var r = await __db.from('classes').select('*').eq('id',cid).eq('teacher_id',uid).maybeSingle();
+      if (!r.data) throw new Error('班级不存在');
+      var sids = (r.data.student_ids||[]).slice();
+      var idx = sids.indexOf(body.studentId);
+      if (idx===-1) throw new Error('该学生不在班级中');
+      sids.splice(idx,1);
+      await __db.from('classes').update({student_ids:sids}).eq('id',cid);
+      var r2 = await __db.from('user_data').select('*').eq('user_id',body.studentId).maybeSingle();
+      if (r2.data) {
+        var nc = (r2.data.class_ids||[]).filter(function(id){return id!==cid;});
+        var ne = (r2.data.teacher_exercises||[]).filter(function(e){return e.classId!==cid;});
+        await __db.from('user_data').update({class_ids:nc,teacher_exercises:ne,updated_at:Date.now()}).eq('user_id',body.studentId);
+      }
+      return {success:true};
+    }
+
+    // ======== 更新学生 ========
+    if (path === '/api/class/update-student' && method === 'POST') {
+      var {studentId, classId, action, studentNo, username} = body;
+      if (!studentId||!action) throw new Error('缺少参数');
+      // 验证学生在老师班级中
+      var cid = classId;
+      if (!cid) {
+        var r0 = await __db.from('classes').select('id').eq('teacher_id',uid).limit(1).maybeSingle();
+        if (!r0.data) throw new Error('尚未创建班级');
+        cid = r0.data.id;
+      }
+      if (action === 'resetPassword') {
+        var r = await __db.from('profiles').select('*').eq('user_id',studentId).maybeSingle();
+        if (!r.data) throw new Error('用户不存在');
+        var h = await _hashPassword('123456', r.data.username);
+        await __db.from('profiles').update({password_hash:h}).eq('user_id',studentId);
+        return {success:true, message:'密码已重置为 123456'};
+      } else if (action === 'updateStudentNo') {
+        if (!studentNo||studentNo.length<1||studentNo.length>30) throw new Error('学号需要1-30个字符');
+        await __db.from('profiles').update({student_no:studentNo}).eq('user_id',studentId);
+        await __db.from('user_data').update({student_no:studentNo}).eq('user_id',studentId);
+        return {success:true, message:'学号已更新'};
+      } else if (action === 'updateUsername') {
+        if (!username||username.length<2||username.length>20) throw new Error('用户名需要2-20个字符');
+        var r = await __db.from('profiles').select('user_id').eq('username',username).maybeSingle();
+        if (r.data && r.data.user_id!==studentId) throw new Error('用户名已被占用');
+        await __db.from('profiles').update({username:username}).eq('user_id',studentId);
+        return {success:true, message:'用户名已更新为 '+username};
+      }
+      throw new Error('无效的操作');
+    }
+
+    // ======== 创建练习 ========
+    if (path === '/api/class/exercise/create' && method === 'POST') {
+      var {title, text, classId} = body;
+      if (!title||title.length<1) throw new Error('练习标题不能为空');
+      if (!text||text.length<1) throw new Error('练习文本不能为空');
+      var cid = classId;
+      if (!cid) {
+        var r0 = await __db.from('classes').select('id').eq('teacher_id',uid).limit(1).maybeSingle();
+        if (!r0.data) throw new Error('尚未创建班级');
+        cid = r0.data.id;
+      }
+      var r = await __db.from('classes').select('*').eq('id',cid).maybeSingle();
+      if (!r.data) throw new Error('班级不存在');
+      var ex = {id:'ex_'+Date.now()+'_'+Math.random().toString(36).slice(2,8), title:title, text:text, createdAt:Date.now()};
+      var exs = (r.data.exercises||[]).slice();
+      exs.push(ex);
+      await __db.from('classes').update({exercises:exs}).eq('id',cid);
+      return {exercise:ex};
+    }
+
+    // ======== 分发练习 ========
+    if (path === '/api/class/exercise/distribute' && method === 'POST') {
+      var {exerciseId, classId} = body;
+      if (!exerciseId) throw new Error('缺少练习ID');
+      var cid = classId;
+      if (!cid) {
+        var r0 = await __db.from('classes').select('id').eq('teacher_id',uid).limit(1).maybeSingle();
+        if (!r0.data) throw new Error('尚未创建班级');
+        cid = r0.data.id;
+      }
+      var r = await __db.from('classes').select('*').eq('id',cid).maybeSingle();
+      if (!r.data) throw new Error('班级不存在');
+      var cls = r.data;
+      var ex = (cls.exercises||[]).find(function(e){return e.id===exerciseId;});
+      if (!ex) throw new Error('练习不存在');
+      var count = 0;
+      for(var i=0;i<(cls.student_ids||[]).length;i++){
+        var sid = cls.student_ids[i];
+        var r2 = await __db.from('user_data').select('teacher_exercises').eq('user_id',sid).maybeSingle();
+        if (r2.data) {
+          var te = r2.data.teacher_exercises || [];
+          if (!te.find(function(e){return e.exerciseId===exerciseId})) {
+            te.push({exerciseId:ex.id, classId:cid, title:ex.title, text:ex.text, completed:false, bestSpeed:0, bestAccuracy:0, stars:0});
+            await __db.from('user_data').update({teacher_exercises:te, updated_at:Date.now()}).eq('user_id',sid);
+            count++;
+          }
+        }
+      }
+      return {distributed:true, count:count};
+    }
+
+    // ======== 删除练习 ========
+    if (path === '/api/class/exercise/delete' && method === 'POST') {
+      var {exerciseId, classId} = body;
+      if (!exerciseId) throw new Error('缺少练习ID');
+      var cid = classId;
+      if (!cid) {
+        var r0 = await __db.from('classes').select('id').eq('teacher_id',uid).limit(1).maybeSingle();
+        if (!r0.data) throw new Error('尚未创建班级');
+        cid = r0.data.id;
+      }
+      var r = await __db.from('classes').select('*').eq('id',cid).maybeSingle();
+      if (!r.data) throw new Error('班级不存在');
+      var exs = r.data.exercises || [];
+      var idx = exs.findIndex(function(e){return e.id===exerciseId;});
+      if (idx===-1) throw new Error('练习不存在');
+      exs.splice(idx,1);
+      await __db.from('classes').update({exercises:exs}).eq('id',cid);
+      for(var i=0;i<(r.data.student_ids||[]).length;i++){
+        var sid = r.data.student_ids[i];
+        var r2 = await __db.from('user_data').select('teacher_exercises').eq('user_id',sid).maybeSingle();
+        if (r2.data && r2.data.teacher_exercises) {
+          var ne = r2.data.teacher_exercises.filter(function(e){return e.exerciseId!==exerciseId;});
+          await __db.from('user_data').update({teacher_exercises:ne,updated_at:Date.now()}).eq('user_id',sid);
+        }
+      }
+      return {success:true};
+    }
+
+    // ======== 学情看板 ========
+    if (path === '/api/class/dashboard') {
+      var cid = q.classId;
+      if (!cid) {
+        var r0 = await __db.from('classes').select('id').eq('teacher_id',uid).limit(1).maybeSingle();
+        if (!r0.data) throw new Error('尚未创建班级');
+        cid = r0.data.id;
+      }
+      var r = await __db.from('classes').select('*').eq('id',cid).maybeSingle();
+      if (!r.data) throw new Error('班级不存在');
+      var exs = r.data.exercises || [];
+      var students = [];
+      for(var i=0;i<(r.data.student_ids||[]).length;i++)
+        students.push(await _fmtStudent(r.data.student_ids[i], exs));
+      return {students:students, exercises:exs};
+    }
+
+    // ======== 学生练习记录 ========
+    if (path === '/api/class/student-records') {
+      if (!q.studentId) throw new Error('缺少 studentId');
+      var r = await __db.from('user_data').select('records').eq('user_id',q.studentId).maybeSingle();
+      var r2 = await __db.from('profiles').select('username').eq('user_id',q.studentId).maybeSingle();
+      return {username: r2.data?r2.data.username:'', records: r.data?(r.data.records||[]):[]};
+    }
+
+    // ======== 排行榜 ========
+    if (path === '/api/class/leaderboard') {
+      var r = await __db.from('classes').select('*').eq('id',q.classId).maybeSingle();
+      if (!r.data) throw new Error('班级不存在');
+      var ranks = [];
+      for(var i=0;i<(r.data.student_ids||[]).length;i++)
+        ranks.push(await _fmtStudent(r.data.student_ids[i], []));
+      ranks.sort(function(a,b){return b.avgSpeed-a.avgSpeed||b.avgAccuracy-a.avgAccuracy;});
+      return {rankings:ranks, className:r.data.name};
+    }
+
+    // ======== 宠物排行榜 ========
+    if (path === '/api/class/pet-leaderboard') {
+      var cids = q.classId ? q.classId.split(',') : [];
+      if (cids.length===0) {
+        var r0 = await __db.from('classes').select('id').eq('teacher_id',uid).limit(1).maybeSingle();
+        if (r0.data) cids.push(r0.data.id);
+      }
+      var all=[], cn=[];
+      for(var ci=0;ci<cids.length;ci++){
+        var r = await __db.from('classes').select('*').eq('id',cids[ci].trim()).maybeSingle();
+        if(!r.data) continue;
+        cn.push(r.data.name);
+        for(var si=0;si<(r.data.student_ids||[]).length;si++)
+          all.push(await _fmtStudent(r.data.student_ids[si], r.data.exercises||[]));
+      }
+      var seen={}, rankings=[];
+      all.forEach(function(s){if(!seen[s.userId]){seen[s.userId]=true;rankings.push(s);}});
+      var xpR=rankings.slice().sort(function(a,b){return b.pet.totalXP-a.pet.totalXP;});
+      var starR=rankings.slice().sort(function(a,b){return b.pet.stars-a.pet.stars;});
+      var petR=rankings.slice().sort(function(a,b){return b.pet.adoptedCount-a.pet.adoptedCount||b.pet.maxLevelCount-a.pet.maxLevelCount||b.pet.highestStage-a.pet.highestStage;});
+      return {className:cn.join('、'), xpRanking:xpR, starRanking:starR, petRanking:petR};
+    }
+
+    // ======== 加入/我的班级/退出 (学生路由) ========
+    if (path === '/api/class/join' && method === 'POST') {
+      var code = body.inviteCode.toUpperCase();
+      var r = await __db.from('classes').select('*').eq('invite_code',code).maybeSingle();
+      if (!r.data) throw new Error('无效的邀请码');
+      var cls = r.data;
+      if ((cls.student_ids||[]).indexOf(uid)>=0) throw new Error('您已在此班级中');
+      var sids = (cls.student_ids||[]).slice();
+      sids.push(uid);
+      await __db.from('classes').update({student_ids:sids}).eq('id',cls.id);
+      var r2 = await __db.from('user_data').select('class_ids,teacher_exercises').eq('user_id',uid).maybeSingle();
+      var cids2 = (r2.data&&r2.data.class_ids)?r2.data.class_ids.slice():[];
+      if(cids2.indexOf(cls.id)<0) cids2.push(cls.id);
+      var exs2 = (r2.data&&r2.data.teacher_exercises)?r2.data.teacher_exercises:[];
+      (cls.exercises||[]).forEach(function(e){
+        if(!exs2.find(function(x){return x.exerciseId===e.id}))
+          exs2.push({exerciseId:e.id,classId:cls.id,title:e.title,text:e.text,completed:false,bestSpeed:0,bestAccuracy:0,stars:0});
+      });
+      await __db.from('user_data').upsert({user_id:uid,class_ids:cids2,teacher_exercises:exs2,updated_at:Date.now()});
+      var r3 = await __db.from('profiles').select('username').eq('user_id',cls.teacher_id).maybeSingle();
+      return {classId:cls.id,className:cls.name,teacherName:r3.data?r3.data.username:'',exercises:cls.exercises||[]};
+    }
+    if (path === '/api/class/my-classes') {
+      var r = await __db.from('user_data').select('class_ids').eq('user_id',uid).maybeSingle();
+      var cids = (r.data&&r.data.class_ids)||[], list=[];
+      for(var i=0;i<cids.length;i++){
+        var r2 = await __db.from('classes').select('*').eq('id',cids[i]).maybeSingle();
+        if(!r2.data) continue;
+        var r3 = await __db.from('profiles').select('username').eq('user_id',r2.data.teacher_id).maybeSingle();
+        list.push({classId:r2.data.id,className:r2.data.name,teacherName:r3.data?r3.data.username:'',studentCount:(r2.data.student_ids||[]).length});
+      }
+      return {classes:list};
+    }
+    if (path === '/api/class/leave' && method === 'POST') {
+      var r = await __db.from('classes').select('*').eq('id',body.classId).maybeSingle();
+      if(r.data){var sids2=(r.data.student_ids||[]).slice(),idx2=sids2.indexOf(uid);
+        if(idx2>=0){sids2.splice(idx2,1);await __db.from('classes').update({student_ids:sids2}).eq('id',r.data.id);}}
+      var r2 = await __db.from('user_data').select('*').eq('user_id',uid).maybeSingle();
+      if(r2.data){
+        var nc=(r2.data.class_ids||[]).filter(function(id){return id!==body.classId;});
+        var ne=(r2.data.teacher_exercises||[]).filter(function(e){return e.classId!==body.classId;});
+        await __db.from('user_data').update({class_ids:nc,teacher_exercises:ne,updated_at:Date.now()}).eq('user_id',uid);
+      }
+      return {success:true};
+    }
+
+    // ======== 健康检查 ========
+    if (path === '/api/health') return {ok:true, time:Date.now()};
+
+    throw new Error('API 未实现: '+path);
+  } catch(e) {
+    throw new Error(e.message || '请求失败');
+  }
+}
+
+async function accountLogin(username, password) {
+  var data = await accountAPI('POST', '/api/login', { username: username, password: password });
+  AccountUser.token = data.token;
+  AccountUser.userId = data.userId;
+  AccountUser.username = data.username;
+  AccountUser.role = data.role || 'student';
+  saveAccount();
+  updateAccountUI();
+  hideAccountModal();
+  showToast('登录成功');
+  if (AccountUser.role === 'teacher') {
+    refreshTeacherData();
+  } else {
+    showToast('✅ 学生登录成功，正在跳转...');
+    setTimeout(function() { location.href = 'index.html'; }, 800);
+  }
+}
+
+async function accountRegister(username, password, isTeacher) {
+  var role = isTeacher ? 'teacher' : 'student';
+  var data = await accountAPI('POST', '/api/register', { username: username, password: password, role: role });
+  AccountUser.token = data.token;
+  AccountUser.userId = data.userId;
+  AccountUser.username = data.username;
+  AccountUser.role = data.role || 'student';
+  saveAccount();
+  updateAccountUI();
+  hideAccountModal();
+  showToast('注册成功');
+  if (AccountUser.role === 'teacher') {
+    refreshTeacherData();
+  } else {
+    showToast('✅ 学生注册成功，正在跳转...');
+    setTimeout(function() { location.href = 'index.html'; }, 800);
+  }
+}
+
+function accountLogout() {
+  AccountUser = { token: '', userId: '', username: '', role: '' };
+  saveAccount();
+  updateAccountUI();
+  document.getElementById('account-dropdown').classList.add('hidden');
+  // 停止 QuickForm 轮询
+  stopQFPolling();
+  // 如果在数据大屏页，切回班级管理
+  if (TeacherState.currentTab === 'quickform') {
+    TeacherState.currentTab = 'class';
+    switchTab('class');
+  }
+  // 清空教师数据
+  TeacherState.classData = null;
+  TeacherState.dashboardData = null;
+  TeacherState.petRankingData = null;
+  QFState.data = null;
+  _qfFetched = false;
+  renderCurrentTab();
+  showToast('已退出登录');
+}
+
+// ===== 教师状态 =====
+var TeacherState = { classList: [], currentClassId: null, classData: null, dashboardData: null, petRankingData: null, petRankMode: 'xp', currentTab: 'class' };
+// QuickForm 数据大屏状态
+var QFState = { data: null, lastCount: -1, timer: 0, loading: false };
+
+// ===== 班级切换 =====
+async function loadClassList() {
+  try {
+    var data = await accountAPI('GET', '/api/class/list');
+    TeacherState.classList = data.classes || [];
+  } catch(e) {
+    TeacherState.classList = [];
+  }
+  if (TeacherState.classList.length > 0) {
+    if (!TeacherState.currentClassId || !TeacherState.classList.find(function(c) { return c.classId === TeacherState.currentClassId; })) {
+      TeacherState.currentClassId = TeacherState.classList[0].classId;
+    }
+  } else {
+    TeacherState.currentClassId = null;
+  }
+  renderClassSwitcher();
+  if (TeacherState.currentTab === 'class') renderClassTab();
+}
+
+function renderClassSwitcher() {
+  var bar = document.getElementById('class-switcher-bar');
+  var sel = document.getElementById('class-switcher-select');
+  var info = document.getElementById('class-switcher-info');
+  if (TeacherState.classList.length <= 1) {
+    bar.classList.add('hidden');
+    return;
+  }
+  bar.classList.remove('hidden');
+  sel.innerHTML = TeacherState.classList.map(function(c) {
+    return '<option value="' + c.classId + '"' + (c.classId === TeacherState.currentClassId ? ' selected' : '') + '>' + c.name + '（' + c.studentCount + '人）</option>';
+  }).join('');
+  var cur = TeacherState.classList.find(function(c) { return c.classId === TeacherState.currentClassId; });
+  if (cur) info.textContent = '邀请码：' + cur.inviteCode;
+}
+
+async function switchClass(classId) {
+  TeacherState.currentClassId = classId;
+  renderClassSwitcher();
+  await loadClassInfo();
+}
+
+// ===== 教师 API =====
+async function createClass(name) {
+  var data = await accountAPI('POST', '/api/class/create', { name: name });
+  showToast('班级创建成功！邀请码：' + data.inviteCode);
+  await loadClassList();
+  TeacherState.currentClassId = data.classId;
+  renderClassSwitcher();
+  await loadClassInfo();
+}
+
+async function loadClassInfo() {
+  var cid = TeacherState.currentClassId;
+  if (!cid) {
+    TeacherState.classData = null;
+    renderCurrentTab();
+    return;
+  }
+  try {
+    var data = await accountAPI('GET', '/api/class/info?classId=' + cid);
+    TeacherState.classData = data;
+  } catch(e) {
+    TeacherState.classData = null;
+  }
+  renderCurrentTab();
+}
+
+async function removeStudent(studentId) {
+  if (!confirm('确定要移除该学生吗？学生数据不会丢失，可重新加入班级。')) return;
+  await accountAPI('POST', '/api/class/remove-student', { studentId: studentId, classId: TeacherState.currentClassId });
+  showToast('已移除学生');
+  await loadClassInfo();
+}
+
+// 编辑学生信息弹窗
+function showEditStudentModal(studentId, studentName, currentStudentNo) {
+  document.getElementById('edit-st-id').value = studentId;
+  document.getElementById('edit-st-name-label').textContent = studentName;
+  document.getElementById('edit-st-sno-label').textContent = currentStudentNo || '无';
+  document.getElementById('edit-st-sno').value = currentStudentNo || '';
+  document.getElementById('edit-st-username').value = studentName;
+  document.getElementById('edit-st-error').classList.add('hidden');
+  document.getElementById('modal-edit-student').classList.remove('hidden');
+}
+
+function closeEditStudentModal() {
+  document.getElementById('modal-edit-student').classList.add('hidden');
+}
+
+async function saveEditStudent() {
+  var studentId = document.getElementById('edit-st-id').value;
+  var newSno = document.getElementById('edit-st-sno').value.trim();
+  var newUsername = document.getElementById('edit-st-username').value.trim();
+  var errEl = document.getElementById('edit-st-error');
+
+  if (!newSno) { errEl.textContent = '请输入学号'; errEl.classList.remove('hidden'); return; }
+  if (newSno.length > 30) { errEl.textContent = '学号不能超过30个字符'; errEl.classList.remove('hidden'); return; }
+  if (!newUsername || newUsername.length < 2 || newUsername.length > 20) { errEl.textContent = '用户名需要2-20个字符'; errEl.classList.remove('hidden'); return; }
+
+  try {
+    // 保存学号
+    await accountAPI('POST', '/api/class/update-student', { studentId: studentId, classId: TeacherState.currentClassId, action: 'updateStudentNo', studentNo: newSno });
+    // 如果用户名有变化，保存用户名
+    var oldName = document.getElementById('edit-st-name-label').textContent;
+    if (newUsername !== oldName) {
+      await accountAPI('POST', '/api/class/update-student', { studentId: studentId, classId: TeacherState.currentClassId, action: 'updateUsername', username: newUsername });
+    }
+    showToast('学生信息已更新');
+    closeEditStudentModal();
+    await loadClassInfo();
+  } catch(e) {
+    errEl.textContent = e.message;
+    errEl.classList.remove('hidden');
+  }
+}
+
+async function resetPasswordInModal() {
+  var studentId = document.getElementById('edit-st-id').value;
+  var studentName = document.getElementById('edit-st-name-label').textContent;
+  if (!confirm('确定要将「' + studentName + '」的密码重置为 123456 吗？')) return;
+  try {
+    await accountAPI('POST', '/api/class/update-student', { studentId: studentId, classId: TeacherState.currentClassId, action: 'resetPassword' });
+    showToast(studentName + ' 的密码已重置为 123456');
+  } catch(e) {
+    showToast('重置失败：' + e.message);
+  }
+}
+
+async function removeStudentFromModal() {
+  var studentId = document.getElementById('edit-st-id').value;
+  var studentName = document.getElementById('edit-st-name-label').textContent;
+  if (!confirm('确定要将「' + studentName + '」移出班级吗？学生数据不会丢失，可重新加入。')) return;
+  await accountAPI('POST', '/api/class/remove-student', { studentId: studentId, classId: TeacherState.currentClassId });
+  showToast('已移除 ' + studentName);
+  closeEditStudentModal();
+  await loadClassInfo();
+}
+
+async function createExercise(title, text) {
+  var data = await accountAPI('POST', '/api/class/exercise/create', { title: title, text: text, classId: TeacherState.currentClassId });
+  showToast('练习创建成功');
+  await loadClassInfo();
+  return data;
+}
+
+async function distributeExercise(exerciseId) {
+  var data = await accountAPI('POST', '/api/class/exercise/distribute', { exerciseId: exerciseId, classId: TeacherState.currentClassId });
+  showToast('已分发给 ' + data.count + ' 名学生');
+}
+
+async function deleteExercise(exerciseId) {
+  if (!confirm('确定要删除该练习吗？将从所有学生端清除。')) return;
+  await accountAPI('POST', '/api/class/exercise/delete', { exerciseId: exerciseId, classId: TeacherState.currentClassId });
+  showToast('练习已删除');
+  await loadClassInfo();
+}
+
+async function loadDashboard() {
+  var cid = TeacherState.currentClassId;
+  if (!cid) {
+    TeacherState.dashboardData = null;
+    renderDashboard();
+    return;
+  }
+  try {
+    var data = await accountAPI('GET', '/api/class/dashboard?classId=' + cid);
+    TeacherState.dashboardData = data;
+  } catch(e) {
+    TeacherState.dashboardData = null;
+  }
+  renderDashboard();
+}
+
+async function refreshTeacherData() {
+  if (!AccountUser.token || AccountUser.role !== 'teacher') return;
+  try {
+    await loadClassList();
+    await loadClassInfo();
+    if (TeacherState.classData) {
+      await loadDashboard();
+      await loadPetLeaderboard();
+      ensureQFData();
+    }
+  } catch(e) {}
+}
+
+// ===== 渲染 =====
+function switchTab(tab) {
+  TeacherState.currentTab = tab;
+  document.querySelectorAll('.nav-tab').forEach(function(t) {
+    t.classList.toggle('active', t.dataset.tab === tab);
+  });
+  document.getElementById('tab-class').classList.toggle('hidden', tab !== 'class');
+  document.getElementById('tab-exercise').classList.toggle('hidden', tab !== 'exercise');
+  document.getElementById('tab-dashboard').classList.toggle('hidden', tab !== 'dashboard');
+  document.getElementById('tab-pet').classList.toggle('hidden', tab !== 'pet');
+  document.getElementById('tab-quickform').classList.toggle('hidden', tab !== 'quickform');
+  // 切换到数据大屏时启动轮询，离开时停止
+  if (tab === 'quickform') { startQFPolling(); }
+  else { stopQFPolling(); }
+  renderCurrentTab();
+}
+
+function renderCurrentTab() {
+  if (TeacherState.currentTab === 'class') renderClassTab();
+  else if (TeacherState.currentTab === 'exercise') renderExerciseTab();
+  else if (TeacherState.currentTab === 'dashboard') renderDashboard();
+  else if (TeacherState.currentTab === 'pet') {
+    if (!TeacherState.petRankingData) loadPetLeaderboard();
+    else renderPetRanking();
+  }
+  else if (TeacherState.currentTab === 'quickform') {
+    renderQFDashboard();
+  }
+}
+
+// ---- 班级管理 ----
+function renderClassTab() {
+  // 渲染班级列表表格
+  var classList = TeacherState.classList;
+  var tableWrap = document.getElementById('class-table-wrap');
+  var tableEmpty = document.getElementById('class-table-empty');
+  var tbody = document.getElementById('class-table-tbody');
+
+  if (classList.length === 0) {
+    tableWrap.style.display = 'none';
+    tableEmpty.classList.remove('hidden');
+    document.getElementById('class-detail-section').classList.add('hidden');
+    return;
+  }
+
+  tableWrap.style.display = '';
+  tableEmpty.classList.add('hidden');
+  tbody.innerHTML = classList.map(function(c) {
+    var isCurrent = c.classId === TeacherState.currentClassId;
+    return '<tr class="' + (isCurrent ? 'class-row-active' : '') + '">' +
+      '<td><strong>' + escHtml(c.name) + '</strong>' + (isCurrent ? ' <span style="color:#0284c7;font-size:11px;">●当前</span>' : '') + '</td>' +
+      '<td>' + c.studentCount + ' 人</td>' +
+      '<td>' + (c.exerciseCount || 0) + ' 个</td>' +
+      '<td><span class="invite-code invite-code-sm" onclick="copyInviteCodeStr(\'' + c.inviteCode + '\')" title="点击复制">' + c.inviteCode + '</span></td>' +
+      '<td><button class="btn btn-primary btn-sm manage-class-btn" data-class-id="' + c.classId + '">管理</button> ' +
+      '<button class="btn btn-danger btn-sm delete-class-btn" data-class-id="' + c.classId + '" data-class-name="' + escHtml(c.name) + '">删除</button></td>' +
+      '</tr>';
+  }).join('');
+
+  // 绑定管理按钮事件
+  tbody.querySelectorAll('.manage-class-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      manageClassDetail(this.dataset.classId);
+    });
+  });
+  // 绑定删除按钮事件
+  tbody.querySelectorAll('.delete-class-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      deleteClass(this.dataset.classId, this.dataset.className);
+    });
+  });
+
+  // 渲染已选班级的学生详情
+  renderClassDetail();
+}
+
+function renderClassDetail() {
+  var data = TeacherState.classData;
+  var section = document.getElementById('class-detail-section');
+  if (!data) {
+    section.classList.add('hidden');
+    return;
+  }
+  section.classList.remove('hidden');
+  document.getElementById('class-detail-title').textContent = '👨‍🎓 ' + data.name + ' · 学生列表';
+
+  var tbody = document.getElementById('class-detail-tbody');
+  var empty = document.getElementById('class-detail-empty');
+  var serverStudents = data.students || [];
+  // 融合 QF 数据
+  var qfMap = getQFStudentMap();
+  var students = mergeQFToServer(serverStudents, qfMap);
+  if (students.length === 0) {
+    tbody.innerHTML = '';
+    empty.classList.remove('hidden');
+  } else {
+    empty.classList.add('hidden');
+    tbody.innerHTML = students.map(function(s) {
+      var ep = s.exerciseProgress;
+      var exText = ep ? ep.completed + '/' + ep.total : '-';
+      var speedClass = s.avgSpeed >= 40 ? 'speed-fast' : (s.avgSpeed >= 25 ? 'speed-mid' : 'speed-slow');
+      var rowStyle = s.isExternal ? 'background:#fdf2e9;' : '';
+      var editBtn = s.isExternal ? '<span style="font-size:11px;color:#999;">外部数据</span>' : '<button class="btn btn-sm btn-outline edit-st-btn" data-sid="' + s.userId + '" data-sname="' + escHtml(s.username) + '" data-sno="' + escHtml(s.studentNo || '') + '">✏️ 编辑</button>';
+      return '<tr style="' + rowStyle + '">' +
+        '<td>' + escHtml(s.studentNo || '-') + '</td>' +
+        '<td><strong>' + escHtml(s.username) + (s.isExternal ? ' <span style="font-size:10px;color:#e67e22;">📡</span>' : '') + '</strong></td>' +
+        '<td>' + s.totalPractices + ' 次</td>' +
+        '<td>' + (s.qfCount || 0) + ' 次</td>' +
+        '<td>' + exText + '</td>' +
+        '<td class="' + speedClass + '">' + s.avgSpeed + ' 字/分</td>' +
+        '<td>' + s.maxSpeed + ' 字/分</td>' +
+        '<td>' + editBtn + '</td>' +
+        '</tr>';
+    }).join('');
+    tbody.querySelectorAll('.edit-st-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        showEditStudentModal(this.dataset.sid, this.dataset.sname, this.dataset.sno);
+      });
+    });
+  }
+}
+
+async function manageClassDetail(classId) {
+  TeacherState.currentClassId = classId;
+  renderClassSwitcher();
+  await loadClassInfo();
+}
+
+async function deleteClass(classId, className) {
+  if (!confirm('确定要删除「' + className + '」吗？\n\n该班级的所有学生将被移出，练习将被清除。此操作不可恢复。')) return;
+  try {
+    await accountAPI('POST', '/api/class/delete', { classId: classId });
+    showToast('班级「' + className + '」已删除');
+    // 如果删除的是当前管理的班级，清除详情
+    if (TeacherState.currentClassId === classId) {
+      TeacherState.currentClassId = null;
+      TeacherState.classData = null;
+    }
+    await loadClassList();
+    await loadClassInfo();
+  } catch(e) {
+    showToast('删除失败：' + e.message);
+  }
+}
+
+function copyInviteCodeStr(code) {
+  if (!code) return;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(code).then(function() { showToast('邀请码已复制：' + code); });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = code; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    showToast('邀请码已复制：' + code);
+  }
+}
+
+// ---- 练习分发 ----
+function renderExerciseTab() {
+  var data = TeacherState.classData;
+  var listEl = document.getElementById('exercise-list');
+  var emptyEl = document.getElementById('exercise-empty');
+
+  if (!data || !data.exercises || data.exercises.length === 0) {
+    listEl.innerHTML = '';
+    emptyEl.classList.remove('hidden');
+    return;
+  }
+  emptyEl.classList.add('hidden');
+  listEl.innerHTML = data.exercises.map(function(ex) {
+    var preview = ex.text.length > 60 ? ex.text.slice(0, 60) + '...' : ex.text;
+    var time = new Date(ex.createdAt).toLocaleString('zh-CN');
+    return '<div class="exercise-item">' +
+      '<div class="exercise-info">' +
+        '<div class="ex-title">' + escHtml(ex.title) + '</div>' +
+        '<div class="ex-meta">创建于 ' + time + '</div>' +
+        '<div class="exercise-text-preview">' + escHtml(preview) + '</div>' +
+      '</div>' +
+      '<div class="exercise-actions">' +
+        '<button class="btn btn-primary btn-sm" onclick="distributeExercise(\'' + ex.id + '\')">📤 分发</button>' +
+        '<button class="btn btn-danger btn-sm" onclick="deleteExercise(\'' + ex.id + '\')">🗑 删除</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+// ---- 学情看板 ----
+function renderDashboard() {
+  var data = TeacherState.dashboardData;
+  if (!data) {
+    document.getElementById('dashboard-empty').classList.remove('hidden');
+    return;
+  }
+
+  var serverStudents = data.students || [];
+  // 融合 QF 数据
+  var qfMap = getQFStudentMap();
+  var students = mergeQFToServer(serverStudents, qfMap);
+  var totalStudents = students.length;
+  var totalPractices = 0, totalSpeed = 0, totalAcc = 0;
+  students.forEach(function(s) {
+    totalPractices += s.totalPractices;
+    totalSpeed += s.avgSpeed;
+    totalAcc += s.avgAccuracy;
+  });
+  var avgSpeed = totalStudents > 0 ? Math.round(totalSpeed / totalStudents) : 0;
+  var avgAcc = totalStudents > 0 ? Math.round(totalAcc / totalStudents) : 0;
+
+  document.getElementById('sum-students').textContent = totalStudents;
+  document.getElementById('sum-avg-speed').textContent = avgSpeed;
+  document.getElementById('sum-avg-acc').textContent = avgAcc + '%';
+  document.getElementById('sum-total-practice').textContent = totalPractices;
+
+  var tbody = document.getElementById('dashboard-tbody');
+  var empty = document.getElementById('dashboard-empty');
+  if (students.length === 0) {
+    tbody.innerHTML = '';
+    empty.classList.remove('hidden');
+  } else {
+    empty.classList.add('hidden');
+    tbody.innerHTML = students.map(function(s) {
+      var speedClass = s.avgSpeed >= 40 ? 'speed-fast' : (s.avgSpeed >= 25 ? 'speed-mid' : 'speed-slow');
+      var ep = s.exerciseProgress;
+      var exText = ep ? ep.completed + '/' + ep.total : '-';
+      var pet = s.pet || {};
+      var petHTML = '';
+      if (pet.adoptedCount > 0) {
+        var petTypes = ['🐱', '🐶', '🐰', '🐼', '🦊'];
+        petHTML = '<span title="已领养' + pet.adoptedCount + '只">' + petTypes.slice(0, Math.min(pet.adoptedCount, 5)).join('') + '</span>';
+        if (pet.maxLevelCount > 0) petHTML += ' <span title="' + pet.maxLevelCount + '只满级" style="font-size:10px;">🏆×' + pet.maxLevelCount + '</span>';
+      } else {
+        petHTML = '-';
+      }
+      var rowClass = s.isExternal ? '' : 'dashboard-row';
+      var rowStyle = s.isExternal ? 'background:#fdf2e9;' : 'cursor:pointer;';
+      var rowTitle = s.isExternal ? '' : 'title="点击查看趋势图"';
+      var rowClick = s.isExternal ? '' : 'data-student-id="' + s.userId + '"';
+      return '<tr class="' + rowClass + '" ' + rowClick + ' style="' + rowStyle + '" ' + rowTitle + '>' +
+        '<td>' + escHtml(s.studentNo || '-') + '</td>' +
+        '<td><strong>' + escHtml(s.username) + (s.isExternal ? ' <span style="font-size:10px;color:#e67e22;">📡</span>' : '') + '</strong></td>' +
+        '<td>' + s.totalPractices + ' 次</td>' +
+        '<td>' + (s.qfCount || 0) + ' 次</td>' +
+        '<td>' + exText + '</td>' +
+        '<td class="' + speedClass + '">' + s.avgSpeed + ' 字/分</td>' +
+        '<td>' + s.maxSpeed + ' 字/分</td>' +
+        '<td>' + s.avgAccuracy + '%</td>' +
+        '<td>' + pet.stars + '</td>' +
+        '<td>' + petHTML + '</td>' +
+        '</tr>';
+    }).join('');
+  }
+}
+
+// ---- CSV 导出 ----
+function exportCSV() {
+  var data = TeacherState.dashboardData;
+  if (!data || !data.students || data.students.length === 0) {
+    showToast('没有数据可导出');
+    return;
+  }
+  var header = ['学号', '姓名', '练习次数', '教师练习', '平均速度(字/分)', '最高速度(字/分)', '正确率(%)', '活跃天数', '经验值', '星星', '宠物领养', '满级', '最后练习时间'];
+  var rows = data.students.map(function(s) {
+    var lastTime = s.lastPracticeAt ? new Date(s.lastPracticeAt).toLocaleString('zh-CN') : '暂无';
+    var ep = s.exerciseProgress;
+    var exText = ep ? ep.completed + '/' + ep.total : '-';
+    var pet = s.pet || {};
+    return [s.studentNo || '', s.username, s.totalPractices, exText, s.avgSpeed, s.maxSpeed, s.avgAccuracy, s.activeDays, pet.totalXP, pet.stars, pet.adoptedCount, pet.maxLevelCount, lastTime];
+  });
+  var csvContent = '﻿' + header.join(',') + '\n' + rows.map(function(r) { return r.join(','); }).join('\n');
+  var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = '学情看板_' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV 已导出');
+}
+
+// ---- 宠物排行 ----
+async function loadPetLeaderboard() {
+  var cid = TeacherState.currentClassId;
+  if (!cid) {
+    TeacherState.petRankingData = null;
+    renderPetRanking();
+    return;
+  }
+  try {
+    var data = await accountAPI('GET', '/api/class/pet-leaderboard?classId=' + cid);
+    TeacherState.petRankingData = data;
+  } catch(e) {
+    TeacherState.petRankingData = null;
+  }
+  renderPetRanking();
+}
+
+function renderPetRanking() {
+  var data = TeacherState.petRankingData;
+  var tbody = document.getElementById('pet-ranking-tbody');
+  var empty = document.getElementById('pet-ranking-empty');
+  if (!data) {
+    tbody.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+
+  // 根据当前排行模式选择数据
+  var ranking;
+  if (TeacherState.petRankMode === 'star') {
+    ranking = data.starRanking || [];
+  } else if (TeacherState.petRankMode === 'pet') {
+    ranking = data.petRanking || [];
+  } else {
+    ranking = data.xpRanking || [];
+  }
+
+  if (ranking.length === 0) {
+    tbody.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+
+  // 融合 QF 宠物数据
+  var qfMap = getQFStudentMap();
+  var mergedRanking = ranking.map(function(s) {
+    var qfKey = null;
+    var name = s.username || '';
+    var sno = s.studentNo || '';
+    Object.keys(qfMap).forEach(function(k) {
+      var parts = k.split('|');
+      if ((sno && parts[1] === sno) || (!sno && parts[0] === name)) { qfKey = k; }
+    });
+    var qf = qfMap[qfKey];
+    var pet = s.pet || {};
+    var mergedPet = {
+      totalXP: Math.max(pet.totalXP || 0, qf ? (qf.qfXP || 0) : 0),
+      stars: Math.max(pet.stars || 0, qf ? (qf.qfStars || 0) : 0),
+      adoptedCount: Math.max(pet.adoptedCount || 0, qf ? (qf.qfPets || 0) : 0),
+      maxLevelCount: Math.max(pet.maxLevelCount || 0, qf ? (qf.qfMaxLevel || 0) : 0),
+      highestStage: Math.max(pet.highestStage || 0, qf ? (qf.qfHighestStage || 0) : 0)
+    };
+    return { username: s.username, studentNo: s.studentNo, totalPractices: s.totalPractices + (qf ? qf.count : 0), pet: mergedPet };
+  });
+  // 按当前排序模式重排
+  if (TeacherState.petRankMode === 'star') {
+    mergedRanking.sort(function(a, b) { return b.pet.stars - a.pet.stars; });
+  } else if (TeacherState.petRankMode === 'pet') {
+    mergedRanking.sort(function(a, b) { return b.pet.adoptedCount - a.pet.adoptedCount || b.pet.maxLevelCount - b.pet.maxLevelCount; });
+  } else {
+    mergedRanking.sort(function(a, b) { return b.pet.totalXP - a.pet.totalXP; });
+  }
+
+  var medals = ['🥇', '🥈', '🥉'];
+  var stageNames = ['🥚 蛋', '🐣 幼崽', '🦊 成年', '👑 满级'];
+  tbody.innerHTML = mergedRanking.map(function(s, i) {
+    var pet = s.pet;
+    var petTypes = ['🐱', '🐶', '🐰', '🐼', '🦊'];
+    var petIcons = '';
+    if (pet.adoptedCount > 0) {
+      petIcons = petTypes.slice(0, Math.min(pet.adoptedCount, 5)).join('');
+    } else {
+      petIcons = '-';
+    }
+    var stageName = stageNames[pet.highestStage] || '🥚 蛋';
+    return '<tr>' +
+      '<td style="font-size:18px;text-align:center;">' + (i < 3 ? medals[i] : (i + 1)) + '</td>' +
+      '<td>' + escHtml(s.studentNo || '-') + '</td>' +
+      '<td><strong>' + escHtml(s.username) + '</strong></td>' +
+      '<td>' + pet.totalXP + '</td>' +
+      '<td>' + pet.stars + '</td>' +
+      '<td>' + petIcons + ' ×' + pet.adoptedCount + '</td>' +
+      '<td>' + pet.maxLevelCount + '</td>' +
+      '<td>' + stageName + '</td>' +
+      '<td>' + s.totalPractices + ' 次</td>' +
+      '</tr>';
+  }).join('');
+}
+
+// ---- 学生练习趋势 ----
+async function showTrendModal(studentId, studentName) {
+  document.getElementById('trend-title').textContent = '📈 ' + studentName + ' 练习趋势';
+  document.getElementById('modal-trend').classList.remove('hidden');
+  document.getElementById('trend-empty').classList.add('hidden');
+  var canvas = document.getElementById('trend-canvas');
+  canvas.style.display = 'none';
+
+  try {
+    var data = await accountAPI('GET', '/api/class/student-records?studentId=' + studentId);
+    if (!data.records || data.records.length === 0) {
+      document.getElementById('trend-empty').classList.remove('hidden');
+      return;
+    }
+    canvas.style.display = 'block';
+    drawTrendChart(canvas, data.records);
+  } catch(e) {
+    document.getElementById('trend-empty').classList.remove('hidden');
+  }
+}
+
+function drawTrendChart(canvas, records) {
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width;
+  var H = canvas.height;
+  var pad = { top: 20, right: 30, bottom: 50, left: 50 };
+  var pw = W - pad.left - pad.right;
+  var ph = H - pad.top - pad.bottom;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // 取最近最多30条记录
+  var data = records.slice(-30);
+  var n = data.length;
+
+  // 计算Y轴范围
+  var maxSpeed = 0, maxAcc = 100;
+  data.forEach(function(r) { if (r.speed > maxSpeed) maxSpeed = r.speed; });
+  maxSpeed = Math.max(maxSpeed, 10);
+  maxSpeed = Math.ceil(maxSpeed / 10) * 10;
+
+  // 辅助函数
+  function x(i) { return pad.left + (i / Math.max(n - 1, 1)) * pw; }
+  function ySpeed(v) { return pad.top + ph - (v / maxSpeed) * ph; }
+  function yAcc(v) { return pad.top + ph - (v / 100) * ph; }
+
+  // 网格线
+  ctx.strokeStyle = '#e5e7eb';
+  ctx.lineWidth = 1;
+  for (var i = 0; i <= 4; i++) {
+    var gy = pad.top + (ph / 4) * i;
+    ctx.beginPath(); ctx.moveTo(pad.left, gy); ctx.lineTo(W - pad.right, gy); ctx.stroke();
+  }
+
+  // X轴标签
+  ctx.fillStyle = '#6b7280';
+  ctx.font = '10px sans-serif';
+  ctx.textAlign = 'center';
+  var maxLabels = Math.min(n, 8);
+  var step = Math.max(1, Math.floor(n / maxLabels));
+  for (var i = 0; i < n; i += step) {
+    var d = new Date(data[i].time);
+    var label = (d.getMonth() + 1) + '/' + d.getDate();
+    ctx.fillText(label, x(i), H - pad.bottom + 16);
+  }
+  // 最后一条
+  if (n > 1 && (n - 1) % step !== 0) {
+    var d = new Date(data[n - 1].time);
+    ctx.fillText((d.getMonth() + 1) + '/' + d.getDate(), x(n - 1), H - pad.bottom + 16);
+  }
+
+  // 左侧Y轴(速度)
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#0284c7';
+  for (var i = 0; i <= 4; i++) {
+    var v = Math.round((maxSpeed / 4) * (4 - i));
+    ctx.fillText(v + '', pad.left - 8, pad.top + (ph / 4) * i + 4);
+  }
+  ctx.fillText('字/分', pad.left - 8, pad.top - 8);
+
+  // 右侧Y轴(正确率)
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#dc2626';
+  for (var i = 0; i <= 4; i++) {
+    var v = 100 - i * 25;
+    ctx.fillText(v + '%', W - pad.right + 8, pad.top + (ph / 4) * i + 4);
+  }
+
+  // 速度折线
+  ctx.strokeStyle = '#0284c7';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  for (var i = 0; i < n; i++) {
+    var px = x(i), py = ySpeed(data[i].speed);
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+
+  // 速度数据点
+  ctx.fillStyle = '#0284c7';
+  for (var i = 0; i < n; i++) {
+    ctx.beginPath(); ctx.arc(x(i), ySpeed(data[i].speed), 3, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // 正确率折线
+  ctx.strokeStyle = '#dc2626';
+  ctx.lineWidth = 2.5;
+  ctx.setLineDash([6, 3]);
+  ctx.beginPath();
+  for (var i = 0; i < n; i++) {
+    var px = x(i), py = yAcc(data[i].accuracy);
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // 正确率数据点
+  ctx.fillStyle = '#dc2626';
+  for (var i = 0; i < n; i++) {
+    ctx.beginPath(); ctx.arc(x(i), yAcc(data[i].accuracy), 3, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // 图例
+  ctx.font = '12px sans-serif';
+  var lx = pad.left, ly = pad.top + 4;
+  ctx.fillStyle = '#0284c7';
+  ctx.fillRect(lx, ly, 16, 3);
+  ctx.fillText('速度(字/分)', lx + 22, ly + 8);
+
+  ctx.fillStyle = '#dc2626';
+  var lx2 = lx + 130;
+  ctx.setLineDash([4, 2]);
+  ctx.beginPath(); ctx.moveTo(lx2, ly + 1.5); ctx.lineTo(lx2 + 16, ly + 1.5); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillText('正确率(%)', lx2 + 22, ly + 8);
+}
+
+// ---- 工具函数 ----
+function escHtml(s) {
+  var d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ===== 复制邀请码 =====
+function copyInviteCode() {
+  var code = document.getElementById('info-invite-code').textContent;
+  if (!code || code === '------') return;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(code).then(function() {
+      showToast('邀请码已复制：' + code);
+    });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = code; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('邀请码已复制：' + code);
+  }
+}
+
+// ===== QuickForm 数据大屏 =====
+const QF_COUNT_URL = 'https://quickform.cn/api/14z2lg4rrd/count';
+const QF_ALL_URL = 'https://quickform.cn/api/14z2lg4rrd/all';
+
+async function fetchQFCount() {
+  try {
+    var res = await fetch(QF_COUNT_URL);
+    if (!res.ok) return -1;
+    var data = await res.json();
+    return data.total_submissions || 0;
+  } catch(e) { return -1; }
+}
+
+async function fetchQFAll() {
+  try {
+    var res = await fetch(QF_ALL_URL);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var data = await res.json();
+    return data;
+  } catch(e) { throw e; }
+}
+
+function startQFPolling() {
+  if (QFState.timer) return;
+  if (!AccountUser.token) {
+    renderQFDashboard();
+    return;
+  }
+  fetchQFAll().then(function(data) {
+    QFState.data = data;
+    QFState.lastCount = data.total_submissions || 0;
+    renderQFDashboard();
+  }).catch(function(e) {
+    document.getElementById('qf-status').textContent = '⚠️ 加载失败：' + e.message;
+  });
+  QFState.timer = setInterval(async function() {
+    if (QFState.loading) return;
+    try {
+      var count = await fetchQFCount();
+      if (count < 0) return;
+      if (count !== QFState.lastCount) {
+        QFState.loading = true;
+        var data = await fetchQFAll();
+        QFState.data = data;
+        QFState.lastCount = data.total_submissions || 0;
+        renderQFDashboard();
+        QFState.loading = false;
+      }
+      document.getElementById('qf-status').textContent = '✅ 已同步 · ' + QFState.lastCount + ' 条提交';
+    } catch(e) {}
+  }, 10000);
+}
+
+function stopQFPolling() {
+  if (QFState.timer) { clearInterval(QFState.timer); QFState.timer = 0; }
+}
+
+async function refreshQFData() {
+  document.getElementById('qf-status').textContent = '🔄 刷新中...';
+  try {
+    var data = await fetchQFAll();
+    QFState.data = data;
+    QFState.lastCount = data.total_submissions || 0;
+    renderQFDashboard();
+    document.getElementById('qf-status').textContent = '✅ 已刷新 · ' + QFState.lastCount + ' 条提交';
+  } catch(e) {
+    document.getElementById('qf-status').textContent = '⚠️ 刷新失败：' + e.message;
+  }
+}
+
+function renderQFDashboard() {
+  // 未登录时显示提示
+  if (!AccountUser.token) {
+    document.getElementById('qf-total-subs').textContent = '-';
+    document.getElementById('qf-unique-students').textContent = '-';
+    document.getElementById('qf-avg-speed').textContent = '-';
+    document.getElementById('qf-avg-acc').textContent = '-';
+    document.getElementById('qf-student-tbody').innerHTML = '';
+    document.getElementById('qf-student-empty').classList.remove('hidden');
+    document.getElementById('qf-student-empty').querySelector('.empty-icon').textContent = '🔒';
+    document.getElementById('qf-student-empty').querySelector('.empty-text').textContent = '请先登录教师账号';
+    document.getElementById('qf-recent-tbody').innerHTML = '';
+    document.getElementById('qf-status').textContent = '⏳ 未登录';
+    return;
+  }
+  var data = QFState.data;
+  var subs = data ? (data.submissions || []) : [];
+  var totalSubs = subs.length;
+
+  // 汇总卡片
+  var nameSet = {};
+  var totalSpeed = 0, totalAcc = 0, speedCount = 0;
+  subs.forEach(function(s) {
+    var key = (s['姓名'] || '') + '_' + (s['学号'] || '');
+    if (key !== '_') nameSet[key] = true;
+    var sp = parseFloat(s['速度']) || 0;
+    var ac = parseFloat(s['正确率']) || 0;
+    if (sp > 0) { totalSpeed += sp; speedCount++; }
+    if (ac > 0) { totalAcc += ac; }
+  });
+  var uniqueStudents = Object.keys(nameSet).length;
+  var avgSpeed = speedCount > 0 ? Math.round(totalSpeed / speedCount) : 0;
+  var avgAcc = subs.length > 0 ? Math.round(totalAcc / subs.length) : 0;
+
+  document.getElementById('qf-total-subs').textContent = totalSubs;
+  document.getElementById('qf-unique-students').textContent = uniqueStudents;
+  document.getElementById('qf-avg-speed').textContent = avgSpeed;
+  document.getElementById('qf-avg-acc').textContent = avgAcc + '%';
+
+  // 学生汇总表（按姓名去重，取每人的最新记录）
+  var studentMap = {};
+  subs.forEach(function(s) {
+    var key = (s['姓名'] || '未知') + '_' + (s['学号'] || '');
+    if (key === '_') return;
+    if (!studentMap[key]) {
+      studentMap[key] = { name: s['姓名'] || '未知', studentNo: s['学号'] || '', count: 0, speeds: [], maxSpeed: 0, accs: [], stars: 0, xp: 0, lastTime: '' };
+    }
+    var st = studentMap[key];
+    st.count++;
+    var sp = parseFloat(s['速度']) || 0;
+    var ac = parseFloat(s['正确率']) || 0;
+    if (sp > 0) st.speeds.push(sp);
+    if (sp > st.maxSpeed) st.maxSpeed = sp;
+    if (ac > 0) st.accs.push(ac);
+    st.stars = Math.max(st.stars, parseInt(s['星星']) || 0);
+    st.xp = Math.max(st.xp, parseInt(s['经验值']) || 0);
+    if (s['提交时间'] > st.lastTime) st.lastTime = s['提交时间'];
+  });
+
+  var students = Object.values(studentMap);
+  students.sort(function(a, b) { return b.count - a.count; });
+
+  var stuTbody = document.getElementById('qf-student-tbody');
+  var stuEmpty = document.getElementById('qf-student-empty');
+  if (students.length === 0) {
+    stuTbody.innerHTML = '';
+    stuEmpty.classList.remove('hidden');
+  } else {
+    stuEmpty.classList.add('hidden');
+    stuTbody.innerHTML = students.map(function(s) {
+      var avgSp = s.speeds.length > 0 ? Math.round(s.speeds.reduce(function(a, b) { return a + b; }, 0) / s.speeds.length) : 0;
+      var avgAc = s.accs.length > 0 ? Math.round(s.accs.reduce(function(a, b) { return a + b; }, 0) / s.accs.length) : 0;
+      var speedClass = avgSp >= 40 ? 'speed-fast' : (avgSp >= 25 ? 'speed-mid' : 'speed-slow');
+      return '<tr>' +
+        '<td><strong>' + escHtml(s.name) + '</strong></td>' +
+        '<td>' + escHtml(s.studentNo) + '</td>' +
+        '<td>' + s.count + ' 次</td>' +
+        '<td class="' + speedClass + '">' + avgSp + ' 字/分</td>' +
+        '<td>' + s.maxSpeed + ' 字/分</td>' +
+        '<td>' + avgAc + '%</td>' +
+        '<td>⭐' + s.stars + '</td>' +
+        '<td>' + s.xp + '</td>' +
+        '<td style="font-size:12px;">' + escHtml(s.lastTime) + '</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  // 最近提交表（取最新 20 条）
+  var recent = subs.slice().reverse().slice(0, 20);
+  var recentTbody = document.getElementById('qf-recent-tbody');
+  recentTbody.innerHTML = recent.map(function(s) {
+    var speedClass = (parseFloat(s['速度']) || 0) >= 40 ? 'speed-fast' : ((parseFloat(s['速度']) || 0) >= 25 ? 'speed-mid' : 'speed-slow');
+    return '<tr>' +
+      '<td>' + escHtml(s['姓名'] || '-') + '</td>' +
+      '<td>' + escHtml(s['练习标题'] || '-') + '</td>' +
+      '<td class="' + speedClass + '">' + (s['速度'] || 0) + '</td>' +
+      '<td>' + (s['正确率'] || 0) + '%</td>' +
+      '<td>' + (s['用时'] || 0) + '秒</td>' +
+      '<td>' + (s['总字数'] || 0) + '</td>' +
+      '<td>⭐' + (s['星星'] || 0) + '</td>' +
+      '<td style="font-size:12px;">' + escHtml(s['提交时间'] || '-') + '</td>' +
+      '</tr>';
+  }).join('');
+
+  document.getElementById('qf-status').textContent = '✅ 已同步 · ' + totalSubs + ' 条提交';
+}
+
+// ===== QuickForm 数据融合 =====
+var _qfFetched = false;
+
+async function ensureQFData() {
+  if (_qfFetched || !AccountUser.token) return;
+  _qfFetched = true;
+  try {
+    QFState.data = await fetchQFAll();
+    QFState.lastCount = QFState.data ? (QFState.data.total_submissions || 0) : 0;
+  } catch(e) {
+    QFState.data = null;
+  }
+}
+
+// 获取 QF 学生汇总（按姓名+学号去重）
+function getQFStudentMap() {
+  var map = {};
+  if (!QFState.data || !QFState.data.submissions) return map;
+  QFState.data.submissions.forEach(function(s) {
+    var key = (s['姓名'] || '') + '|' + (s['学号'] || '');
+    if (!key || key === '|') return;
+    if (!map[key]) {
+      map[key] = { name: s['姓名'], studentNo: s['学号'], count: 0, speeds: [], accs: [], maxSpeed: 0, qfStars: 0, qfXP: 0, qfPets: 0, qfMaxLevel: 0, qfHighestStage: 0, lastTime: '' };
+    }
+    var st = map[key];
+    st.count++;
+    var sp = parseFloat(s['速度']) || 0;
+    var ac = parseFloat(s['正确率']) || 0;
+    if (sp > 0) st.speeds.push(sp);
+    if (ac > 0) st.accs.push(ac);
+    if (sp > st.maxSpeed) st.maxSpeed = sp;
+    st.qfStars = Math.max(st.qfStars, parseInt(s['星星']) || 0);
+    st.qfXP = Math.max(st.qfXP, parseInt(s['经验值']) || 0);
+    st.qfPets = Math.max(st.qfPets, parseInt(s['宠物数量']) || 0);
+    st.qfMaxLevel = Math.max(st.qfMaxLevel, parseInt(s['满级宠物数']) || 0);
+    st.qfHighestStage = Math.max(st.qfHighestStage, parseInt(s['最高阶段']) || 0);
+    if (s['提交时间'] > st.lastTime) st.lastTime = s['提交时间'];
+  });
+  return map;
+}
+
+// 匹配 QF 学生到服务端学生列表，返回合并后的数组
+function mergeQFToServer(serverStudents, qfMap) {
+  var usedKeys = {};
+  var result = [];
+  serverStudents.forEach(function(s) {
+    var sno = s.studentNo || '';
+    var name = s.username || '';
+    // 尝试匹配：学号匹配 或 姓名匹配
+    var qfKey = null;
+    var qfStudent = null;
+    // 优先学号匹配
+    Object.keys(qfMap).forEach(function(k) {
+      if (usedKeys[k]) return;
+      var parts = k.split('|');
+      if (sno && parts[1] === sno) { qfKey = k; qfStudent = qfMap[k]; }
+    });
+    // 其次姓名匹配（且学号为空或已确定）
+    if (!qfStudent) {
+      Object.keys(qfMap).forEach(function(k) {
+        if (usedKeys[k]) return;
+        var parts = k.split('|');
+        if (name && parts[0] === name) { qfKey = k; qfStudent = qfMap[k]; }
+      });
+    }
+    if (qfKey) usedKeys[qfKey] = true;
+    result.push({
+      userId: s.userId,
+      username: s.username,
+      studentNo: s.studentNo,
+      totalPractices: s.totalPractices,
+      avgSpeed: s.avgSpeed,
+      maxSpeed: Math.max(s.maxSpeed, qfStudent ? qfStudent.maxSpeed : 0),
+      avgAccuracy: s.avgAccuracy,
+      activeDays: s.activeDays,
+      lastPracticeAt: s.lastPracticeAt,
+      pet: s.pet,
+      exerciseProgress: s.exerciseProgress,
+      exerciseStatus: s.exerciseStatus,
+      qfCount: qfStudent ? qfStudent.count : 0,
+      qfStudent: qfStudent,
+      isExternal: false
+    });
+  });
+  // QF 独有的学生
+  Object.keys(qfMap).forEach(function(k) {
+    if (usedKeys[k]) return;
+    var qf = qfMap[k];
+    var avgSp = qf.speeds.length > 0 ? Math.round(qf.speeds.reduce(function(a, b) { return a + b; }, 0) / qf.speeds.length) : 0;
+    var avgAc = qf.accs.length > 0 ? Math.round(qf.accs.reduce(function(a, b) { return a + b; }, 0) / qf.accs.length) : 0;
+    result.push({
+      userId: 'qf_' + k,
+      username: qf.name,
+      studentNo: qf.studentNo,
+      totalPractices: qf.count,
+      avgSpeed: avgSp,
+      maxSpeed: qf.maxSpeed,
+      avgAccuracy: avgAc,
+      activeDays: 0,
+      lastPracticeAt: qf.lastTime ? new Date(qf.lastTime).getTime() : 0,
+      pet: { totalXP: qf.qfXP, stars: qf.qfStars, adoptedCount: qf.qfPets, maxLevelCount: qf.qfMaxLevel, highestStage: qf.qfHighestStage },
+      exerciseProgress: null,
+      qfCount: qf.count,
+      qfStudent: qf,
+      isExternal: true
+    });
+  });
+  return result;
+}
+
+// ===== 主题切换 =====
+function initTheme() {
+  var saved = localStorage.getItem('typing2_theme') || 'ocean';
+  applyTheme(saved);
+}
+
+function applyTheme(theme) {
+  document.body.dataset.theme = theme;
+  localStorage.setItem('typing2_theme', theme);
+  document.querySelectorAll('.theme-option').forEach(function(o) {
+    o.classList.toggle('active', o.dataset.theme === theme);
+  });
+}
+
+// ===== 初始化 =====
+function init() {
+  initAccount();
+  initTheme();
+  renderCurrentTab();
+
+  // 如果已登录为教师，默认刷新数据
+  if (AccountUser.token && AccountUser.role === 'teacher') {
+    refreshTeacherData();
+  }
+}
+
+// ===== 事件绑定 =====
+document.addEventListener('DOMContentLoaded', function() {
+  init();
+
+  // 账号按钮
+  document.getElementById('btn-account').addEventListener('click', function(e) {
+    e.stopPropagation();
+    if (AccountUser.token) {
+      document.getElementById('account-dropdown').classList.toggle('hidden');
+    } else {
+      showAccountModal('login');
+    }
+  });
+
+  // 退出登录
+  document.getElementById('btn-logout').addEventListener('click', accountLogout);
+
+  // 关闭账号弹窗
+  document.getElementById('btn-account-close').addEventListener('click', hideAccountModal);
+  document.getElementById('modal-account').addEventListener('click', function(e) {
+    if (e.target === this) hideAccountModal();
+  });
+
+  // 账号 Tab 切换
+  document.querySelectorAll('#account-tabs .account-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() { switchAccountTab(this.dataset.form); });
+  });
+
+  // 我是学生/我是老师 互斥
+  document.getElementById('login-as-student').addEventListener('change', function() {
+    if (this.checked) document.getElementById('login-as-teacher').checked = false;
+  });
+  document.getElementById('login-as-teacher').addEventListener('change', function() {
+    if (this.checked) document.getElementById('login-as-student').checked = false;
+  });
+
+  // 登录表单
+  document.getElementById('account-form-login').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var u = document.getElementById('login-username').value.trim();
+    var p = document.getElementById('login-password').value;
+    var err = document.getElementById('login-error');
+    if (!u || !p) { err.textContent = '请填写用户名和密码'; err.style.display = 'block'; return; }
+    err.style.display = 'none';
+    accountLogin(u, p).catch(function(e) { err.textContent = e.message; err.style.display = 'block'; });
+  });
+
+  // 注册表单
+  document.getElementById('account-form-register').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var u = document.getElementById('reg-username').value.trim();
+    var p = document.getElementById('reg-password').value;
+    var isTeacher = document.getElementById('reg-is-teacher').checked;
+    var err = document.getElementById('reg-error');
+    if (!u || !p) { err.textContent = '请填写用户名和密码'; err.style.display = 'block'; return; }
+    if (u.length < 2 || u.length > 20) { err.textContent = '用户名需要2-20个字符'; err.style.display = 'block'; return; }
+    if (p.length < 3 || p.length > 50) { err.textContent = '密码需要3-50个字符'; err.style.display = 'block'; return; }
+    err.style.display = 'none';
+    accountRegister(u, p, isTeacher).catch(function(e) { err.textContent = e.message; err.style.display = 'block'; });
+  });
+
+  // 导航 Tab
+  document.querySelectorAll('.nav-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() { switchTab(this.dataset.tab); });
+  });
+
+  // 创建班级
+  document.getElementById('btn-create-class').addEventListener('click', function() {
+    if (!AccountUser.token) { showAccountModal('login'); return; }
+    if (AccountUser.role !== 'teacher') { showToast('请使用教师账号登录'); return; }
+    var name = document.getElementById('input-class-name').value.trim();
+    var err = document.getElementById('create-class-error');
+    if (!name || name.length < 2 || name.length > 30) {
+      err.textContent = '班级名称需要2-30个字符'; return;
+    }
+    err.textContent = '';
+    createClass(name).catch(function(e) { err.textContent = e.message; });
+  });
+
+  // 刷新班级列表
+  document.getElementById('btn-refresh-classes').addEventListener('click', function() {
+    loadClassList().then(function() { showToast('已刷新'); });
+  });
+
+  // 收起班级详情
+  document.getElementById('btn-close-detail').addEventListener('click', function() {
+    document.getElementById('class-detail-section').classList.add('hidden');
+  });
+
+  // 创建练习
+  document.getElementById('btn-create-exercise').addEventListener('click', function() {
+    if (!AccountUser.token) { showAccountModal('login'); return; }
+    if (AccountUser.role !== 'teacher') { showToast('请使用教师账号登录'); return; }
+    if (!TeacherState.currentClassId) { showToast('请先创建班级'); return; }
+    var title = document.getElementById('input-ex-title').value.trim();
+    var text = document.getElementById('input-ex-text').value.trim();
+    var err = document.getElementById('create-ex-error');
+    if (!title) { err.textContent = '练习标题不能为空'; err.style.display = 'block'; return; }
+    if (!text) { err.textContent = '练习文本不能为空'; err.style.display = 'block'; return; }
+    err.style.display = 'none';
+    createExercise(title, text).then(function() {
+      document.getElementById('input-ex-title').value = '';
+      document.getElementById('input-ex-text').value = '';
+      document.getElementById('import-file-name').textContent = '';
+      document.getElementById('input-ex-file').value = '';
+    }).catch(function(e) { err.textContent = e.message; err.style.display = 'block'; });
+  });
+
+  // TXT文件导入
+  document.getElementById('btn-import-txt').addEventListener('click', function() {
+    document.getElementById('input-ex-file').click();
+  });
+  document.getElementById('input-ex-file').addEventListener('change', function() {
+    var file = this.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      document.getElementById('input-ex-text').value = e.target.result;
+      document.getElementById('import-file-name').textContent = '已导入：' + file.name;
+    };
+    reader.onerror = function() {
+      showToast('文件读取失败，请重试');
+    };
+    reader.readAsText(file, 'UTF-8');
+  });
+
+  // 刷新练习
+  document.getElementById('btn-refresh-exercises').addEventListener('click', function() {
+    loadClassInfo().then(function() { showToast('已刷新'); });
+  });
+
+  // 刷新看板
+  document.getElementById('btn-refresh-dashboard').addEventListener('click', function() {
+    loadDashboard().then(function() { showToast('已刷新'); });
+  });
+
+  // 刷新宠物排行
+  document.getElementById('btn-refresh-pet').addEventListener('click', function() {
+    loadPetLeaderboard().then(function() { showToast('已刷新'); });
+  });
+  // 宠物排行切换
+  document.querySelectorAll('.pet-rank-tab').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      TeacherState.petRankMode = this.dataset.rank;
+      document.querySelectorAll('.pet-rank-tab').forEach(function(b) {
+        b.style.background = 'var(--color-bg)';
+        b.style.color = 'var(--color-text)';
+        b.classList.remove('active');
+      });
+      this.style.background = '';
+      this.style.color = '';
+      this.classList.add('active');
+      renderPetRanking();
+    });
+  });
+
+  // 导出CSV
+  document.getElementById('btn-export-csv').addEventListener('click', function() {
+    exportCSV();
+  });
+
+  // 看板学生行点击 → 趋势图（事件委托）
+  document.getElementById('dashboard-tbody').addEventListener('click', function(e) {
+    var row = e.target.closest('.dashboard-row');
+    if (!row) return;
+    var studentId = row.dataset.studentId;
+    var studentName = row.querySelector('strong').textContent;
+    showTrendModal(studentId, studentName);
+  });
+
+  // 关闭趋势弹窗
+  document.getElementById('btn-trend-close').addEventListener('click', function() {
+    document.getElementById('modal-trend').classList.add('hidden');
+  });
+  document.getElementById('modal-trend').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.add('hidden');
+  });
+
+  // 编辑学生信息弹窗
+  document.getElementById('btn-edit-st-close').addEventListener('click', closeEditStudentModal);
+  document.getElementById('btn-edit-st-save').addEventListener('click', saveEditStudent);
+  document.getElementById('btn-edit-st-resetpwd').addEventListener('click', resetPasswordInModal);
+  document.getElementById('btn-edit-st-remove').addEventListener('click', removeStudentFromModal);
+  document.getElementById('modal-edit-student').addEventListener('click', function(e) {
+    if (e.target === this) closeEditStudentModal();
+  });
+
+  // 班级切换
+  document.getElementById('class-switcher-select').addEventListener('change', function() {
+    switchClass(this.value);
+  });
+
+
+  // 主题切换
+  document.getElementById('btn-theme').addEventListener('click', function(e) {
+    e.stopPropagation();
+    document.getElementById('theme-popup').classList.toggle('show');
+  });
+  document.querySelectorAll('.theme-option').forEach(function(opt) {
+    opt.addEventListener('click', function(e) {
+      e.stopPropagation();
+      applyTheme(this.dataset.theme);
+      document.getElementById('theme-popup').classList.remove('show');
+    });
+  });
+  document.addEventListener('click', function() {
+    document.getElementById('theme-popup').classList.remove('show');
+    document.getElementById('account-dropdown').classList.add('hidden');
+  });
+
+  // QuickForm 数据大屏刷新按钮
+  document.getElementById('btn-refresh-qf').addEventListener('click', function() {
+    refreshQFData();
+  });
+
+  // Escape 关闭弹窗
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') { hideAccountModal(); }
+  });
+});
+</script>
+</body>
+</html>
