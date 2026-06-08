@@ -2683,6 +2683,40 @@ async function syncAccountData() {
   }
 }
 
+// ===== 账号初始化 =====
+function initAccount() {
+  try {
+    var saved = JSON.parse(localStorage.getItem('typing2_account'));
+    if (saved && saved.token && saved.role !== 'teacher') {
+      AccountUser = saved;
+      updateAccountUI();
+      downloadAndMerge();
+    }
+  } catch(e) {}
+}
+
+function saveAccount() {
+  if (AccountUser) {
+    localStorage.setItem('typing2_account', JSON.stringify(AccountUser));
+  } else {
+    localStorage.removeItem('typing2_account');
+  }
+}
+
+function updateAccountUI() {
+  var btn = document.getElementById('btn-account');
+  if (!btn) return;
+  if (AccountUser) {
+    btn.textContent = '👤 ' + AccountUser.username;
+    btn.classList.add('logged-in');
+    btn.title = '已登录：' + AccountUser.username;
+  } else {
+    btn.textContent = '👤 登录';
+    btn.classList.remove('logged-in');
+    btn.title = '登录/注册';
+  }
+}
+
 // ===== QuickForm 数据提交 =====
 function submitToQuickForm(stats) {
   if (!QUICKFORM_URL) return;
