@@ -1472,7 +1472,8 @@ function renderPetRanking() {
   }
   empty.classList.add('hidden');
 
-
+  var medals = ['🥇', '🥈', '🥉'];
+  var stageNames = ['🥚 蛋', '🐣 幼崽', '🦊 成年', '👑 满级'];
   tbody.innerHTML = ranking.map(function(s, i) {
     var pet = s.pet;
     var petTypes = ['🐱', '🐶', '🐰', '🐼', '🦊'];
