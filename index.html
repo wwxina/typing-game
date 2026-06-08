@@ -2298,7 +2298,7 @@ const QUICKFORM_URL = 'https://quickform.cn/api/14z2lg4rrd';
 
 function initAccount() {
   try {
-    var saved = JSON.parse(localStorage.getItem('typing2_account'));
+    var saved = JSON.parse(localStorage.getItem('typing2_student_account'));
     // 只恢复学生账号，教师账号不在此页生效
     if (saved && saved.token && saved.role !== 'teacher') {
       AccountUser = saved;
@@ -2310,9 +2310,9 @@ function initAccount() {
 
 function saveAccount() {
   if (AccountUser) {
-    localStorage.setItem('typing2_account', JSON.stringify(AccountUser));
+    localStorage.setItem('typing2_student_account', JSON.stringify(AccountUser));
   } else {
-    localStorage.removeItem('typing2_account');
+    localStorage.removeItem('typing2_student_account');
   }
 }
 
