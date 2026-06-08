@@ -488,7 +488,7 @@ tr:hover td { background: var(--color-bg); }
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>学号</th><th>姓名</th><th>练习次数</th><th>QF提交</th><th>教师练习</th><th>平均速度</th><th>最高速度</th><th>操作</th></tr>
+              <tr><th>学号</th><th>姓名</th><th>练习次数</th><th>教师练习</th><th>平均速度</th><th>最高速度</th><th>操作</th></tr>
             </thead>
             <tbody id="class-detail-tbody"></tbody>
           </table>
@@ -569,7 +569,7 @@ tr:hover td { background: var(--color-bg); }
           <table id="dashboard-table">
             <thead>
               <tr>
-                <th>学号</th><th>姓名</th><th>练习次数</th><th>QF提交</th><th>教师练习</th><th>平均速度</th><th>最高速度</th><th>正确率</th><th>⭐</th><th>宠物</th>
+                <th>学号</th><th>姓名</th><th>练习次数</th><th>教师练习</th><th>平均速度</th><th>最高速度</th><th>正确率</th><th>⭐</th><th>宠物</th>
               </tr>
             </thead>
             <tbody id="dashboard-tbody"></tbody>
@@ -1247,9 +1247,7 @@ function renderClassDetail() {
   var tbody = document.getElementById('class-detail-tbody');
   var empty = document.getElementById('class-detail-empty');
   var serverStudents = data.students || [];
-  // 融合 QF 数据
-  var qfMap = getQFStudentMap();
-  var students = mergeQFToServer(serverStudents, qfMap);
+  var students = serverStudents;
   if (students.length === 0) {
     tbody.innerHTML = '';
     empty.classList.remove('hidden');
@@ -1265,7 +1263,7 @@ function renderClassDetail() {
         '<td>' + escHtml(s.studentNo || '-') + '</td>' +
         '<td><strong>' + escHtml(s.username) + (s.isExternal ? ' <span style="font-size:10px;color:#e67e22;">📡</span>' : '') + '</strong></td>' +
         '<td>' + s.totalPractices + ' 次</td>' +
-        '<td>' + (s.qfCount || 0) + ' 次</td>' +
+        '' +
         '<td>' + exText + '</td>' +
         '<td class="' + speedClass + '">' + s.avgSpeed + ' 字/分</td>' +
         '<td>' + s.maxSpeed + ' 字/分</td>' +
@@ -1353,10 +1351,7 @@ function renderDashboard() {
     return;
   }
 
-  var serverStudents = data.students || [];
-  // 融合 QF 数据
-  var qfMap = getQFStudentMap();
-  var students = mergeQFToServer(serverStudents, qfMap);
+  var students = data.students || [];
   var totalStudents = students.length;
   var totalPractices = 0, totalSpeed = 0, totalAcc = 0;
   students.forEach(function(s) {
@@ -1392,15 +1387,10 @@ function renderDashboard() {
       } else {
         petHTML = '-';
       }
-      var rowClass = s.isExternal ? '' : 'dashboard-row';
-      var rowStyle = s.isExternal ? 'background:#fdf2e9;' : 'cursor:pointer;';
-      var rowTitle = s.isExternal ? '' : 'title="点击查看趋势图"';
-      var rowClick = s.isExternal ? '' : 'data-student-id="' + s.userId + '"';
-      return '<tr class="' + rowClass + '" ' + rowClick + ' style="' + rowStyle + '" ' + rowTitle + '>' +
+      return '<tr class="dashboard-row" data-student-id="' + s.userId + '" style="cursor:pointer;" title="点击查看趋势图">' +
         '<td>' + escHtml(s.studentNo || '-') + '</td>' +
-        '<td><strong>' + escHtml(s.username) + (s.isExternal ? ' <span style="font-size:10px;color:#e67e22;">📡</span>' : '') + '</strong></td>' +
+        '<td><strong>' + escHtml(s.username) + '</strong></td>' +
         '<td>' + s.totalPractices + ' 次</td>' +
-        '<td>' + (s.qfCount || 0) + ' 次</td>' +
         '<td>' + exText + '</td>' +
         '<td class="' + speedClass + '">' + s.avgSpeed + ' 字/分</td>' +
         '<td>' + s.maxSpeed + ' 字/分</td>' +
@@ -1482,39 +1472,8 @@ function renderPetRanking() {
   }
   empty.classList.add('hidden');
 
-  // 融合 QF 宠物数据
-  var qfMap = getQFStudentMap();
-  var mergedRanking = ranking.map(function(s) {
-    var qfKey = null;
-    var name = s.username || '';
-    var sno = s.studentNo || '';
-    Object.keys(qfMap).forEach(function(k) {
-      var parts = k.split('|');
-      if ((sno && parts[1] === sno) || (!sno && parts[0] === name)) { qfKey = k; }
-    });
-    var qf = qfMap[qfKey];
-    var pet = s.pet || {};
-    var mergedPet = {
-      totalXP: Math.max(pet.totalXP || 0, qf ? (qf.qfXP || 0) : 0),
-      stars: Math.max(pet.stars || 0, qf ? (qf.qfStars || 0) : 0),
-      adoptedCount: Math.max(pet.adoptedCount || 0, qf ? (qf.qfPets || 0) : 0),
-      maxLevelCount: Math.max(pet.maxLevelCount || 0, qf ? (qf.qfMaxLevel || 0) : 0),
-      highestStage: Math.max(pet.highestStage || 0, qf ? (qf.qfHighestStage || 0) : 0)
-    };
-    return { username: s.username, studentNo: s.studentNo, totalPractices: s.totalPractices + (qf ? qf.count : 0), pet: mergedPet };
-  });
-  // 按当前排序模式重排
-  if (TeacherState.petRankMode === 'star') {
-    mergedRanking.sort(function(a, b) { return b.pet.stars - a.pet.stars; });
-  } else if (TeacherState.petRankMode === 'pet') {
-    mergedRanking.sort(function(a, b) { return b.pet.adoptedCount - a.pet.adoptedCount || b.pet.maxLevelCount - b.pet.maxLevelCount; });
-  } else {
-    mergedRanking.sort(function(a, b) { return b.pet.totalXP - a.pet.totalXP; });
-  }
 
-  var medals = ['🥇', '🥈', '🥉'];
-  var stageNames = ['🥚 蛋', '🐣 幼崽', '🦊 成年', '👑 满级'];
-  tbody.innerHTML = mergedRanking.map(function(s, i) {
+  tbody.innerHTML = ranking.map(function(s, i) {
     var pet = s.pet;
     var petTypes = ['🐱', '🐶', '🐰', '🐼', '🦊'];
     var petIcons = '';
