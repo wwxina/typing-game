@@ -2433,6 +2433,7 @@ async function joinClass() {
       saveTeacherExercises();
     }
     _classNames[result.classId] = result.className;
+    updateJoinClassUI([result.classId]);
     showPetToast('已加入班级：' + result.className);
     hideJoinClassModal();
     if (AppState.currentPage === 'course-select') renderCoursePage();
