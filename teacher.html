@@ -679,7 +679,7 @@ function showToast(msg) {
 // ===== 账号系统 =====
 function initAccount() {
   try {
-    var raw = localStorage.getItem('typing2_account');
+    var raw = localStorage.getItem('typing2_teacher_account');
     // 只恢复教师账号，学生账号不在此页生效
     if (raw) { var d = JSON.parse(raw); if (d.role === 'teacher') AccountUser = d; }
   } catch(e) {}
@@ -688,7 +688,7 @@ function initAccount() {
 }
 
 function saveAccount() {
-  localStorage.setItem('typing2_account', JSON.stringify(AccountUser));
+  localStorage.setItem('typing2_teacher_account', JSON.stringify(AccountUser));
 }
 
 function updateAccountUI() {
