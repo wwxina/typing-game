@@ -370,7 +370,6 @@ tr:hover td { background: var(--color-bg); }
         <button class="nav-tab" data-tab="exercise">📝 练习分发</button>
         <button class="nav-tab" data-tab="dashboard">📊 学情看板</button>
         <button class="nav-tab" data-tab="pet">🐱 宠物排行</button>
-        <button class="nav-tab" data-tab="quickform" id="nav-quickform">📈 数据大屏</button>
       </nav>
     </div>
     <div class="header-right">
@@ -610,74 +609,6 @@ tr:hover td { background: var(--color-bg); }
       </div>
     </div>
 
-    <!-- TAB 5: QuickForm 数据大屏 -->
-    <div id="tab-quickform" class="hidden">
-      <!-- 汇总卡片 -->
-      <div class="summary-grid" id="qf-summary">
-        <div class="summary-card">
-          <div class="summary-icon">📬</div>
-          <div class="summary-value" id="qf-total-subs">0</div>
-          <div class="summary-label">提交总数</div>
-        </div>
-        <div class="summary-card">
-          <div class="summary-icon">👨‍🎓</div>
-          <div class="summary-value" id="qf-unique-students">0</div>
-          <div class="summary-label">学生人数</div>
-        </div>
-        <div class="summary-card">
-          <div class="summary-icon">⚡</div>
-          <div class="summary-value" id="qf-avg-speed">0</div>
-          <div class="summary-label">平均速度（字/分）</div>
-        </div>
-        <div class="summary-card">
-          <div class="summary-icon">🎯</div>
-          <div class="summary-value" id="qf-avg-acc">0%</div>
-          <div class="summary-label">平均正确率</div>
-        </div>
-      </div>
-
-      <!-- 控制栏 -->
-      <div class="section-header">
-        <h3 class="section-title">📋 学生练习记录</h3>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <span style="font-size:12px;color:var(--color-text-muted);" id="qf-status">⏳ 等待数据...</span>
-          <button class="btn btn-secondary btn-sm" id="btn-refresh-qf">🔄 立即刷新</button>
-        </div>
-      </div>
-
-      <!-- 学生汇总表 -->
-      <div class="card" style="margin-bottom:var(--space-lg);">
-        <h4 style="font-size:14px;font-weight:600;margin-bottom:8px;">👤 学生汇总</h4>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>姓名</th><th>学号</th><th>练习次数</th><th>平均速度</th><th>最高速度</th><th>平均正确率</th><th>星星</th><th>经验值</th><th>最后提交</th></tr>
-            </thead>
-            <tbody id="qf-student-tbody"></tbody>
-          </table>
-        </div>
-        <div id="qf-student-empty" class="empty-state hidden">
-          <div class="empty-icon">📭</div>
-          <div class="empty-text">还没有学生提交数据</div>
-        </div>
-      </div>
-
-      <!-- 最近提交 -->
-      <div class="card">
-        <h4 style="font-size:14px;font-weight:600;margin-bottom:8px;">🕐 最近提交</h4>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>姓名</th><th>练习标题</th><th>速度</th><th>正确率</th><th>用时</th><th>总字数</th><th>星星</th><th>提交时间</th></tr>
-            </thead>
-            <tbody id="qf-recent-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-  </div>
-</div>
 
 <!-- 编辑学生信息弹窗 -->
 <div class="modal-overlay hidden" id="modal-edit-student">
@@ -731,11 +662,7 @@ tr:hover td { background: var(--color-bg); }
 
 <script>
 // ===== 配置 =====
-const ACCOUNT_API = (location.protocol === 'file:')
-  ? 'http://localhost:3456'
-  : location.protocol === 'https:'
-    ? location.origin.replace(/:3457$/, '') + ':3457'
-    : location.origin.replace(/:3456$/, '') + ':3456';
+const ACCOUNT_API = true;
 
 // ===== 账号状态 =====
 var AccountUser = { token: '', userId: '', username: '', role: '' };
@@ -822,7 +749,6 @@ function _chain(t){var s="*",q="",ms=false,c={
 async function _hashPwd(pwd,uname){var e=new TextEncoder();var b=await crypto.subtle.digest("SHA-256",e.encode(pwd+"::"+uname));return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0")}).join("");}
 function _mkToken(uid,un,role){return btoa(JSON.stringify({u:uid,n:un,r:role,e:Date.now()+2592000000}));}
 function _parseQ(path){var q={},i=path.indexOf("?");if(i<0)return{path:path,query:q};path.slice(i+1).split("&").forEach(function(p){var kv=p.split("=");q[decodeURIComponent(kv[0])]=decodeURIComponent(kv[1]||"");});return{path:path.slice(0,i),query:q};}
-// 学生信息格式化
 async function _fmtStudent(sid,classExercises){
   var r1=await __db.from("user_data").select("*").eq("user_id",sid).maybeSingle();
   var r2=await __db.from("profiles").select("*").eq("user_id",sid).maybeSingle();
@@ -833,22 +759,21 @@ async function _fmtStudent(sid,classExercises){
   var pets=pet.pets||[],ap=pets.filter(function(p){return p.adopted;}),mp=pets.filter(function(p){return p.maxLevel;}),hs=0;
   pets.forEach(function(p){if(p.stage>hs)hs=p.stage;});
   var exs=classExercises||[];var exTotal=exs.length,exCompleted=0;
-  if(exTotal>0){var exMap={};te.forEach(function(e){exMap[e.exerciseId]=e;});exs.forEach(function(ex){if(exMap[ex.id]&&exMap[ex.id].completed)exCompleted++;});}
-  var exerciseStatus={};if(exTotal>0){var exMap2={};te.forEach(function(e){exMap2[e.exerciseId]=e;});exs.forEach(function(ex){var st=exMap2[ex.id];exerciseStatus[ex.id]={title:ex.title,completed:st?st.completed:false,bestSpeed:st?(st.bestSpeed||0):0,bestAccuracy:st?(st.bestAccuracy||0):0,stars:st?(st.stars||0):0};});}
+  if(exTotal>0){var em={};te.forEach(function(e){em[e.exerciseId]=e;});exs.forEach(function(ex){if(em[ex.id]&&em[ex.id].completed)exCompleted++;});}
+  var est={};if(exTotal>0){var em2={};te.forEach(function(e){em2[e.exerciseId]=e;});exs.forEach(function(ex){var st=em2[ex.id];est[ex.id]={title:ex.title,completed:st?st.completed:false,bestSpeed:st?(st.bestSpeed||0):0,bestAccuracy:st?(st.bestAccuracy||0):0,stars:st?(st.stars||0):0};});}
   return{userId:sid,username:pf?pf.username:sid,studentNo:(pf&&pf.student_no)||"",
     totalPractices:total,avgSpeed:total>0?Math.round(ts/total):0,maxSpeed:ms,
     avgAccuracy:total>0?Math.round(ta/total):0,activeDays:Object.keys(ds).length,
     lastPracticeAt:recs.length>0?recs[recs.length-1].time:0,
     totalChars:recs.reduce(function(s,r){return s+(r.totalChars||0)},0),
     pet:{totalXP:pet.totalXP||0,stars:pet.stars||0,adoptedCount:ap.length,maxLevelCount:mp.length,highestStage:hs},
-    exerciseProgress:{completed:exCompleted,total:exTotal},exerciseStatus:exerciseStatus};
+    exerciseProgress:{completed:exCompleted,total:exTotal},exerciseStatus:est};
 }
+
 
 async function accountAPI(method, path, body) {
   var uid = AccountUser ? AccountUser.userId : "";
-  var pq = _parseQ(path);
-  var q = pq.query;
-  path = pq.path;
+  var pq = _parseQ(path); var q = pq.query; path = pq.path;
   try {
     if (path === "/api/register" && method === "POST") {
       var un=body.username, pw=body.password, role=body.role||"student", sno=body.studentNo||"";
@@ -870,45 +795,38 @@ async function accountAPI(method, path, body) {
       if (h!==u.password_hash) throw new Error("密码错误");
       return {token:_mkToken(u.user_id,u.username,u.role),userId:u.user_id,username:u.username,role:u.role||"student",studentNo:u.student_no||""};
     }
-    // === 班级列表 ===
     if (path === "/api/class/list") {
       var r=await __db.from("classes").select("*").eq("teacher_id",uid);
       var list=[];if(r.data)r.data.forEach(function(c){list.push({classId:c.id,name:c.name,studentCount:(c.student_ids||[]).length,exerciseCount:(c.exercises||[]).length,inviteCode:c.invite_code});});
       return {classes:list};
     }
-    // === 创建班级 ===
     if (path === "/api/class/create" && method === "POST") {
       if (!body.name||body.name.length<2||body.name.length>30) throw new Error("班级名称需要2-30个字符");
       var chk=await __db.from("classes").select("id").eq("teacher_id",uid).eq("name",body.name).maybeSingle();
       if (chk.data) throw new Error("班级名称已存在");
       var cid="class_"+Date.now()+"_"+Math.random().toString(36).slice(2,8);
-      var code="",chars="ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-      for(var i=0;i<6;i++)code+=chars[Math.floor(Math.random()*chars.length)];
+      var code="",chars="ABCDEFGHJKMNPQRSTUVWXYZ23456789";for(var i=0;i<6;i++)code+=chars[Math.floor(Math.random()*chars.length)];
       await __db.from("classes").insert({id:cid,name:body.name,teacher_id:uid,invite_code:code,student_ids:[],exercises:[],created_at:Date.now()});
       return {classId:cid,inviteCode:code};
     }
-    // === 删除班级 ===
     if (path === "/api/class/delete" && method === "POST") {
       var r=await __db.from("classes").select("*").eq("id",body.classId).eq("teacher_id",uid).maybeSingle();
       if (!r.data) throw new Error("无权操作此班级");
       var cls=r.data;
       for(var i=0;i<(cls.student_ids||[]).length;i++){var sid=cls.student_ids[i];
         var ud=await __db.from("user_data").select("*").eq("user_id",sid).maybeSingle();
-        if(ud.data){var nc=(ud.data.class_ids||[]).filter(function(id){return id!==cls.id;});var ne=(ud.data.teacher_exercises||[]).filter(function(e){return e.classId!==cls.id;});await __db.from("user_data").update({class_ids:nc,teacher_exercises:ne,updated_at:Date.now()}).eq("user_id",sid);}
-      }
+        if(ud.data){var nc=(ud.data.class_ids||[]).filter(function(id){return id!==cls.id;});var ne=(ud.data.teacher_exercises||[]).filter(function(e){return e.classId!==cls.id;});await __db.from("user_data").update({class_ids:nc,teacher_exercises:ne,updated_at:Date.now()}).eq("user_id",sid);}}
       await __db.from("classes").delete().eq("id",cls.id);
       return {success:true};
     }
-    // === 班级信息 ===
     if (path.indexOf("/api/class/info")===0) {
       var cid=q.classId;if(!cid){var r0=await __db.from("classes").select("id").eq("teacher_id",uid).limit(1).maybeSingle();if(!r0.data) throw new Error("尚未创建班级");cid=r0.data.id;}
       var r=await __db.from("classes").select("*").eq("id",cid).eq("teacher_id",uid).maybeSingle();
       if (!r.data) throw new Error("班级不存在");
-      var cls=r.data;var exs=cls.exercises||[];
-      var students=[];for(var i=0;i<(cls.student_ids||[]).length;i++)students.push(await _fmtStudent(cls.student_ids[i],exs));
+      var cls=r.data;var exs=cls.exercises||[];var students=[];
+      for(var i=0;i<(cls.student_ids||[]).length;i++)students.push(await _fmtStudent(cls.student_ids[i],exs));
       return {classId:cls.id,name:cls.name,inviteCode:cls.invite_code,students:students,exercises:exs,studentCount:(cls.student_ids||[]).length};
     }
-    // === 移除学生 ===
     if (path === "/api/class/remove-student" && method === "POST") {
       if (!body.studentId) throw new Error("缺少学生ID");
       var cid=body.classId;if(!cid){var r0=await __db.from("classes").select("id").eq("teacher_id",uid).limit(1).maybeSingle();if(!r0.data) throw new Error("尚未创建班级");cid=r0.data.id;}
@@ -920,7 +838,6 @@ async function accountAPI(method, path, body) {
       if(r2.data){var nc=(r2.data.class_ids||[]).filter(function(id){return id!==cid;});var ne=(r2.data.teacher_exercises||[]).filter(function(e){return e.classId!==cid;});await __db.from("user_data").update({class_ids:nc,teacher_exercises:ne,updated_at:Date.now()}).eq("user_id",body.studentId);}
       return {success:true};
     }
-    // === 更新学生 ===
     if (path === "/api/class/update-student" && method === "POST") {
       var cid=body.classId;if(!cid){var r0=await __db.from("classes").select("id").eq("teacher_id",uid).limit(1).maybeSingle();if(!r0.data) throw new Error("尚未创建班级");cid=r0.data.id;}
       if (body.action === "resetPassword") {
@@ -943,7 +860,6 @@ async function accountAPI(method, path, body) {
       }
       throw new Error("无效的操作");
     }
-    // === 创建练习 ===
     if (path === "/api/class/exercise/create" && method === "POST") {
       if (!body.title||body.title.length<1) throw new Error("练习标题不能为空");
       if (!body.text||body.text.length<1) throw new Error("练习文本不能为空");
@@ -951,42 +867,34 @@ async function accountAPI(method, path, body) {
       var r=await __db.from("classes").select("*").eq("id",cid).maybeSingle();
       if (!r.data) throw new Error("班级不存在");
       var ex={id:"ex_"+Date.now()+"_"+Math.random().toString(36).slice(2,8),title:body.title,text:body.text,createdAt:Date.now()};
-      var exs=(r.data.exercises||[]).slice();exs.push(ex);
-      await __db.from("classes").update({exercises:exs}).eq("id",cid);
+      var exs=(r.data.exercises||[]).slice();exs.push(ex);await __db.from("classes").update({exercises:exs}).eq("id",cid);
       return {exercise:ex};
     }
-    // === 分发练习 ===
     if (path === "/api/class/exercise/distribute" && method === "POST") {
       if (!body.exerciseId) throw new Error("缺少练习ID");
       var cid=body.classId;if(!cid){var r0=await __db.from("classes").select("id").eq("teacher_id",uid).limit(1).maybeSingle();if(!r0.data) throw new Error("尚未创建班级");cid=r0.data.id;}
       var r=await __db.from("classes").select("*").eq("id",cid).maybeSingle();
       if (!r.data) throw new Error("班级不存在");
       var cls=r.data;var ex=(cls.exercises||[]).find(function(e){return e.id===body.exerciseId;});
-      if (!ex) throw new Error("练习不存在");
-      var count=0;
+      if (!ex) throw new Error("练习不存在");var count=0;
       for(var i=0;i<(cls.student_ids||[]).length;i++){var sid=cls.student_ids[i];
         var r2=await __db.from("user_data").select("teacher_exercises").eq("user_id",sid).maybeSingle();
         if(r2.data){var te=r2.data.teacher_exercises||[];
-          if(!te.find(function(e){return e.exerciseId===body.exerciseId;})){te.push({exerciseId:ex.id,classId:cid,title:ex.title,text:ex.text,completed:false,bestSpeed:0,bestAccuracy:0,stars:0});await __db.from("user_data").update({teacher_exercises:te,updated_at:Date.now()}).eq("user_id",sid);count++;}}
-      }
+          if(!te.find(function(e){return e.exerciseId===body.exerciseId;})){te.push({exerciseId:ex.id,classId:cid,title:ex.title,text:ex.text,completed:false,bestSpeed:0,bestAccuracy:0,stars:0});await __db.from("user_data").update({teacher_exercises:te,updated_at:Date.now()}).eq("user_id",sid);count++;}}}
       return {distributed:true,count:count};
     }
-    // === 删除练习 ===
     if (path === "/api/class/exercise/delete" && method === "POST") {
       if (!body.exerciseId) throw new Error("缺少练习ID");
       var cid=body.classId;if(!cid){var r0=await __db.from("classes").select("id").eq("teacher_id",uid).limit(1).maybeSingle();if(!r0.data) throw new Error("尚未创建班级");cid=r0.data.id;}
       var r=await __db.from("classes").select("*").eq("id",cid).maybeSingle();
       if (!r.data) throw new Error("班级不存在");
       var exs=r.data.exercises||[];var idx=exs.findIndex(function(e){return e.id===body.exerciseId;});
-      if(idx===-1) throw new Error("练习不存在");exs.splice(idx,1);
-      await __db.from("classes").update({exercises:exs}).eq("id",cid);
+      if(idx===-1) throw new Error("练习不存在");exs.splice(idx,1);await __db.from("classes").update({exercises:exs}).eq("id",cid);
       for(var i=0;i<(r.data.student_ids||[]).length;i++){var sid=r.data.student_ids[i];
         var r2=await __db.from("user_data").select("teacher_exercises").eq("user_id",sid).maybeSingle();
-        if(r2.data&&r2.data.teacher_exercises){var ne=r2.data.teacher_exercises.filter(function(e){return e.exerciseId!==body.exerciseId;});await __db.from("user_data").update({teacher_exercises:ne,updated_at:Date.now()}).eq("user_id",sid);}
-      }
+        if(r2.data&&r2.data.teacher_exercises){var ne=r2.data.teacher_exercises.filter(function(e){return e.exerciseId!==body.exerciseId;});await __db.from("user_data").update({teacher_exercises:ne,updated_at:Date.now()}).eq("user_id",sid);}}
       return {success:true};
     }
-    // === 学情看板 ===
     if (path.indexOf("/api/class/dashboard")===0) {
       var cid=q.classId;if(!cid){var r0=await __db.from("classes").select("id").eq("teacher_id",uid).limit(1).maybeSingle();if(!r0.data) throw new Error("尚未创建班级");cid=r0.data.id;}
       var r=await __db.from("classes").select("*").eq("id",cid).maybeSingle();
@@ -995,14 +903,12 @@ async function accountAPI(method, path, body) {
       for(var i=0;i<(r.data.student_ids||[]).length;i++)students.push(await _fmtStudent(r.data.student_ids[i],exs));
       return {students:students,exercises:exs};
     }
-    // === 学生练习记录 ===
     if (path.indexOf("/api/class/student-records")===0) {
       if (!q.studentId) throw new Error("缺少 studentId");
       var r=await __db.from("user_data").select("records").eq("user_id",q.studentId).maybeSingle();
       var r2=await __db.from("profiles").select("username").eq("user_id",q.studentId).maybeSingle();
       return {username:r2.data?r2.data.username:"",records:r.data?(r.data.records||[]):[]};
     }
-    // === 宠物排行 ===
     if (path.indexOf("/api/class/pet-leaderboard")===0) {
       var cids=q.classId?q.classId.split(","):[];
       if(cids.length===0){var r0=await __db.from("classes").select("id").eq("teacher_id",uid).limit(1).maybeSingle();if(r0.data)cids.push(r0.data.id);}
@@ -1018,6 +924,7 @@ async function accountAPI(method, path, body) {
     throw new Error("API未实现: "+path);
   } catch(e) { throw new Error(e.message||"请求失败"); }
 }
+
 
 async function accountLogin(username, password) {
   var data = await accountAPI('POST', '/api/login', { username: username, password: password });
@@ -1061,27 +968,16 @@ function accountLogout() {
   saveAccount();
   updateAccountUI();
   document.getElementById('account-dropdown').classList.add('hidden');
-  // 停止 QuickForm 轮询
-  stopQFPolling();
-  // 如果在数据大屏页，切回班级管理
-  if (TeacherState.currentTab === 'quickform') {
-    TeacherState.currentTab = 'class';
-    switchTab('class');
-  }
   // 清空教师数据
   TeacherState.classData = null;
   TeacherState.dashboardData = null;
   TeacherState.petRankingData = null;
-  QFState.data = null;
-  _qfFetched = false;
   renderCurrentTab();
   showToast('已退出登录');
 }
 
 // ===== 教师状态 =====
 var TeacherState = { classList: [], currentClassId: null, classData: null, dashboardData: null, petRankingData: null, petRankMode: 'xp', currentTab: 'class' };
-// QuickForm 数据大屏状态
-var QFState = { data: null, lastCount: -1, timer: 0, loading: false };
 
 // ===== 班级切换 =====
 async function loadClassList() {
@@ -1264,7 +1160,6 @@ async function refreshTeacherData() {
     if (TeacherState.classData) {
       await loadDashboard();
       await loadPetLeaderboard();
-      ensureQFData();
     }
   } catch(e) {}
 }
@@ -1279,10 +1174,7 @@ function switchTab(tab) {
   document.getElementById('tab-exercise').classList.toggle('hidden', tab !== 'exercise');
   document.getElementById('tab-dashboard').classList.toggle('hidden', tab !== 'dashboard');
   document.getElementById('tab-pet').classList.toggle('hidden', tab !== 'pet');
-  document.getElementById('tab-quickform').classList.toggle('hidden', tab !== 'quickform');
-  // 切换到数据大屏时启动轮询，离开时停止
-  if (tab === 'quickform') { startQFPolling(); }
-  else { stopQFPolling(); }
+
   renderCurrentTab();
 }
 
@@ -1293,9 +1185,6 @@ function renderCurrentTab() {
   else if (TeacherState.currentTab === 'pet') {
     if (!TeacherState.petRankingData) loadPetLeaderboard();
     else renderPetRanking();
-  }
-  else if (TeacherState.currentTab === 'quickform') {
-    renderQFDashboard();
   }
 }
 
@@ -1811,293 +1700,6 @@ function copyInviteCode() {
   }
 }
 
-// ===== QuickForm 数据大屏 =====
-const QF_COUNT_URL = 'https://quickform.cn/api/14z2lg4rrd/count';
-const QF_ALL_URL = 'https://quickform.cn/api/14z2lg4rrd/all';
-
-async function fetchQFCount() {
-  try {
-    var res = await fetch(QF_COUNT_URL);
-    if (!res.ok) return -1;
-    var data = await res.json();
-    return data.total_submissions || 0;
-  } catch(e) { return -1; }
-}
-
-async function fetchQFAll() {
-  try {
-    var res = await fetch(QF_ALL_URL);
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    var data = await res.json();
-    return data;
-  } catch(e) { throw e; }
-}
-
-function startQFPolling() {
-  if (QFState.timer) return;
-  if (!AccountUser.token) {
-    renderQFDashboard();
-    return;
-  }
-  fetchQFAll().then(function(data) {
-    QFState.data = data;
-    QFState.lastCount = data.total_submissions || 0;
-    renderQFDashboard();
-  }).catch(function(e) {
-    document.getElementById('qf-status').textContent = '⚠️ 加载失败：' + e.message;
-  });
-  QFState.timer = setInterval(async function() {
-    if (QFState.loading) return;
-    try {
-      var count = await fetchQFCount();
-      if (count < 0) return;
-      if (count !== QFState.lastCount) {
-        QFState.loading = true;
-        var data = await fetchQFAll();
-        QFState.data = data;
-        QFState.lastCount = data.total_submissions || 0;
-        renderQFDashboard();
-        QFState.loading = false;
-      }
-      document.getElementById('qf-status').textContent = '✅ 已同步 · ' + QFState.lastCount + ' 条提交';
-    } catch(e) {}
-  }, 10000);
-}
-
-function stopQFPolling() {
-  if (QFState.timer) { clearInterval(QFState.timer); QFState.timer = 0; }
-}
-
-async function refreshQFData() {
-  document.getElementById('qf-status').textContent = '🔄 刷新中...';
-  try {
-    var data = await fetchQFAll();
-    QFState.data = data;
-    QFState.lastCount = data.total_submissions || 0;
-    renderQFDashboard();
-    document.getElementById('qf-status').textContent = '✅ 已刷新 · ' + QFState.lastCount + ' 条提交';
-  } catch(e) {
-    document.getElementById('qf-status').textContent = '⚠️ 刷新失败：' + e.message;
-  }
-}
-
-function renderQFDashboard() {
-  // 未登录时显示提示
-  if (!AccountUser.token) {
-    document.getElementById('qf-total-subs').textContent = '-';
-    document.getElementById('qf-unique-students').textContent = '-';
-    document.getElementById('qf-avg-speed').textContent = '-';
-    document.getElementById('qf-avg-acc').textContent = '-';
-    document.getElementById('qf-student-tbody').innerHTML = '';
-    document.getElementById('qf-student-empty').classList.remove('hidden');
-    document.getElementById('qf-student-empty').querySelector('.empty-icon').textContent = '🔒';
-    document.getElementById('qf-student-empty').querySelector('.empty-text').textContent = '请先登录教师账号';
-    document.getElementById('qf-recent-tbody').innerHTML = '';
-    document.getElementById('qf-status').textContent = '⏳ 未登录';
-    return;
-  }
-  var data = QFState.data;
-  var subs = data ? (data.submissions || []) : [];
-  var totalSubs = subs.length;
-
-  // 汇总卡片
-  var nameSet = {};
-  var totalSpeed = 0, totalAcc = 0, speedCount = 0;
-  subs.forEach(function(s) {
-    var key = (s['姓名'] || '') + '_' + (s['学号'] || '');
-    if (key !== '_') nameSet[key] = true;
-    var sp = parseFloat(s['速度']) || 0;
-    var ac = parseFloat(s['正确率']) || 0;
-    if (sp > 0) { totalSpeed += sp; speedCount++; }
-    if (ac > 0) { totalAcc += ac; }
-  });
-  var uniqueStudents = Object.keys(nameSet).length;
-  var avgSpeed = speedCount > 0 ? Math.round(totalSpeed / speedCount) : 0;
-  var avgAcc = subs.length > 0 ? Math.round(totalAcc / subs.length) : 0;
-
-  document.getElementById('qf-total-subs').textContent = totalSubs;
-  document.getElementById('qf-unique-students').textContent = uniqueStudents;
-  document.getElementById('qf-avg-speed').textContent = avgSpeed;
-  document.getElementById('qf-avg-acc').textContent = avgAcc + '%';
-
-  // 学生汇总表（按姓名去重，取每人的最新记录）
-  var studentMap = {};
-  subs.forEach(function(s) {
-    var key = (s['姓名'] || '未知') + '_' + (s['学号'] || '');
-    if (key === '_') return;
-    if (!studentMap[key]) {
-      studentMap[key] = { name: s['姓名'] || '未知', studentNo: s['学号'] || '', count: 0, speeds: [], maxSpeed: 0, accs: [], stars: 0, xp: 0, lastTime: '' };
-    }
-    var st = studentMap[key];
-    st.count++;
-    var sp = parseFloat(s['速度']) || 0;
-    var ac = parseFloat(s['正确率']) || 0;
-    if (sp > 0) st.speeds.push(sp);
-    if (sp > st.maxSpeed) st.maxSpeed = sp;
-    if (ac > 0) st.accs.push(ac);
-    st.stars = Math.max(st.stars, parseInt(s['星星']) || 0);
-    st.xp = Math.max(st.xp, parseInt(s['经验值']) || 0);
-    if (s['提交时间'] > st.lastTime) st.lastTime = s['提交时间'];
-  });
-
-  var students = Object.values(studentMap);
-  students.sort(function(a, b) { return b.count - a.count; });
-
-  var stuTbody = document.getElementById('qf-student-tbody');
-  var stuEmpty = document.getElementById('qf-student-empty');
-  if (students.length === 0) {
-    stuTbody.innerHTML = '';
-    stuEmpty.classList.remove('hidden');
-  } else {
-    stuEmpty.classList.add('hidden');
-    stuTbody.innerHTML = students.map(function(s) {
-      var avgSp = s.speeds.length > 0 ? Math.round(s.speeds.reduce(function(a, b) { return a + b; }, 0) / s.speeds.length) : 0;
-      var avgAc = s.accs.length > 0 ? Math.round(s.accs.reduce(function(a, b) { return a + b; }, 0) / s.accs.length) : 0;
-      var speedClass = avgSp >= 40 ? 'speed-fast' : (avgSp >= 25 ? 'speed-mid' : 'speed-slow');
-      return '<tr>' +
-        '<td><strong>' + escHtml(s.name) + '</strong></td>' +
-        '<td>' + escHtml(s.studentNo) + '</td>' +
-        '<td>' + s.count + ' 次</td>' +
-        '<td class="' + speedClass + '">' + avgSp + ' 字/分</td>' +
-        '<td>' + s.maxSpeed + ' 字/分</td>' +
-        '<td>' + avgAc + '%</td>' +
-        '<td>⭐' + s.stars + '</td>' +
-        '<td>' + s.xp + '</td>' +
-        '<td style="font-size:12px;">' + escHtml(s.lastTime) + '</td>' +
-        '</tr>';
-    }).join('');
-  }
-
-  // 最近提交表（取最新 20 条）
-  var recent = subs.slice().reverse().slice(0, 20);
-  var recentTbody = document.getElementById('qf-recent-tbody');
-  recentTbody.innerHTML = recent.map(function(s) {
-    var speedClass = (parseFloat(s['速度']) || 0) >= 40 ? 'speed-fast' : ((parseFloat(s['速度']) || 0) >= 25 ? 'speed-mid' : 'speed-slow');
-    return '<tr>' +
-      '<td>' + escHtml(s['姓名'] || '-') + '</td>' +
-      '<td>' + escHtml(s['练习标题'] || '-') + '</td>' +
-      '<td class="' + speedClass + '">' + (s['速度'] || 0) + '</td>' +
-      '<td>' + (s['正确率'] || 0) + '%</td>' +
-      '<td>' + (s['用时'] || 0) + '秒</td>' +
-      '<td>' + (s['总字数'] || 0) + '</td>' +
-      '<td>⭐' + (s['星星'] || 0) + '</td>' +
-      '<td style="font-size:12px;">' + escHtml(s['提交时间'] || '-') + '</td>' +
-      '</tr>';
-  }).join('');
-
-  document.getElementById('qf-status').textContent = '✅ 已同步 · ' + totalSubs + ' 条提交';
-}
-
-// ===== QuickForm 数据融合 =====
-var _qfFetched = false;
-
-async function ensureQFData() {
-  if (_qfFetched || !AccountUser.token) return;
-  _qfFetched = true;
-  try {
-    QFState.data = await fetchQFAll();
-    QFState.lastCount = QFState.data ? (QFState.data.total_submissions || 0) : 0;
-  } catch(e) {
-    QFState.data = null;
-  }
-}
-
-// 获取 QF 学生汇总（按姓名+学号去重）
-function getQFStudentMap() {
-  var map = {};
-  if (!QFState.data || !QFState.data.submissions) return map;
-  QFState.data.submissions.forEach(function(s) {
-    var key = (s['姓名'] || '') + '|' + (s['学号'] || '');
-    if (!key || key === '|') return;
-    if (!map[key]) {
-      map[key] = { name: s['姓名'], studentNo: s['学号'], count: 0, speeds: [], accs: [], maxSpeed: 0, qfStars: 0, qfXP: 0, qfPets: 0, qfMaxLevel: 0, qfHighestStage: 0, lastTime: '' };
-    }
-    var st = map[key];
-    st.count++;
-    var sp = parseFloat(s['速度']) || 0;
-    var ac = parseFloat(s['正确率']) || 0;
-    if (sp > 0) st.speeds.push(sp);
-    if (ac > 0) st.accs.push(ac);
-    if (sp > st.maxSpeed) st.maxSpeed = sp;
-    st.qfStars = Math.max(st.qfStars, parseInt(s['星星']) || 0);
-    st.qfXP = Math.max(st.qfXP, parseInt(s['经验值']) || 0);
-    st.qfPets = Math.max(st.qfPets, parseInt(s['宠物数量']) || 0);
-    st.qfMaxLevel = Math.max(st.qfMaxLevel, parseInt(s['满级宠物数']) || 0);
-    st.qfHighestStage = Math.max(st.qfHighestStage, parseInt(s['最高阶段']) || 0);
-    if (s['提交时间'] > st.lastTime) st.lastTime = s['提交时间'];
-  });
-  return map;
-}
-
-// 匹配 QF 学生到服务端学生列表，返回合并后的数组
-function mergeQFToServer(serverStudents, qfMap) {
-  var usedKeys = {};
-  var result = [];
-  serverStudents.forEach(function(s) {
-    var sno = s.studentNo || '';
-    var name = s.username || '';
-    // 尝试匹配：学号匹配 或 姓名匹配
-    var qfKey = null;
-    var qfStudent = null;
-    // 优先学号匹配
-    Object.keys(qfMap).forEach(function(k) {
-      if (usedKeys[k]) return;
-      var parts = k.split('|');
-      if (sno && parts[1] === sno) { qfKey = k; qfStudent = qfMap[k]; }
-    });
-    // 其次姓名匹配（且学号为空或已确定）
-    if (!qfStudent) {
-      Object.keys(qfMap).forEach(function(k) {
-        if (usedKeys[k]) return;
-        var parts = k.split('|');
-        if (name && parts[0] === name) { qfKey = k; qfStudent = qfMap[k]; }
-      });
-    }
-    if (qfKey) usedKeys[qfKey] = true;
-    result.push({
-      userId: s.userId,
-      username: s.username,
-      studentNo: s.studentNo,
-      totalPractices: s.totalPractices,
-      avgSpeed: s.avgSpeed,
-      maxSpeed: Math.max(s.maxSpeed, qfStudent ? qfStudent.maxSpeed : 0),
-      avgAccuracy: s.avgAccuracy,
-      activeDays: s.activeDays,
-      lastPracticeAt: s.lastPracticeAt,
-      pet: s.pet,
-      exerciseProgress: s.exerciseProgress,
-      exerciseStatus: s.exerciseStatus,
-      qfCount: qfStudent ? qfStudent.count : 0,
-      qfStudent: qfStudent,
-      isExternal: false
-    });
-  });
-  // QF 独有的学生
-  Object.keys(qfMap).forEach(function(k) {
-    if (usedKeys[k]) return;
-    var qf = qfMap[k];
-    var avgSp = qf.speeds.length > 0 ? Math.round(qf.speeds.reduce(function(a, b) { return a + b; }, 0) / qf.speeds.length) : 0;
-    var avgAc = qf.accs.length > 0 ? Math.round(qf.accs.reduce(function(a, b) { return a + b; }, 0) / qf.accs.length) : 0;
-    result.push({
-      userId: 'qf_' + k,
-      username: qf.name,
-      studentNo: qf.studentNo,
-      totalPractices: qf.count,
-      avgSpeed: avgSp,
-      maxSpeed: qf.maxSpeed,
-      avgAccuracy: avgAc,
-      activeDays: 0,
-      lastPracticeAt: qf.lastTime ? new Date(qf.lastTime).getTime() : 0,
-      pet: { totalXP: qf.qfXP, stars: qf.qfStars, adoptedCount: qf.qfPets, maxLevelCount: qf.qfMaxLevel, highestStage: qf.qfHighestStage },
-      exerciseProgress: null,
-      qfCount: qf.count,
-      qfStudent: qf,
-      isExternal: true
-    });
-  });
-  return result;
-}
-
 // ===== 主题切换 =====
 function initTheme() {
   var saved = localStorage.getItem('typing2_theme') || 'ocean';
@@ -2332,11 +1934,6 @@ document.addEventListener('DOMContentLoaded', function() {
   document.addEventListener('click', function() {
     document.getElementById('theme-popup').classList.remove('show');
     document.getElementById('account-dropdown').classList.add('hidden');
-  });
-
-  // QuickForm 数据大屏刷新按钮
-  document.getElementById('btn-refresh-qf').addEventListener('click', function() {
-    refreshQFData();
   });
 
   // Escape 关闭弹窗
