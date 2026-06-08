@@ -375,7 +375,7 @@ tr:hover td { background: var(--color-bg); }
     </div>
     <div class="header-right">
       <div class="account-wrap">
-        <button class="btn-account" id="btn-account">
+        <button class="btn-account" id="btn-account" onclick="if(!AccountUser.token)showAccountModal('login');else document.getElementById('account-dropdown').classList.toggle('hidden');event.stopPropagation();"
           <span class="avatar">👤</span>
           <span class="username" id="label-username">未登录</span>
           <span>▾</span>
@@ -2336,17 +2336,21 @@ function init() {
 
 // ===== 事件绑定 =====
 document.addEventListener('DOMContentLoaded', function() {
+  try {
   init();
 
   // 账号按钮
-  document.getElementById('btn-account').addEventListener('click', function(e) {
-    e.stopPropagation();
-    if (AccountUser.token) {
-      document.getElementById('account-dropdown').classList.toggle('hidden');
-    } else {
-      showAccountModal('login');
-    }
-  });
+  var btnAcct = document.getElementById('btn-account');
+  if (btnAcct) {
+    btnAcct.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (AccountUser.token) {
+        document.getElementById('account-dropdown').classList.toggle('hidden');
+      } else {
+        showAccountModal('login');
+      }
+    });
+  } else { console.error('btn-account not found'); }
 
   // 退出登录
   document.getElementById('btn-logout').addEventListener('click', accountLogout);
@@ -2553,6 +2557,7 @@ document.addEventListener('DOMContentLoaded', function() {
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') { hideAccountModal(); }
   });
+  } catch(e) { console.error('Init error:', e); }
 });
 </script>
 </body>
