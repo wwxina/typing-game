@@ -2336,11 +2336,10 @@ function updateJoinClassUI(classIds) {
   if (!btn) return;
   var hasClass = (classIds && classIds.length > 0);
   if (hasClass) {
-    btn.textContent = '🏫 我的班级';
-    btn.classList.add('joined');
-    btn.title = '查看班级信息';
+    btn.style.display = 'none';
     if (lbBtn) lbBtn.style.display = '';
   } else {
+    btn.style.display = '';
     btn.textContent = '🏫 加入班级';
     btn.classList.remove('joined');
     btn.title = '加入班级';
