@@ -2648,6 +2648,24 @@ async function accountAPI(path, body) {
       if(r2.data){var nc=(r2.data.class_ids||[]).filter(function(id){return id!==body.classId;});var ne=(r2.data.teacher_exercises||[]).filter(function(e){return e.classId!==body.classId;});await __db.from("user_data").eq("user_id",uid).update({class_ids:nc,teacher_exercises:ne,updated_at:Date.now()});}
       return {success:true};
     }
+    if (path.indexOf("/api/class/leaderboard")===0) {
+      var qsi=path.indexOf("classId="),cid=null;
+      if(qsi>=0){var end=path.indexOf("&",qsi);cid=path.slice(qsi+8,end>0?end:path.length);}
+      if(!cid) throw new Error("缺少 classId");
+      var cls=await __db.from("classes").select("*").eq("id",cid).maybeSingle();
+      if(!cls.data) throw new Error("班级不存在");
+      var ranks=[];
+      for(var i=0;i<(cls.data.student_ids||[]).length;i++){
+        var sid=cls.data.student_ids[i];
+        var ud=await __db.from("user_data").select("records").eq("user_id",sid).maybeSingle();
+        var pf=await __db.from("profiles").select("username,student_no").eq("user_id",sid).maybeSingle();
+        var recs=ud.data?(ud.data.records||[]):[];
+        var ts=0,ta=0,msp=0;recs.forEach(function(r){ts+=r.speed||0;ta+=r.accuracy||0;if(r.speed>msp)msp=r.speed;});
+        ranks.push({userId:sid,username:pf.data?pf.data.username:sid,studentNo:pf.data?pf.data.student_no||"":"",avgSpeed:recs.length>0?Math.round(ts/recs.length):0,avgAccuracy:recs.length>0?Math.round(ta/recs.length):0,maxSpeed:msp,totalPractices:recs.length});
+      }
+      ranks.sort(function(a,b){return b.avgSpeed-a.avgSpeed||b.avgAccuracy-a.avgAccuracy;});
+      return {rankings:ranks,className:cls.data.name};
+    }
     if (path === "/api/health") return {ok:true,time:Date.now()};
     throw new Error("API未实现: "+path);
   } catch(e) { throw new Error(e.message||"请求失败"); }
