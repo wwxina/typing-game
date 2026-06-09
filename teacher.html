@@ -635,6 +635,11 @@ tr:hover td { background: var(--color-bg); }
     </div>
     <p class="form-error hidden" id="edit-st-error" style="color:#e74c3c;font-size:13px;margin:4px 0 8px;"></p>
     <button class="btn btn-primary" id="btn-edit-st-save" style="width:100%;padding:11px;font-size:15px;font-weight:600;border-radius:10px;margin-bottom:16px;">💾 保存修改</button>
+    <div style="margin-bottom:12px;">
+      <label style="display:block;font-size:13px;font-weight:600;color:#555;margin-bottom:4px;">切换班级</label>
+      <select id="edit-st-move-class" style="width:100%;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;outline:none;background:#fff;cursor:pointer;"></select>
+      <button id="btn-edit-st-move" style="width:100%;margin-top:6px;padding:8px;border:1.5px solid #e0e0e0;border-radius:8px;background:#fff;color:#555;font-size:13px;cursor:pointer;">📦 移动到该班级</button>
+    </div>
     <div style="border-top:1px solid #f0f0f0;padding-top:14px;display:flex;gap:10px;">
       <button id="btn-edit-st-resetpwd" style="flex:1;padding:9px;border:1.5px solid #e0e0e0;border-radius:8px;background:#fff;color:#555;font-size:13px;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='#fff'">🔑 重置密码</button>
       <button id="btn-edit-st-remove" style="flex:1;padding:9px;border:1.5px solid #fde8e8;border-radius:8px;background:#fff;color:#e74c3c;font-size:13px;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.background='#fef5f5'" onmouseout="this.style.background='#fff'">✕ 移除学生</button>
@@ -800,7 +805,7 @@ async function accountAPI(method, path, body) {
       var un=body.username, pw=body.password, role=body.role||"student", sno=body.studentNo||"";
       if (!un||!pw) throw new Error("用户名和密码不能为空");
       var chk=await __db.from("profiles").select("user_id").eq("username",un);
-      if (chk.data&&chk.data.length>0) throw new Error("用户名已被注册");
+      if (chk.data!==null&&chk.data.length>0) throw new Error("用户名已被注册");
       var nid="u_"+Date.now()+"_"+Math.random().toString(36).slice(2,8);
       var hash=await _hashPwd(pw,un);
       await __db.from("profiles").insert({user_id:nid,username:un,password_hash:hash,role:role,student_no:sno,created_at:Date.now()});
@@ -847,6 +852,29 @@ async function accountAPI(method, path, body) {
       var cls=r.data;var exs=cls.exercises||[];var students=[];
       for(var i=0;i<(cls.student_ids||[]).length;i++)students.push(await _fmtStudent(cls.student_ids[i],exs));
       return {classId:cls.id,name:cls.name,inviteCode:cls.invite_code,students:students,exercises:exs,studentCount:(cls.student_ids||[]).length};
+    }
+    if (path === "/api/class/move-student" && method === "POST") {
+      var fid=body.fromClassId,tid=body.toClassId,sid=body.studentId;
+      // 从原班级移除
+      var fc=await __db.from("classes").select("*").eq("id",fid).maybeSingle();
+      if(fc.data){var ss=(fc.data.student_ids||[]).slice();var ix=ss.indexOf(sid);if(ix>=0){ss.splice(ix,1);await __db.from("classes").eq("id",fid).update({student_ids:ss});}}
+      // 加入目标班级
+      var tc=await __db.from("classes").select("*").eq("id",tid).maybeSingle();
+      if(!tc.data) throw new Error("目标班级不存在");
+      var ts=(tc.data.student_ids||[]).slice();
+      if(ts.indexOf(sid)>=0) throw new Error("学生已在该班级中");
+      ts.push(sid);await __db.from("classes").eq("id",tid).update({student_ids:ts});
+      // 更新学生 user_data 中的 class_ids
+      var ud=await __db.from("user_data").select("class_ids,teacher_exercises").eq("user_id",sid).maybeSingle();
+      if(ud.data){
+        var nc=(ud.data.class_ids||[]).filter(function(id){return id!==fid;});
+        if(nc.indexOf(tid)<0)nc.push(tid);
+        // 同步目标班级的练习
+        var te=(ud.data.teacher_exercises||[]).filter(function(e){return e.classId!==fid;});
+        (tc.data.exercises||[]).forEach(function(e){if(!te.find(function(x){return x.exerciseId===e.id}))te.push({exerciseId:e.id,classId:tid,title:e.title,text:e.text,completed:false,bestSpeed:0,bestAccuracy:0,stars:0});});
+        await __db.from("user_data").eq("user_id",sid).update({class_ids:nc,teacher_exercises:te,updated_at:Date.now()});
+      }
+      return {success:true,className:tc.data.name};
     }
     if (path === "/api/class/remove-student" && method === "POST") {
       if (!body.studentId) throw new Error("缺少学生ID");
@@ -1082,7 +1110,25 @@ function showEditStudentModal(studentId, studentName, currentStudentNo) {
   document.getElementById('edit-st-sno').value = currentStudentNo || '';
   document.getElementById('edit-st-username').value = studentName;
   document.getElementById('edit-st-error').classList.add('hidden');
+  // 填充切换班级下拉（排除当前班级）
+  var sel=document.getElementById('edit-st-move-class');
+  var classes=TeacherState.classList||[];
+  sel.innerHTML='<option value=\"\">选择目标班级...</option>'+classes.map(function(c){
+    return '<option value=\"'+c.classId+'\">'+c.name+'（'+c.studentCount+'人）</option>';
+  }).join('');
   document.getElementById('modal-edit-student').classList.remove('hidden');
+}
+
+async function moveStudentToClass() {
+  var studentId=document.getElementById('edit-st-id').value;
+  var targetClassId=document.getElementById('edit-st-move-class').value;
+  if(!targetClassId){showToast('请选择目标班级');return;}
+  try{
+    var result=await accountAPI('POST','/api/class/move-student',{studentId:studentId,fromClassId:TeacherState.currentClassId,toClassId:targetClassId});
+    showToast('已移动到 '+result.className);
+    closeEditStudentModal();
+    await loadClassInfo();
+  }catch(e){showToast('移动失败：'+e.message);}
 }
 
 function closeEditStudentModal() {
@@ -1980,6 +2026,7 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('btn-edit-st-save').addEventListener('click', saveEditStudent);
   document.getElementById('btn-edit-st-resetpwd').addEventListener('click', resetPasswordInModal);
   document.getElementById('btn-edit-st-remove').addEventListener('click', removeStudentFromModal);
+  document.getElementById('btn-edit-st-move').addEventListener('click', moveStudentToClass);
   document.getElementById('modal-edit-student').addEventListener('click', function(e) {
     if (e.target === this) closeEditStudentModal();
   });
