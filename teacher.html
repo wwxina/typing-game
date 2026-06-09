@@ -749,6 +749,8 @@ function _chain(t){var s="*",q="",ms=false,c={
 async function _hashPwd(pwd,uname){var e=new TextEncoder();var b=await crypto.subtle.digest("SHA-256",e.encode(pwd+"::"+uname));return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0")}).join("");}
 function _mkToken(uid,un,role){return btoa(JSON.stringify({u:uid,n:un,r:role,e:Date.now()+2592000000}));}
 function _parseQ(path){var q={},i=path.indexOf("?");if(i<0)return{path:path,query:q};path.slice(i+1).split("&").forEach(function(p){var kv=p.split("=");q[decodeURIComponent(kv[0])]=decodeURIComponent(kv[1]||"");});return{path:path.slice(0,i),query:q};}
+var PET_EMOJI={cat:"🐱",dog:"🐶",bunny:"🐰",panda:"🐼",fox:"🦊"};
+var PET_NAME={cat:"小橘猫",dog:"小黄狗",bunny:"小兔子",panda:"小熊猫",fox:"小狐狸"};
 async function _fmtStudent(sid,classExercises){
   var r1=await __db.from("user_data").select("*").eq("user_id",sid).maybeSingle();
   var r2=await __db.from("profiles").select("*").eq("user_id",sid).maybeSingle();
@@ -758,6 +760,7 @@ async function _fmtStudent(sid,classExercises){
   var ds={};recs.forEach(function(r){var d=(r.date||"").slice(0,10);if(d)ds[d]=true;});
   var pets=pet.pets||[],ap=pets.filter(function(p){return p.adopted;}),mp=pets.filter(function(p){return p.maxLevel;}),hs=0;
   pets.forEach(function(p){if(p.stage>hs)hs=p.stage;});
+  var adoptedTypes=ap.map(function(p){return{type:p.type,emoji:PET_EMOJI[p.type]||"🐾",name:PET_NAME[p.type]||p.name}});
   var exs=classExercises||[];var exTotal=exs.length,exCompleted=0;
   if(exTotal>0){var em={};te.forEach(function(e){em[e.exerciseId]=e;});exs.forEach(function(ex){if(em[ex.id]&&em[ex.id].completed)exCompleted++;});}
   var est={};if(exTotal>0){var em2={};te.forEach(function(e){em2[e.exerciseId]=e;});exs.forEach(function(ex){var st=em2[ex.id];est[ex.id]={title:ex.title,completed:st?st.completed:false,bestSpeed:st?(st.bestSpeed||0):0,bestAccuracy:st?(st.bestAccuracy||0):0,stars:st?(st.stars||0):0};});}
@@ -766,7 +769,7 @@ async function _fmtStudent(sid,classExercises){
     avgAccuracy:total>0?Math.round(ta/total):0,activeDays:Object.keys(ds).length,
     lastPracticeAt:recs.length>0?recs[recs.length-1].time:0,
     totalChars:recs.reduce(function(s,r){return s+(r.totalChars||0)},0),
-    pet:{totalXP:pet.totalXP||0,stars:pet.stars||0,adoptedCount:ap.length,maxLevelCount:mp.length,highestStage:hs},
+    pet:{totalXP:pet.totalXP||0,stars:pet.stars||0,adoptedCount:ap.length,maxLevelCount:mp.length,highestStage:hs,petTypes:adoptedTypes},
     exerciseProgress:{completed:exCompleted,total:exTotal},exerciseStatus:est};
 }
 
@@ -1381,8 +1384,8 @@ function renderDashboard() {
       var pet = s.pet || {};
       var petHTML = '';
       if (pet.adoptedCount > 0) {
-        var petTypes = ['🐱', '🐶', '🐰', '🐼', '🦊'];
-        petHTML = '<span title="已领养' + pet.adoptedCount + '只">' + petTypes.slice(0, Math.min(pet.adoptedCount, 5)).join('') + '</span>';
+        var ptypes=pet.petTypes||[];
+        petHTML=ptypes.length>0?ptypes.map(function(p){return '<span title="'+p.name+'">'+p.emoji+'</span>'}).join(''):'-';
         if (pet.maxLevelCount > 0) petHTML += ' <span title="' + pet.maxLevelCount + '只满级" style="font-size:10px;">🏆×' + pet.maxLevelCount + '</span>';
       } else {
         petHTML = '-';
@@ -1477,12 +1480,7 @@ function renderPetRanking() {
   tbody.innerHTML = ranking.map(function(s, i) {
     var pet = s.pet;
     var petTypes = ['🐱', '🐶', '🐰', '🐼', '🦊'];
-    var petIcons = '';
-    if (pet.adoptedCount > 0) {
-      petIcons = petTypes.slice(0, Math.min(pet.adoptedCount, 5)).join('');
-    } else {
-      petIcons = '-';
-    }
+    var ptypes2=pet.petTypes||[]; var petIcons=ptypes2.length>0?ptypes2.map(function(p){return p.emoji}).join(''):'-';
     var stageName = stageNames[pet.highestStage] || '🥚 蛋';
     return '<tr>' +
       '<td style="font-size:18px;text-align:center;">' + (i < 3 ? medals[i] : (i + 1)) + '</td>' +
