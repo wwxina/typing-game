@@ -461,17 +461,7 @@ tr:hover td { background: var(--color-bg); }
             <div class="empty-icon">🏫</div>
             <div class="empty-text">还没有创建班级，点击「+ 新建班级」</div>
           </div>
-          <div class="card" id="unclassed-section" style="margin-top:var(--space-lg);">
-            <div class="section-header" style="padding-top:0;">
-              <h3 class="section-title">🏠 无班级学生</h3>
-              <button class="btn btn-secondary btn-sm" id="btn-refresh-unclassed">🔄</button>
-            </div>
-            <div id="unclassed-tbody" style="display:flex;flex-direction:column;gap:4px;"></div>
-            <div id="unclassed-empty" class="empty-state" style="padding:12px;">
-              <div class="empty-icon">✅</div>
-              <div class="empty-text" style="font-size:13px;">所有学生都已加入班级</div>
-            </div>
-          </div>
+          <div id="unclassed-card-area" style="margin-top:var(--space-sm);"></div>
         </div>
         <!-- 右侧：学生详情 -->
         <div id="class-detail-panel" style="flex:2;min-width:400px;">
@@ -1364,7 +1354,8 @@ function renderCurrentTab() {
   }
 }
 
-// ---- 班级管理 (v2: left-right layout) ----
+// ---- 班级管理 (v3: unclassed as card) ----
+var _unclassedStudents = [];
 function renderClassTab() {
   var classList = TeacherState.classList || [];
   var cardList = document.getElementById('class-card-list');
@@ -1374,7 +1365,7 @@ function renderClassTab() {
     cardEmpty.classList.remove('hidden');
     document.getElementById('class-detail-content').classList.add('hidden');
     document.getElementById('class-detail-empty-state').classList.remove('hidden');
-    loadUnclassedStudents();
+    loadUnclassedStudents().then(function(){renderUnclassedCard();});
     return;
   }
   cardEmpty.classList.add('hidden');
@@ -1398,7 +1389,7 @@ function renderClassTab() {
   });
   if (TeacherState.classData && TeacherState.currentClassId) renderClassDetailPanel();
   else if (TeacherState.currentClassId && !TeacherState.classData) loadClassInfo();
-  loadUnclassedStudents();
+  loadUnclassedStudents().then(function(){renderUnclassedCard();});
 }
 
 function showCreateClassModal() {
@@ -1425,24 +1416,47 @@ function closeClassDetailPanel() {
 async function loadUnclassedStudents() {
   try {
     var data = await accountAPI('GET', '/api/class/unclassed-students');
-    var students = data.students || [];
-    var container = document.getElementById('unclassed-tbody');
-    var empty = document.getElementById('unclassed-empty');
-    if (students.length === 0) {
-      container.innerHTML = '';
-      empty.classList.remove('hidden');
-    } else {
-      empty.classList.add('hidden');
-      container.innerHTML = students.map(function(s) {
-        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 4px;font-size:14px;">' +
-          '<span><strong>' + escHtml(s.username) + '</strong> <span style="color:var(--color-text-muted);font-size:12px;">' + escHtml(s.studentNo || '-') + '</span></span>' +
-          '<span style="font-size:12px;color:var(--color-text-muted);">' + s.totalPractices + '次</span>' +
-          '</div>';
-      }).join('');
-    }
-  } catch(e) {
-    document.getElementById('unclassed-tbody').innerHTML = '';
-  }
+    _unclassedStudents = (data && data.students) ? data.students : [];
+  } catch(e) { _unclassedStudents = []; }
+  return _unclassedStudents;
+}
+
+function renderUnclassedCard() {
+  var area = document.getElementById('unclassed-card-area');
+  if (!area) return;
+  area.innerHTML = '';
+  if (_unclassedStudents.length === 0) return;
+  area.innerHTML = '<div class="class-card-item" data-cid="_unclassed" style="background:var(--color-surface);border:2px solid var(--color-warning);border-radius:12px;padding:14px 16px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:12px;">' +
+    '<div style="font-size:28px;">🏠</div>' +
+    '<div style="flex:1;min-width:0;">' +
+      '<div style="font-weight:700;font-size:15px;">无班级学生</div>' +
+      '<div style="font-size:12px;color:var(--color-text-muted);margin-top:2px;">' + _unclassedStudents.length + ' 名学生未分配班级</div>' +
+    '</div>' +
+    '</div>';
+  area.querySelector('.class-card-item').addEventListener('click', renderUnclassedDetail);
+}
+
+function renderUnclassedDetail() {
+  document.getElementById('class-detail-empty-state').classList.add('hidden');
+  document.getElementById('class-detail-content').classList.remove('hidden');
+  document.getElementById('class-detail-title').textContent = '🏠 无班级学生';
+  var tbody = document.getElementById('class-detail-tbody');
+  document.getElementById('class-detail-empty').classList.add('hidden');
+  tbody.innerHTML = _unclassedStudents.map(function(s) {
+    return '<tr>' +
+      '<td>' + escHtml(s.studentNo || '-') + '</td>' +
+      '<td><strong>' + escHtml(s.username) + '</strong></td>' +
+      '<td>' + s.totalPractices + ' 次</td>' +
+      '<td>-</td><td>-</td><td>-</td>' +
+      '<td><span style="font-size:11px;color:var(--color-warning);">未分配</span></td>' +
+      '</tr>';
+  }).join('');
+  document.querySelectorAll('.class-card-item').forEach(function(el) {
+    var cur = el.dataset.cid === '_unclassed';
+    el.style.borderColor = cur ? 'var(--color-warning)' : 'var(--color-border)';
+    el.style.background = cur ? '#FFF8E1' : 'var(--color-surface)';
+  });
+  document.getElementById('class-detail-empty').classList.add('hidden');
 }
 
 function renderClassDetailPanel() {
@@ -2043,11 +2057,6 @@ document.addEventListener('DOMContentLoaded', function() {
   // 刷新看板
   document.getElementById('btn-refresh-dashboard').addEventListener('click', function() {
     loadDashboard().then(function() { showToast('已刷新'); });
-  });
-
-  // 刷新无班级学生
-  document.getElementById('btn-refresh-unclassed').addEventListener('click', function() {
-    loadUnclassedStudents().then(function() { showToast('已刷新'); });
   });
 
   // 刷新宠物排行
