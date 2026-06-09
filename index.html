@@ -1080,7 +1080,14 @@ input { font-family: inherit; }
   display: flex; align-items: center; gap: 6px;
   margin-bottom: 4px;
 }
-.pet-card-emoji { font-size: 28px; line-height: 1; }
+.pet-card-emoji { font-size: 28px; line-height: 1; cursor:pointer; }
+.pet-card.minimized { width:52px; padding:6px; border-radius:50%; right:12px; bottom:12px; }
+.pet-card.minimized .pet-card-header > :not(.pet-card-emoji) { display:none; }
+.pet-card.minimized .pet-card-xp-bar,
+.pet-card.minimized .pet-card-food-text,
+.pet-card.minimized .pet-card-combo,
+.pet-card.minimized .daily-panel { display:none !important; }
+.pet-card.minimized .pet-card-emoji { font-size:32px; }
 .pet-card-accessory { font-size: 16px; margin-left: -2px; }
 .pet-card-info { flex: 1; }
 .pet-card-name { font-weight: 700; color: var(--color-text-primary); font-size: var(--font-size-sm); }
@@ -1537,7 +1544,10 @@ input { font-family: inherit; }
       <h2 class="practice-title" id="practice-title"></h2>
       <div class="practice-stars" id="typing-stars">☆☆☆</div>
     </div>
-    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-bar"></div></div>
+    <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progress-bar"></div>
+        <button class="btn-submit-early" id="btn-submit-early" style="display:none;margin-left:12px;padding:4px 14px;font-size:13px;background:#f59e0b;color:#fff;border:none;border-radius:16px;cursor:pointer;white-space:nowrap;font-weight:600;">✅ 提交成绩</button>
+      </div>
     <!-- 宠物卡片 -->
     <div class="pet-card hidden" id="pet-card">
       <div class="pet-card-header">
@@ -2591,8 +2601,8 @@ async function accountAPI(path, body) {
       if (un.length<2||un.length>20) throw new Error("用户名需要2-20个字符");
       if (pw.length<3||pw.length>50) throw new Error("密码需要3-50个字符");
       if (role==="student"&&!sno) throw new Error("学号不能为空");
-      var chk=await __db.from("profiles").select("user_id").eq("username",un);
-      if (chk.data&&chk.data.length>0) throw new Error("用户名已被注册");
+      var chk=await __db.from("profiles").select("user_id").eq("username",un).maybeSingle();
+      if (chk.data!==null) throw new Error("用户名已被注册");
       var nid="u_"+Date.now()+"_"+Math.random().toString(36).slice(2,8);
       var hash=await _hashPwd(pw,un);
       await __db.from("profiles").insert({user_id:nid,username:un,password_hash:hash,role:role,student_no:sno,created_at:Date.now()});
@@ -3325,6 +3335,10 @@ function renderPetCard() {
     return;
   }
   card.classList.remove('hidden');
+
+  // 点击宠物头像切换最小化
+  var emojiEl=document.getElementById('pet-card-emoji');
+  if(emojiEl) emojiEl.onclick=function(e){e.stopPropagation();card.classList.toggle('minimized');};
 
   var def = getCurrentPetDef();
   var stages = getPetStageDef(def);
@@ -5037,6 +5051,8 @@ function processCharInput(char) {
   updateAffectedCells();
   positionHiddenInput();
   document.getElementById('click-to-start').classList.add('hidden');
+  var btnSubmit=document.getElementById('btn-submit-early');
+  if(btnSubmit && AppState.correctCount>0) btnSubmit.style.display='';
   updateStatsDisplay();
   saveSession();
 }
@@ -5580,6 +5596,9 @@ document.getElementById('btn-retry').addEventListener('click', () => {
 document.getElementById('btn-retry-errors').addEventListener('click', retryErrors);
 document.getElementById('btn-back-course').addEventListener('click', () => { hideModal(); goBackToCourse(); });
 document.getElementById('btn-back-practice').addEventListener('click', goBackToCourse);
+document.getElementById('btn-submit-early').addEventListener('click', function(){
+  if(confirm('确定要提交当前练习成绩吗？')) completeLesson();
+});
 document.getElementById('btn-pause').addEventListener('click', togglePause);
 document.getElementById('btn-reset').addEventListener('click', resetLesson);
 document.getElementById('pause-overlay').addEventListener('click', () => { if (AppState.isPaused) togglePause(); });
