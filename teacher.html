@@ -479,10 +479,18 @@ tr:hover td { background: var(--color-bg); }
                 <h3 class="section-title" id="class-detail-title">👨‍🎓 学生列表</h3>
                 <button class="btn btn-secondary btn-sm" id="btn-close-detail-panel">✕ 关闭</button>
               </div>
+              <div id="batch-bar" style="display:none;align-items:center;gap:8px;padding:8px 12px;margin-bottom:12px;background:var(--color-accent-light);border-radius:8px;font-size:13px;flex-wrap:wrap;">
+                <span id="batch-count" style="font-weight:600;">已选 0 人</span>
+                <select id="batch-move-class" style="padding:4px 8px;border:1px solid var(--color-border);border-radius:6px;font-size:12px;background:#fff;min-width:120px;"></select>
+                <button class="btn btn-primary btn-sm" id="btn-batch-move" style="padding:4px 12px;font-size:12px;">📦 移班</button>
+                <button class="btn btn-secondary btn-sm" id="btn-batch-resetpwd" style="padding:4px 12px;font-size:12px;">🔑 重置密码</button>
+                <button class="btn btn-danger btn-sm" id="btn-batch-remove" style="padding:4px 12px;font-size:12px;">✕ 移除所选</button>
+                <button class="btn btn-secondary btn-sm" id="btn-batch-export" style="padding:4px 12px;font-size:12px;">📥 导出</button>
+              </div>
               <div class="table-wrap">
                 <table>
                   <thead>
-                    <tr><th>学号</th><th>姓名</th><th>练习次数</th><th>教师练习</th><th>平均速度</th><th>最高速度</th><th>操作</th></tr>
+                    <tr><th style="width:32px;"><input type="checkbox" id="select-all" style="cursor:pointer;" title="全选"></th><th class="sortable" data-sort="studentNo" style="cursor:pointer;">学号 ▸</th><th class="sortable" data-sort="username" style="cursor:pointer;">姓名 ▸</th><th class="sortable" data-sort="totalPractices" style="cursor:pointer;">练习次数 ▸</th><th class="sortable" data-sort="exProgress" style="cursor:pointer;">教师练习 ▸</th><th class="sortable" data-sort="avgSpeed" style="cursor:pointer;">平均速度 ▸</th><th class="sortable" data-sort="maxSpeed" style="cursor:pointer;">最高速度 ▸</th><th>操作</th></tr>
                   </thead>
                   <tbody id="class-detail-tbody"></tbody>
                 </table>
@@ -1476,6 +1484,7 @@ function renderUnclassedDetail() {
   document.getElementById('class-detail-empty-state').classList.add('hidden');
   document.getElementById('class-detail-content').classList.remove('hidden');
   document.getElementById('class-detail-title').textContent = '🏠 无班级学生';
+  document.getElementById('batch-bar').style.display='none';
   var tbody = document.getElementById('class-detail-tbody');
   document.getElementById('class-detail-empty').classList.add('hidden');
   tbody.innerHTML = _unclassedStudents.map(function(s) {
@@ -1495,6 +1504,7 @@ function renderUnclassedDetail() {
   document.getElementById('class-detail-empty').classList.add('hidden');
 }
 
+var _detailSort={key:"studentNo",asc:true};
 function renderClassDetailPanel() {
   var data = TeacherState.classData;
   if (!data) return;
@@ -1505,31 +1515,97 @@ function renderClassDetailPanel() {
   var tbody = document.getElementById('class-detail-tbody');
   var empty = document.getElementById('class-detail-empty');
   var students = data.students || [];
+  // 排序
+  var sk=_detailSort.key, sa=_detailSort.asc;
+  students.sort(function(a,b){
+    var va, vb;
+    if(sk==="studentNo"||sk==="username"){va=(a[sk]||"");vb=(b[sk]||"");return sa?va.localeCompare(vb):vb.localeCompare(va);}
+    if(sk==="exProgress"){va=(a.exerciseProgress?a.exerciseProgress.completed/a.exerciseProgress.total:0);vb=(b.exerciseProgress?b.exerciseProgress.completed/b.exerciseProgress.total:0);}
+    else if(sk==="avgSpeed"||sk==="maxSpeed"||sk==="totalPractices"){va=a[sk]||0;vb=b[sk]||0;}
+    else {va=a[sk]||"";vb=b[sk]||"";return sa?String(va).localeCompare(String(vb)):String(vb).localeCompare(String(va));}
+    return sa?va-vb:vb-va;
+  });
   if (students.length === 0) {
     tbody.innerHTML = '';
     empty.classList.remove('hidden');
+    document.getElementById('batch-bar').style.display='none';
   } else {
     empty.classList.add('hidden');
+    document.getElementById('batch-bar').style.display='flex';
+    // 填充移班下拉
+    var ms=document.getElementById('batch-move-class');
+    ms.innerHTML=TeacherState.classList.filter(function(c){return c.classId!==TeacherState.currentClassId;}).map(function(c){return '<option value="'+c.classId+'">'+c.name+'</option>'}).join('');
     tbody.innerHTML = students.map(function(s) {
       var ep = s.exerciseProgress;
       var exText = ep ? ep.completed + '/' + ep.total : '-';
       var speedClass = s.avgSpeed >= 40 ? 'speed-fast' : (s.avgSpeed >= 25 ? 'speed-mid' : 'speed-slow');
       return '<tr>' +
+        '<td><input type="checkbox" class="row-check" data-sid="'+s.userId+'" style="cursor:pointer;"></td>' +
         '<td>' + escHtml(s.studentNo || '-') + '</td>' +
         '<td><strong>' + escHtml(s.username) + '</strong></td>' +
         '<td>' + s.totalPractices + ' 次</td>' +
         '<td>' + exText + '</td>' +
         '<td class="' + speedClass + '">' + s.avgSpeed + ' 字/分</td>' +
         '<td>' + s.maxSpeed + ' 字/分</td>' +
-        '<td><button class="btn btn-sm btn-outline edit-st-btn" data-sid="' + s.userId + '" data-sname="' + escHtml(s.username) + '" data-sno="' + escHtml(s.studentNo || '') + '">✏️ 编辑</button></td>' +
+        '<td><button class="btn btn-sm btn-outline edit-st-btn" data-sid="' + s.userId + '" data-sname="' + escHtml(s.username) + '" data-sno="' + escHtml(s.studentNo || '') + '">✏️ 编辑</button> ' +
+        '<button class="btn btn-sm btn-danger remove-st-btn" data-sid="' + s.userId + '" data-sname="' + escHtml(s.username) + '">✕</button></td>' +
         '</tr>';
     }).join('');
     tbody.querySelectorAll('.edit-st-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() { showEditStudentModal(this.dataset.sid, this.dataset.sname, this.dataset.sno); });
+    });
+    tbody.querySelectorAll('.remove-st-btn').forEach(function(btn) {
       btn.addEventListener('click', function() {
-        showEditStudentModal(this.dataset.sid, this.dataset.sname, this.dataset.sno);
+        if(!confirm('确定要将「'+this.dataset.sname+'」移出班级吗？数据保留。')) return;
+        removeStudentFromClass(this.dataset.sid);
       });
     });
+    // Checkbox events
+    var allBox=document.getElementById('select-all');allBox.checked=false;
+    allBox.onchange=function(){
+      tbody.querySelectorAll('.row-check').forEach(function(cb){cb.checked=allBox.checked;});
+      updateBatchCount();
+    };
+    tbody.querySelectorAll('.row-check').forEach(function(cb){cb.onchange=updateBatchCount;});
+    updateBatchCount();
   }
+}
+function updateBatchCount(){
+  var n=document.querySelectorAll('.row-check:checked').length;
+  document.getElementById('batch-count').textContent='已选 '+n+' 人';
+}
+function getSelectedIds(){return Array.from(document.querySelectorAll('.row-check:checked')).map(function(cb){return cb.dataset.sid;});}
+async function removeStudentFromClass(sid){
+  try{await accountAPI('POST','/api/class/remove-student',{studentId:sid,classId:TeacherState.currentClassId});showToast('已移除');await loadClassInfo();}catch(e){showToast('移除失败：'+e.message);}
+}
+async function batchMove(){
+  var ids=getSelectedIds();if(!ids.length){showToast('请先选择学生');return;}
+  var tid=document.getElementById('batch-move-class').value;if(!tid){showToast('请选择目标班级');return;}
+  if(!confirm('将 '+ids.length+' 名学生移动到目标班级？')) return;
+  for(var i=0;i<ids.length;i++){await accountAPI('POST','/api/class/move-student',{studentId:ids[i],fromClassId:TeacherState.currentClassId,toClassId:tid});}
+  showToast('已移动 '+ids.length+' 人');await loadClassInfo();
+}
+async function batchResetPwd(){
+  var ids=getSelectedIds();if(!ids.length){showToast('请先选择学生');return;}
+  if(!confirm('将 '+ids.length+' 名学生的密码重置为 123456？')) return;
+  for(var i=0;i<ids.length;i++){await accountAPI('POST','/api/class/update-student',{studentId:ids[i],classId:TeacherState.currentClassId,action:'resetPassword'});}
+  showToast('已重置 '+ids.length+' 人');
+}
+async function batchRemove(){
+  var ids=getSelectedIds();if(!ids.length){showToast('请先选择学生');return;}
+  if(!confirm('将 '+ids.length+' 名学生移出班级？数据保留。')) return;
+  for(var i=0;i<ids.length;i++){await accountAPI('POST','/api/class/remove-student',{studentId:ids[i],classId:TeacherState.currentClassId});}
+  showToast('已移除 '+ids.length+' 人');await loadClassInfo();
+}
+function batchExport(){
+  var ids=getSelectedIds();if(!ids.length){showToast('请先选择学生');return;}
+  var students=TeacherState.classData.students.filter(function(s){return ids.indexOf(s.userId)>=0;});
+  var csv='学号,姓名,练习次数,教师练习,平均速度,最高速度,正确率,活跃天数,经验值,星星,宠物领养,满级,最后练习时间\n';
+  csv+=students.map(function(s){
+    var ep=s.exerciseProgress;var exText=ep?ep.completed+'/'+ep.total:'-';var last=s.lastPracticeAt?new Date(s.lastPracticeAt).toLocaleString('zh-CN'):'-';var pt=s.pet||{};
+    return (s.studentNo||'')+','+s.username+','+s.totalPractices+','+exText+','+s.avgSpeed+','+s.maxSpeed+','+s.avgAccuracy+','+s.activeDays+','+pt.totalXP+','+pt.stars+','+pt.adoptedCount+','+pt.maxLevelCount+','+last;
+  }).join('\n');
+  var blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8;'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='学生列表_'+new Date().toISOString().slice(0,10)+'.csv';a.click();showToast('已导出'+ids.length+'人');
 }
 
 async function manageClassDetail(classId) {
@@ -2177,7 +2253,25 @@ document.addEventListener('DOMContentLoaded', function() {
     if (e.target === this) hideDistributeModal();
   });
 
-  // Escape 关闭弹窗
+
+  // Sort + batch events
+  document.querySelectorAll('.sortable').forEach(function(th){
+    th.addEventListener('click',function(){
+      var k=this.dataset.sort;
+      if(_detailSort.key===k)_detailSort.asc=!_detailSort.asc;
+      else{_detailSort.key=k;_detailSort.asc=true;}
+      document.querySelectorAll('.sortable').forEach(function(t){t.textContent=t.dataset.sort+' ▸';});
+      this.textContent=this.dataset.sort+(_detailSort.asc?' ▲':' ▼');
+      renderClassDetailPanel();
+    });
+  });
+  document.getElementById('select-all').addEventListener('change',function(){document.querySelectorAll('.row-check').forEach(function(cb){cb.checked=this.checked;});updateBatchCount();});
+  document.getElementById('btn-batch-move').addEventListener('click',batchMove);
+  document.getElementById('btn-batch-resetpwd').addEventListener('click',batchResetPwd);
+  document.getElementById('btn-batch-remove').addEventListener('click',batchRemove);
+  document.getElementById('btn-batch-export').addEventListener('click',batchExport);
+
+    // Escape 关闭弹窗
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') { hideAccountModal(); hideDistributeModal(); }
   });
