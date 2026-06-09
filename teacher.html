@@ -770,7 +770,7 @@ function _chain(t){var s="*",q="",ms=false,c={
   then:function(r,j){var qs=(s!=="*"?"?select="+s:"")+(s!=="*"&&q?"&"+q.slice(1):q);_sbFetch("GET",t,qs,null,ms?{"Accept":"application/vnd.pgrst.object+json"}:null).then(r,j);}
 };return c;}
 async function _hashPwd(pwd,uname){var e=new TextEncoder();var b=await crypto.subtle.digest("SHA-256",e.encode(pwd+"::"+uname));return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0")}).join("");}
-function _mkToken(uid,un,role){return btoa(JSON.stringify({u:uid,n:un,r:role,e:Date.now()+2592000000}));}
+function _mkToken(uid,un,role){return btoa(unescape(encodeURIComponent(JSON.stringify({u:uid,n:un,r:role,e:Date.now()+2592000000}))));}
 function _parseQ(path){var q={},i=path.indexOf("?");if(i<0)return{path:path,query:q};path.slice(i+1).split("&").forEach(function(p){var kv=p.split("=");q[decodeURIComponent(kv[0])]=decodeURIComponent(kv[1]||"");});return{path:path.slice(0,i),query:q};}
 var PET_EMOJI={cat:"🐱",dog:"🐶",bunny:"🐰",panda:"🐼",fox:"🦊"};
 var PET_NAME={cat:"小橘猫",dog:"小黄狗",bunny:"小兔子",panda:"小熊猫",fox:"小狐狸"};
