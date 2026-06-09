@@ -2666,7 +2666,8 @@ async function downloadAndMerge() {
   _syncInProgress = true;
   try {
     var cloud = await accountAPI('/api/sync');
-    if (!cloud || !cloud.updatedAt) return; // 云端无数据
+    if (!cloud) return;
+    var hasCloud = cloud.updatedAt > 0;
 
     var merged = false;
 
