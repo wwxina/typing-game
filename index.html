@@ -1397,6 +1397,12 @@ input { font-family: inherit; }
         <label>密码</label>
         <input type="password" id="acct-reg-pass" placeholder="3-50个字符" autocomplete="new-password">
       </div>
+      <div class="form-group">
+        <label>加入班级（可选）</label>
+        <select id="acct-reg-class" style="width:100%;padding:10px 12px;border:1px solid var(--color-border);border-radius:8px;font-size:14px;background:var(--color-bg);color:var(--color-text-primary);cursor:pointer;">
+          <option value="">暂不加入</option>
+        </select>
+      </div>
       <p class="form-error hidden" id="acct-reg-error"></p>
       <button class="btn btn-primary acct-submit" id="btn-register">注册并登录</button>
     </div>
@@ -2539,6 +2545,21 @@ function hideLeaderboard() {
   if (modal) modal.classList.add('hidden');
 }
 
+// 加载所有班级到注册下拉框
+async function loadClassesForRegister() {
+  var sel = document.getElementById('acct-reg-class');
+  if (!sel) return;
+  try {
+    var all = await __db.from("classes").select("id,name,invite_code,student_ids");
+    var list = all.data || [];
+    sel.innerHTML = '<option value="">暂不加入</option>' + list.map(function(c) {
+      return '<option value="' + c.invite_code + '">' + c.name + '（' + c.invite_code + '）</option>';
+    }).join('');
+  } catch(e) {
+    sel.innerHTML = '<option value="">暂不加入</option>';
+  }
+}
+
 // 打开登录弹窗
 function showAccountModal() {
   var modal = document.getElementById('modal-account');
@@ -2798,7 +2819,7 @@ async function accountLogin(username, password) {
 }
 
 // 注册
-async function accountRegister(username, password, studentNo) {
+async function accountRegister(username, password, studentNo, inviteCode) {
   if (ACCOUNT_API) {
     var result = await accountAPI('/api/register', { username: username, password: password, studentNo: studentNo });
     AccountUser = { token: result.token, userId: result.userId, username: result.username, studentNo: result.studentNo };
@@ -2810,6 +2831,10 @@ async function accountRegister(username, password, studentNo) {
   saveAccount();
   updateAccountUI();
   hideAccountModal();
+  // 如果选择了班级，自动加入
+  if (inviteCode && ACCOUNT_API) {
+    try { await accountAPI('/api/class/join', { inviteCode: inviteCode.toUpperCase() }); } catch(e) {}
+  }
   // 清除本地旧数据（可能是前一个用户留下的），注册后数据从零开始
   localStorage.removeItem('typing2_pet');
   localStorage.removeItem('typing2_scores');
@@ -5786,6 +5811,7 @@ function init() {
       document.getElementById('account-form-register').classList.toggle('hidden', t !== 'register');
       document.getElementById('acct-login-error').classList.add('hidden');
       document.getElementById('acct-reg-error').classList.add('hidden');
+      if (t === 'register') loadClassesForRegister();
     });
   });
 
@@ -5821,8 +5847,9 @@ function init() {
     if (user.length < 2 || user.length > 20) { errEl.textContent = '姓名需要2-20个字符'; errEl.classList.remove('hidden'); return; }
     if (pass.length < 3 || pass.length > 50) { errEl.textContent = '密码需要3-50个字符'; errEl.classList.remove('hidden'); return; }
     errEl.classList.add('hidden');
+    var inviteCode = document.getElementById('acct-reg-class').value;
     var btn = this; btn.disabled = true; btn.textContent = '注册中...';
-    try { await accountRegister(user, pass, studentNo); }
+    try { await accountRegister(user, pass, studentNo, inviteCode); }
     catch(e) { errEl.textContent = e.message; errEl.classList.remove('hidden'); }
     finally { btn.disabled = false; btn.textContent = '注册并登录'; }
   });
