@@ -84,7 +84,7 @@ input, textarea { font-family: inherit; font-size: inherit; }
 .hidden { display: none !important; }
 
 /* ===== APP CONTAINER ===== */
-.app-container { max-width: 1280px; margin: 0 auto; padding: var(--space-md) var(--space-lg); }
+.app-container { max-width: 96%; margin: 0 auto; padding: var(--space-md) var(--space-lg); }
 
 /* ===== HEADER ===== */
 .app-header {
@@ -438,7 +438,7 @@ tr:hover td { background: var(--color-bg); }
   <!-- 班级切换器 -->
   <div id="class-switcher-bar" class="hidden" style="background:var(--color-surface);border-bottom:1px solid var(--color-border);padding:8px var(--space-lg);display:flex;align-items:center;gap:var(--space-md);">
     <span style="font-weight:600;white-space:nowrap;">当前班级：</span>
-    <select id="class-switcher-select" style="padding:6px 12px;border:1px solid var(--color-border);border-radius:8px;font-size:14px;background:var(--color-bg);color:var(--color-text);cursor:pointer;max-width:280px;"></select>
+    <select id="class-switcher-select" style="padding:6px 12px;border:1px solid var(--color-border);border-radius:8px;font-size:14px;background:var(--color-bg);color:var(--color-text);cursor:pointer;max-width:320px;"></select>
     <span id="class-switcher-info" style="font-size:12px;color:var(--color-text-muted);"></span>
   </div>
 
@@ -449,7 +449,7 @@ tr:hover td { background: var(--color-bg); }
     <div id="tab-class">
       <div style="display:flex;gap:var(--space-lg);flex-wrap:wrap;">
         <!-- 左侧：班级列表 -->
-        <div style="flex:1;min-width:300px;">
+        <div style="flex:1;min-width:260px;">
           <div style="display:flex;gap:var(--space-sm);margin-bottom:var(--space-md);align-items:center;">
             <h3 class="section-title" style="margin:0;">📋 班级列表</h3>
             <div style="flex:1;"></div>
@@ -464,7 +464,7 @@ tr:hover td { background: var(--color-bg); }
           <div id="unclassed-card-area" style="margin-top:var(--space-sm);"></div>
         </div>
         <!-- 右侧：学生详情 -->
-        <div id="class-detail-panel" style="flex:2;min-width:400px;">
+        <div id="class-detail-panel" style="flex:3;min-width:500px;">
           <div id="class-detail-empty-state" class="empty-state" style="padding:60px 16px;">
             <div class="empty-icon">👈</div>
             <div class="empty-text">选择左侧班级查看学生列表</div>
