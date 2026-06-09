@@ -2553,7 +2553,7 @@ async function loadClassesForRegister() {
     var all = await __db.from("classes").select("id,name,invite_code,student_ids");
     var list = all.data || [];
     sel.innerHTML = '<option value="">暂不加入</option>' + list.map(function(c) {
-      return '<option value="' + c.invite_code + '">' + c.name + '（' + c.invite_code + '）</option>';
+      return '<option value="' + c.invite_code + '">' + c.name + '</option>';
     }).join('');
   } catch(e) {
     sel.innerHTML = '<option value="">暂不加入</option>';
