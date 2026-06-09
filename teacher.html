@@ -502,6 +502,17 @@ tr:hover td { background: var(--color-bg); }
 
     <!-- TAB 2: 练习分发 -->
     <div id="tab-exercise" class="hidden">
+      <!-- 班级选择器（练习分发专用） -->
+      <div class="card" style="margin-bottom:var(--space-lg);">
+        <div style="display:flex;gap:var(--space-md);align-items:flex-end;flex-wrap:wrap;">
+          <div style="flex:1;min-width:200px;">
+            <label class="form-label">选择分发班级</label>
+            <select id="exercise-class-select" style="width:100%;padding:10px 12px;border:1px solid var(--color-border);border-radius:8px;font-size:14px;background:var(--color-bg);color:var(--color-text-primary);cursor:pointer;"></select>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="btn-refresh-ex-classes" style="height:42px;">🔄 刷新班级</button>
+        </div>
+        <div id="exercise-class-empty" style="display:none;text-align:center;padding:20px;color:var(--color-text-muted);">还没有创建班级，请先在「班级管理」中创建班级</div>
+      </div>
       <div class="card" style="margin-bottom:var(--space-lg);">
         <div class="card-header"><h3 class="card-title">➕ 创建练习</h3></div>
         <div class="form-group">
@@ -980,7 +991,7 @@ function accountLogout() {
 }
 
 // ===== 教师状态 =====
-var TeacherState = { classList: [], currentClassId: null, classData: null, dashboardData: null, petRankingData: null, petRankMode: 'xp', currentTab: 'class' };
+var TeacherState = { classList: [], currentClassId: null, classData: null, dashboardData: null, petRankingData: null, petRankMode: 'xp', currentTab: 'class', exerciseClassId: null };
 
 // ===== 班级切换 =====
 async function loadClassList() {
@@ -1120,23 +1131,61 @@ async function removeStudentFromModal() {
   await loadClassInfo();
 }
 
+// 刷新练习页班级选择器
+function refreshExerciseClassSelector() {
+  var sel = document.getElementById('exercise-class-select');
+  var empty = document.getElementById('exercise-class-empty');
+  if (!sel) return;
+  var classes = TeacherState.classList || [];
+  if (classes.length === 0) {
+    if (empty) empty.style.display = '';
+    if (sel) sel.style.display = 'none';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  sel.style.display = '';
+  sel.innerHTML = classes.map(function(c) {
+    var selAttr = (c.classId === TeacherState.exerciseClassId) ? ' selected' : '';
+    return '<option value="' + c.classId + '"' + selAttr + '>' + c.name + '（' + c.studentCount + '人）</option>';
+  }).join('');
+  if (!TeacherState.exerciseClassId && classes.length > 0) {
+    TeacherState.exerciseClassId = classes[0].classId;
+    sel.value = TeacherState.exerciseClassId;
+  }
+}
+
 async function createExercise(title, text) {
-  var data = await accountAPI('POST', '/api/class/exercise/create', { title: title, text: text, classId: TeacherState.currentClassId });
+  var cid = TeacherState.exerciseClassId || TeacherState.currentClassId;
+  if (!cid) { showToast('请先选择班级'); return; }
+  var data = await accountAPI('POST', '/api/class/exercise/create', { title: title, text: text, classId: cid });
   showToast('练习创建成功');
-  await loadClassInfo();
+  await loadClassInfoForExercise(cid);
   return data;
 }
 
+async function loadClassInfoForExercise(cid) {
+  try {
+    var data = await accountAPI('GET', '/api/class/info?classId=' + cid);
+    TeacherState.classData = data;
+  } catch(e) {
+    TeacherState.classData = null;
+  }
+  renderExerciseTab();
+}
+
 async function distributeExercise(exerciseId) {
-  var data = await accountAPI('POST', '/api/class/exercise/distribute', { exerciseId: exerciseId, classId: TeacherState.currentClassId });
-  showToast('已分发给 ' + data.count + ' 名学生');
+  var cid = TeacherState.exerciseClassId || TeacherState.currentClassId;
+  var data = await accountAPI('POST', '/api/class/exercise/distribute', { exerciseId: exerciseId, classId: cid });
+  showToast('已分发到 ' + data.count + ' 名学生');
+  await loadClassInfoForExercise(cid);
 }
 
 async function deleteExercise(exerciseId) {
   if (!confirm('确定要删除该练习吗？将从所有学生端清除。')) return;
-  await accountAPI('POST', '/api/class/exercise/delete', { exerciseId: exerciseId, classId: TeacherState.currentClassId });
+  var cid = TeacherState.exerciseClassId || TeacherState.currentClassId;
+  await accountAPI('POST', '/api/class/exercise/delete', { exerciseId: exerciseId, classId: cid });
   showToast('练习已删除');
-  await loadClassInfo();
+  await loadClassInfoForExercise(cid);
 }
 
 async function loadDashboard() {
@@ -1183,7 +1232,12 @@ function switchTab(tab) {
 
 function renderCurrentTab() {
   if (TeacherState.currentTab === 'class') renderClassTab();
-  else if (TeacherState.currentTab === 'exercise') renderExerciseTab();
+  else if (TeacherState.currentTab === 'exercise') {
+    if (!TeacherState.exerciseClassId) refreshExerciseClassSelector();
+    var cid = TeacherState.exerciseClassId || TeacherState.currentClassId;
+    if (cid && !TeacherState.classData) loadClassInfoForExercise(cid);
+    else renderExerciseTab();
+  }
   else if (TeacherState.currentTab === 'dashboard') renderDashboard();
   else if (TeacherState.currentTab === 'pet') {
     if (!TeacherState.petRankingData) loadPetLeaderboard();
@@ -1319,6 +1373,7 @@ function copyInviteCodeStr(code) {
 
 // ---- 练习分发 ----
 function renderExerciseTab() {
+  refreshExerciseClassSelector();
   var data = TeacherState.classData;
   var listEl = document.getElementById('exercise-list');
   var emptyEl = document.getElementById('exercise-empty');
@@ -1812,8 +1867,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // 刷新练习
   document.getElementById('btn-refresh-exercises').addEventListener('click', function() {
-    loadClassInfo().then(function() { showToast('已刷新'); });
+    loadClassList().then(function() {
+      refreshExerciseClassSelector();
+      var cid = TeacherState.exerciseClassId || TeacherState.currentClassId;
+      if (cid) loadClassInfoForExercise(cid).then(function() { showToast('已刷新'); });
+    });
   });
+
+  // 练习页班级选择器变更
+  var exClassSel = document.getElementById('exercise-class-select');
+  if (exClassSel) {
+    exClassSel.addEventListener('change', function() {
+      TeacherState.exerciseClassId = this.value;
+      loadClassInfoForExercise(this.value);
+    });
+  }
+  var btnRefreshExClasses = document.getElementById('btn-refresh-ex-classes');
+  if (btnRefreshExClasses) {
+    btnRefreshExClasses.addEventListener('click', function() {
+      loadClassList().then(function() {
+        refreshExerciseClassSelector();
+        showToast('已刷新');
+      });
+    });
+  }
 
   // 刷新看板
   document.getElementById('btn-refresh-dashboard').addEventListener('click', function() {
