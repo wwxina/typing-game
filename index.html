@@ -1398,9 +1398,9 @@ input { font-family: inherit; }
         <input type="password" id="acct-reg-pass" placeholder="3-50个字符" autocomplete="new-password">
       </div>
       <div class="form-group">
-        <label>加入班级（可选）</label>
+        <label>加入班级 <span style="color:red;">*</span></label>
         <select id="acct-reg-class" style="width:100%;padding:10px 12px;border:1px solid var(--color-border);border-radius:8px;font-size:14px;background:var(--color-bg);color:var(--color-text-primary);cursor:pointer;">
-          <option value="">暂不加入</option>
+          <option value="">请选择班级...</option>
         </select>
       </div>
       <p class="form-error hidden" id="acct-reg-error"></p>
@@ -2552,7 +2552,7 @@ async function loadClassesForRegister() {
   try {
     var all = await __db.from("classes").select("id,name,invite_code,student_ids");
     var list = all.data || [];
-    sel.innerHTML = '<option value="">暂不加入</option>' + list.map(function(c) {
+    sel.innerHTML = '<option value="">请选择班级...</option>' + list.map(function(c) {
       return '<option value="' + c.invite_code + '">' + c.name + '</option>';
     }).join('');
   } catch(e) {
@@ -5844,10 +5844,11 @@ function init() {
     var errEl = document.getElementById('acct-reg-error');
     if (!user || !pass) { errEl.textContent = '请填写姓名和密码'; errEl.classList.remove('hidden'); return; }
     if (!studentNo) { errEl.textContent = '请填写学号'; errEl.classList.remove('hidden'); return; }
+    var inviteCode = document.getElementById('acct-reg-class').value;
+    if (!inviteCode) { errEl.textContent = '请选择加入的班级'; errEl.classList.remove('hidden'); return; }
     if (user.length < 2 || user.length > 20) { errEl.textContent = '姓名需要2-20个字符'; errEl.classList.remove('hidden'); return; }
     if (pass.length < 3 || pass.length > 50) { errEl.textContent = '密码需要3-50个字符'; errEl.classList.remove('hidden'); return; }
     errEl.classList.add('hidden');
-    var inviteCode = document.getElementById('acct-reg-class').value;
     var btn = this; btn.disabled = true; btn.textContent = '注册中...';
     try { await accountRegister(user, pass, studentNo, inviteCode); }
     catch(e) { errEl.textContent = e.message; errEl.classList.remove('hidden'); }
