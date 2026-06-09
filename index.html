@@ -4020,6 +4020,8 @@ function buildSegments() {
     content = lesson.content;
     pinyin = lesson.pinyin || '';
   }
+  // 合并连续破折号，避免学生误以为是两个"一"字
+  content = content.replace(/——/g, '—');
   const allPinyins = pinyin ? pinyin.split(' ') : [];
   let pyIdx = 0;
   const rawSegments = content.includes('\n') ? content.split('\n') : content.split(/(?<=[。！？])/);
