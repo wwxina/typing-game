@@ -2739,8 +2739,9 @@ async function downloadAndMerge() {
 
     if (merged) {
       console.log('已从云端恢复数据');
-      // 刷新宠物显示
       if (typeof updatePetDisplay === 'function') updatePetDisplay();
+      // 刷新课程页显示
+      if (AppState.currentPage === 'course-select') renderCoursePage();
     }
   } catch(e) {
     console.log('云端数据下载失败:', e.message);
@@ -4085,6 +4086,7 @@ function endPracticeSession() {
 
 /* ===== COURSE PAGE ===== */
 function renderCoursePage() {
+  try {
   renderQuickNav();
   renderTempBanner();
   renderAllLessons();
@@ -4127,6 +4129,7 @@ function renderCoursePage() {
     clearSession();
   }
   if (banner) banner.classList.add('hidden');
+  } catch(e) { console.error('renderCoursePage error:', e); }
 }
 function renderQuickNav() {
   const container = document.getElementById('grade-quick-nav');
