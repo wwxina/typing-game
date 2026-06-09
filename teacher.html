@@ -502,17 +502,6 @@ tr:hover td { background: var(--color-bg); }
 
     <!-- TAB 2: 练习分发 -->
     <div id="tab-exercise" class="hidden">
-      <!-- 班级选择器（练习分发专用） -->
-      <div class="card" style="margin-bottom:var(--space-lg);">
-        <div style="display:flex;gap:var(--space-md);align-items:flex-end;flex-wrap:wrap;">
-          <div style="flex:1;min-width:200px;">
-            <label class="form-label">选择分发班级</label>
-            <select id="exercise-class-select" style="width:100%;padding:10px 12px;border:1px solid var(--color-border);border-radius:8px;font-size:14px;background:var(--color-bg);color:var(--color-text-primary);cursor:pointer;"></select>
-          </div>
-          <button class="btn btn-secondary btn-sm" id="btn-refresh-ex-classes" style="height:42px;">🔄 刷新班级</button>
-        </div>
-        <div id="exercise-class-empty" style="display:none;text-align:center;padding:20px;color:var(--color-text-muted);">还没有创建班级，请先在「班级管理」中创建班级</div>
-      </div>
       <div class="card" style="margin-bottom:var(--space-lg);">
         <div class="card-header"><h3 class="card-title">➕ 创建练习</h3></div>
         <div class="form-group">
@@ -665,6 +654,24 @@ tr:hover td { background: var(--color-bg); }
       <div class="empty-icon">📭</div>
       <div class="empty-text">该学生还没有练习记录</div>
     </div>
+  </div>
+</div>
+
+<!-- 分发练习弹窗 -->
+<div class="modal-overlay hidden" id="modal-distribute">
+  <div style="background:#fff;border-radius:16px;padding:24px;max-width:420px;width:92%;position:relative;box-shadow:0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h3 style="margin:0;font-size:18px;font-weight:700;color:#1a1a1a;">📤 分发练习</h3>
+      <button id="btn-distribute-close" style="width:32px;height:32px;border-radius:50%;background:#f5f5f5;color:#666;font-size:16px;border:none;cursor:pointer;">✕</button>
+    </div>
+    <p id="distribute-ex-title" style="font-size:14px;color:#555;margin-bottom:16px;padding:10px 12px;background:#f8f9fa;border-radius:8px;"></p>
+    <div style="margin-bottom:16px;">
+      <label style="display:block;font-size:13px;font-weight:600;color:#555;margin-bottom:6px;">分发到班级</label>
+      <select id="distribute-class-select" style="width:100%;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;outline:none;background:#fff;cursor:pointer;margin-bottom:8px;"></select>
+      <button class="btn btn-secondary btn-sm" id="btn-distribute-refresh-classes" style="width:100%;">🔄 刷新班级列表</button>
+    </div>
+    <button class="btn btn-primary" id="btn-distribute-confirm" style="width:100%;padding:12px;font-size:15px;font-weight:600;border-radius:10px;">✅ 确认分发</button>
+    <div id="distribute-result" style="text-align:center;font-size:13px;color:#10b981;margin-top:8px;display:none;"></div>
   </div>
 </div>
 
@@ -1173,11 +1180,40 @@ async function loadClassInfoForExercise(cid) {
   renderExerciseTab();
 }
 
-async function distributeExercise(exerciseId) {
-  var cid = TeacherState.exerciseClassId || TeacherState.currentClassId;
-  var data = await accountAPI('POST', '/api/class/exercise/distribute', { exerciseId: exerciseId, classId: cid });
-  showToast('已分发到 ' + data.count + ' 名学生');
-  await loadClassInfoForExercise(cid);
+var _pendingDistributeExId = null;
+function showDistributeModal(exerciseId) {
+  _pendingDistributeExId = exerciseId;
+  var exTitle = '练习';
+  if (TeacherState.classData && TeacherState.classData.exercises) {
+    var ex = TeacherState.classData.exercises.find(function(e) { return e.id === exerciseId; });
+    if (ex) exTitle = ex.title;
+  }
+  document.getElementById('distribute-ex-title').textContent = '📝 ' + exTitle;
+  // 填充班级下拉
+  var sel = document.getElementById('distribute-class-select');
+  var classes = TeacherState.classList || [];
+  sel.innerHTML = classes.map(function(c) {
+    return '<option value="' + c.classId + '">' + c.name + '（' + c.studentCount + '人）</option>';
+  }).join('');
+  if (classes.length > 0 && !TeacherState.exerciseClassId) {
+    TeacherState.exerciseClassId = classes[0].classId;
+  }
+  if (TeacherState.exerciseClassId) sel.value = TeacherState.exerciseClassId;
+  document.getElementById('distribute-result').style.display = 'none';
+  document.getElementById('modal-distribute').classList.remove('hidden');
+}
+function hideDistributeModal() {
+  document.getElementById('modal-distribute').classList.add('hidden');
+}
+async function confirmDistribute() {
+  if (!_pendingDistributeExId) return;
+  var cid = document.getElementById('distribute-class-select').value;
+  if (!cid) { showToast('请选择班级'); return; }
+  TeacherState.exerciseClassId = cid;
+  var data = await accountAPI('POST', '/api/class/exercise/distribute', { exerciseId: _pendingDistributeExId, classId: cid });
+  document.getElementById('distribute-result').textContent = '已分发到 ' + data.count + ' 名学生';
+  document.getElementById('distribute-result').style.display = '';
+  setTimeout(function() { hideDistributeModal(); _pendingDistributeExId = null; loadClassInfoForExercise(cid); }, 800);
 }
 
 async function deleteExercise(exerciseId) {
@@ -1394,7 +1430,7 @@ function renderExerciseTab() {
         '<div class="exercise-text-preview">' + escHtml(preview) + '</div>' +
       '</div>' +
       '<div class="exercise-actions">' +
-        '<button class="btn btn-primary btn-sm" onclick="distributeExercise(\'' + ex.id + '\')">📤 分发</button>' +
+        '<button class="btn btn-primary btn-sm" onclick="showDistributeModal(\'' + ex.id + '\')">📤 分发</button>' +
         '<button class="btn btn-danger btn-sm" onclick="deleteExercise(\'' + ex.id + '\')">🗑 删除</button>' +
       '</div>' +
     '</div>';
@@ -1971,9 +2007,16 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('account-dropdown').classList.add('hidden');
   });
 
+  // 分发弹窗事件
+  document.getElementById('btn-distribute-close').addEventListener('click', hideDistributeModal);
+  document.getElementById('btn-distribute-confirm').addEventListener('click', confirmDistribute);
+  document.getElementById('modal-distribute').addEventListener('click', function(e) {
+    if (e.target === this) hideDistributeModal();
+  });
+
   // Escape 关闭弹窗
   document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') { hideAccountModal(); }
+    if (e.key === 'Escape') { hideAccountModal(); hideDistributeModal(); }
   });
 });
 </script>
