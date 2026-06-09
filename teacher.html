@@ -498,6 +498,24 @@ tr:hover td { background: var(--color-bg); }
           <div class="empty-text">还没有学生加入</div>
         </div>
       </div>
+
+      <!-- 无班级学生 -->
+      <div class="card" id="unclassed-section" style="margin-top:var(--space-lg);">
+        <div class="section-header" style="padding-top:0;">
+          <h3 class="section-title">🏠 无班级学生</h3>
+          <button class="btn btn-secondary btn-sm" id="btn-refresh-unclassed">🔄 刷新</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>学号</th><th>姓名</th><th>练习次数</th><th>操作</th></tr></thead>
+            <tbody id="unclassed-tbody"></tbody>
+          </table>
+        </div>
+        <div id="unclassed-empty" class="empty-state">
+          <div class="empty-icon">✅</div>
+          <div class="empty-text">所有学生都已加入班级</div>
+        </div>
+      </div>
     </div>
 
     <!-- TAB 2: 练习分发 -->
@@ -969,6 +987,23 @@ async function accountAPI(method, path, body) {
       var petR=rankings.slice().sort(function(a,b){return b.pet.adoptedCount-a.pet.adoptedCount||b.pet.maxLevelCount-b.pet.maxLevelCount||b.pet.highestStage-a.pet.highestStage;});
       return {className:cn.join("、"),xpRanking:xpR,starRanking:starR,petRanking:petR};
     }
+    if (path === "/api/class/unclassed-students") {
+      var allP=await __db.from("profiles").select("user_id,username,student_no,role");
+      var allUD=await __db.from("user_data").select("user_id,class_ids,records");
+      var profs=allP.data||[], uds=allUD.data||[];
+      var udMap={};uds.forEach(function(u){udMap[u.user_id]=u;});
+      var students=[];
+      profs.forEach(function(p){
+        if(p.role==="teacher") return;
+        var ud=udMap[p.user_id];
+        var cids=(ud&&ud.class_ids)?ud.class_ids:[];
+        if(cids.length===0){
+          var recs=(ud&&ud.records)?ud.records:[];
+          students.push({userId:p.user_id,username:p.username,studentNo:p.student_no||"",totalPractices:recs.length});
+        }
+      });
+      return {students:students};
+    }
     if (path === "/api/health") return {ok:true,time:Date.now()};
     throw new Error("API未实现: "+path);
   } catch(e) { throw new Error(e.message||"请求失败"); }
@@ -1371,6 +1406,33 @@ function renderClassTab() {
 
   // 渲染已选班级的学生详情
   renderClassDetail();
+  // 渲染无班级学生
+  loadUnclassedStudents();
+}
+
+async function loadUnclassedStudents() {
+  try {
+    var data = await accountAPI('GET', '/api/class/unclassed-students');
+    var students = data.students || [];
+    var tbody = document.getElementById('unclassed-tbody');
+    var empty = document.getElementById('unclassed-empty');
+    if (students.length === 0) {
+      tbody.innerHTML = '';
+      empty.classList.remove('hidden');
+    } else {
+      empty.classList.add('hidden');
+      tbody.innerHTML = students.map(function(s) {
+        return '<tr>' +
+          '<td>' + escHtml(s.studentNo || '-') + '</td>' +
+          '<td><strong>' + escHtml(s.username) + '</strong></td>' +
+          '<td>' + s.totalPractices + ' 次</td>' +
+          '<td><span style=\"font-size:11px;color:#999;\">未分配班级</span></td>' +
+          '</tr>';
+      }).join('');
+    }
+  } catch(e) {
+    document.getElementById('unclassed-tbody').innerHTML = '';
+  }
 }
 
 function renderClassDetail() {
@@ -1977,6 +2039,11 @@ document.addEventListener('DOMContentLoaded', function() {
   // 刷新看板
   document.getElementById('btn-refresh-dashboard').addEventListener('click', function() {
     loadDashboard().then(function() { showToast('已刷新'); });
+  });
+
+  // 刷新无班级学生
+  document.getElementById('btn-refresh-unclassed').addEventListener('click', function() {
+    loadUnclassedStudents().then(function() { showToast('已刷新'); });
   });
 
   // 刷新宠物排行
