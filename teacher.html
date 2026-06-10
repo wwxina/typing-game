@@ -1472,11 +1472,12 @@ function renderUnclassedDetail() {
   document.getElementById('class-detail-empty-state').classList.add('hidden');
   document.getElementById('class-detail-content').classList.remove('hidden');
   document.getElementById('class-detail-title').textContent = '🏠 无班级学生';
-  document.getElementById('batch-bar').style.display='none';
+  document.getElementById('batch-bar').style.display='flex';
   var tbody = document.getElementById('class-detail-tbody');
   document.getElementById('class-detail-empty').classList.add('hidden');
   tbody.innerHTML = _unclassedStudents.map(function(s) {
     return '<tr>' +
+      '<td><input type="checkbox" class="row-check" data-sid="'+s.userId+'" style="cursor:pointer;"></td>' +
       '<td>' + escHtml(s.studentNo || '-') + '</td>' +
       '<td><strong>' + escHtml(s.username) + '</strong></td>' +
       '<td>' + s.totalPractices + ' 次</td>' +
@@ -1484,6 +1485,9 @@ function renderUnclassedDetail() {
       '<td><span style="font-size:11px;color:var(--color-warning);">未分配</span></td>' +
       '</tr>';
   }).join('');
+  var allBox=document.getElementById('select-all');if(allBox){allBox.checked=false;allBox.onchange=function(){tbody.querySelectorAll('.row-check').forEach(function(cb){cb.checked=allBox.checked;});updateBatchCount();};}
+  tbody.querySelectorAll('.row-check').forEach(function(cb){cb.onchange=updateBatchCount;});
+  updateBatchCount();
   document.querySelectorAll('.class-card-item').forEach(function(el) {
     var cur = el.dataset.cid === '_unclassed';
     el.style.borderColor = cur ? 'var(--color-warning)' : 'var(--color-border)';
@@ -1704,7 +1708,6 @@ function renderDashboard() {
         '<td>' + escHtml(s.studentNo || '-') + '</td>' +
         '<td><strong>' + escHtml(s.username) + '</strong></td>' +
         '<td>' + s.totalPractices + ' 次</td>' +
-        '<td>' + exText + '</td>' +
         '<td class="' + speedClass + '">' + s.avgSpeed + ' 字/分</td>' +
         '<td>' + s.maxSpeed + ' 字/分</td>' +
         '<td>' + s.avgAccuracy + '%</td>' +
