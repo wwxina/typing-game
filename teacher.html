@@ -490,7 +490,7 @@ tr:hover td { background: var(--color-bg); }
               <div class="table-wrap">
                 <table>
                   <thead>
-                    <tr><th style="width:32px;"><input type="checkbox" id="select-all" style="cursor:pointer;" title="全选"></th><th class="sortable" data-sort="studentNo" style="cursor:pointer;">学号 ▸</th><th class="sortable" data-sort="username" style="cursor:pointer;">姓名 ▸</th><th class="sortable" data-sort="totalPractices" style="cursor:pointer;">练习次数 ▸</th><th class="sortable" data-sort="exProgress" style="cursor:pointer;">教师练习 ▸</th><th class="sortable" data-sort="avgSpeed" style="cursor:pointer;">平均速度 ▸</th><th class="sortable" data-sort="maxSpeed" style="cursor:pointer;">最高速度 ▸</th><th>操作</th></tr>
+                    <tr><th style="width:32px;"><input type="checkbox" id="select-all" style="cursor:pointer;" title="全选"></th><th class="sortable" data-sort="studentNo" style="cursor:pointer;">学号 ▸</th><th class="sortable" data-sort="username" style="cursor:pointer;">姓名 ▸</th><th class="sortable" data-sort="totalPractices" style="cursor:pointer;">练习次数 ▸</th><th class="sortable" data-sort="avgSpeed" style="cursor:pointer;">平均速度 ▸</th><th class="sortable" data-sort="maxSpeed" style="cursor:pointer;">最高速度 ▸</th><th>操作</th></tr>
                   </thead>
                   <tbody id="class-detail-tbody"></tbody>
                 </table>
@@ -1492,7 +1492,7 @@ function renderUnclassedDetail() {
       '<td>' + escHtml(s.studentNo || '-') + '</td>' +
       '<td><strong>' + escHtml(s.username) + '</strong></td>' +
       '<td>' + s.totalPractices + ' 次</td>' +
-      '<td>-</td><td>-</td><td>-</td>' +
+      '<td>-</td><td>-</td>' +
       '<td><span style="font-size:11px;color:var(--color-warning);">未分配</span></td>' +
       '</tr>';
   }).join('');
@@ -1536,15 +1536,12 @@ function renderClassDetailPanel() {
     var ms=document.getElementById('batch-move-class');
     ms.innerHTML=TeacherState.classList.filter(function(c){return c.classId!==TeacherState.currentClassId;}).map(function(c){return '<option value="'+c.classId+'">'+c.name+'</option>'}).join('');
     tbody.innerHTML = students.map(function(s) {
-      var ep = s.exerciseProgress;
-      var exText = ep ? ep.completed + '/' + ep.total : '-';
       var speedClass = s.avgSpeed >= 40 ? 'speed-fast' : (s.avgSpeed >= 25 ? 'speed-mid' : 'speed-slow');
       return '<tr>' +
         '<td><input type="checkbox" class="row-check" data-sid="'+s.userId+'" style="cursor:pointer;"></td>' +
         '<td>' + escHtml(s.studentNo || '-') + '</td>' +
         '<td><strong>' + escHtml(s.username) + '</strong></td>' +
         '<td>' + s.totalPractices + ' 次</td>' +
-        '<td>' + exText + '</td>' +
         '<td class="' + speedClass + '">' + s.avgSpeed + ' 字/分</td>' +
         '<td>' + s.maxSpeed + ' 字/分</td>' +
         '<td><button class="btn btn-sm btn-outline edit-st-btn" data-sid="' + s.userId + '" data-sname="' + escHtml(s.username) + '" data-sno="' + escHtml(s.studentNo || '') + '">✏️ 编辑</button> ' +
@@ -1600,10 +1597,10 @@ async function batchRemove(){
 function batchExport(){
   var ids=getSelectedIds();if(!ids.length){showToast('请先选择学生');return;}
   var students=TeacherState.classData.students.filter(function(s){return ids.indexOf(s.userId)>=0;});
-  var csv='学号,姓名,练习次数,教师练习,平均速度,最高速度,正确率,活跃天数,经验值,星星,宠物领养,满级,最后练习时间\n';
+  var csv='学号,姓名,练习次数,平均速度,最高速度,正确率,活跃天数,经验值,星星,宠物领养,满级,最后练习时间\n';
   csv+=students.map(function(s){
-    var ep=s.exerciseProgress;var exText=ep?ep.completed+'/'+ep.total:'-';var last=s.lastPracticeAt?new Date(s.lastPracticeAt).toLocaleString('zh-CN'):'-';var pt=s.pet||{};
-    return (s.studentNo||'')+','+s.username+','+s.totalPractices+','+exText+','+s.avgSpeed+','+s.maxSpeed+','+s.avgAccuracy+','+s.activeDays+','+pt.totalXP+','+pt.stars+','+pt.adoptedCount+','+pt.maxLevelCount+','+last;
+    var last=s.lastPracticeAt?new Date(s.lastPracticeAt).toLocaleString('zh-CN'):'-';var pt=s.pet||{};
+    return (s.studentNo||'')+','+s.username+','+s.totalPractices+','+s.avgSpeed+','+s.maxSpeed+','+s.avgAccuracy+','+s.activeDays+','+pt.totalXP+','+pt.stars+','+pt.adoptedCount+','+pt.maxLevelCount+','+last;
   }).join('\n');
   var blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8;'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='学生列表_'+new Date().toISOString().slice(0,10)+'.csv';a.click();showToast('已导出'+ids.length+'人');
 }
@@ -2255,13 +2252,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
   // Sort + batch events
+  var SORT_LABELS={studentNo:'学号',username:'姓名',totalPractices:'练习次数',avgSpeed:'平均速度',maxSpeed:'最高速度'};
   document.querySelectorAll('.sortable').forEach(function(th){
     th.addEventListener('click',function(){
       var k=this.dataset.sort;
       if(_detailSort.key===k)_detailSort.asc=!_detailSort.asc;
       else{_detailSort.key=k;_detailSort.asc=true;}
-      document.querySelectorAll('.sortable').forEach(function(t){t.textContent=t.dataset.sort+' ▸';});
-      this.textContent=this.dataset.sort+(_detailSort.asc?' ▲':' ▼');
+      document.querySelectorAll('.sortable').forEach(function(t){t.textContent=(SORT_LABELS[t.dataset.sort]||t.dataset.sort)+' ▸';});
+      this.textContent=(SORT_LABELS[k]||k)+(_detailSort.asc?' ▲':' ▼');
       renderClassDetailPanel();
     });
   });
