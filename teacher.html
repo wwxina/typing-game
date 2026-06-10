@@ -2252,10 +2252,10 @@ document.addEventListener('DOMContentLoaded', function() {
       renderClassDetailPanel();
     });
   });
-  document.getElementById('select-all').addEventListener('change',function(){document.querySelectorAll('.row-check').forEach(function(cb){cb.checked=this.checked;});updateBatchCount();});
-  document.getElementById('btn-batch-resetpwd').addEventListener('click',batchResetPwd);
-  document.getElementById('btn-batch-remove').addEventListener('click',batchRemove);
-  document.getElementById('btn-batch-export').addEventListener('click',batchExport);
+  var allBox=document.getElementById('select-all');if(allBox){allBox.checked=false;allBox.onchange=function(){document.querySelectorAll('.row-check').forEach(function(cb){cb.checked=allBox.checked;});updateBatchCount();};}
+  var moveBtn=document.getElementById('btn-batch-resetpwd');if(moveBtn)moveBtn.onclick=batchResetPwd;
+  var removeBtn=document.getElementById('btn-batch-remove');if(removeBtn)removeBtn.onclick=batchRemove;
+  var exportBtn=document.getElementById('btn-batch-export');if(exportBtn)exportBtn.onclick=batchExport;
 
     // Escape 关闭弹窗
   document.addEventListener('keydown', function(e) {
