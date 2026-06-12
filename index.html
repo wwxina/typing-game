@@ -1366,7 +1366,7 @@ input { font-family: inherit; }
     <div class="account-form" id="account-form-login">
       <div class="form-group">
         <label>姓名</label>
-        <input type="text" id="acct-login-user" placeholder="请输入姓名" autocomplete="name">
+        <input type="text" id="acct-login-user" placeholder="请输入姓名或学号" autocomplete="name">
       </div>
       <div class="form-group">
         <label>密码</label>
@@ -2733,10 +2733,16 @@ async function accountAPI(path, body) {
       return {token:_mkToken(nid,un,role),userId:nid,username:un,role:role};
     }
     if (path === "/api/login") {
+      // 支持姓名或学号登录
       var r=await __db.from("profiles").select("*").eq("username",body.username);
-      if (!r.data||r.data.length===0) throw new Error("姓名不存在");
+      if (!r.data||r.data.length===0){
+        // 尝试用学号查询
+        r=await __db.from("profiles").select("*").eq("student_no",body.username);
+      }
+      if (!r.data||r.data.length===0) throw new Error("姓名或学号不存在");
       var u=r.data[0];
-      var h=await _hashPwd(body.password,body.username);
+      // 用数据库中实际的 username 做密码哈希
+      var h=await _hashPwd(body.password,u.username);
       if (h!==u.password_hash) throw new Error("密码错误");
       return {token:_mkToken(u.user_id,u.username,u.role),userId:u.user_id,username:u.username,role:u.role||"student",studentNo:u.student_no||""};
     }
@@ -5970,7 +5976,7 @@ function init() {
     var user = document.getElementById('acct-login-user').value.trim();
     var pass = document.getElementById('acct-login-pass').value;
     var errEl = document.getElementById('acct-login-error');
-    if (!user || !pass) { errEl.textContent = '请填写姓名和密码'; errEl.classList.remove('hidden'); return; }
+    if (!user || !pass) { errEl.textContent = '请填写姓名或学号和密码'; errEl.classList.remove('hidden'); return; }
     errEl.classList.add('hidden');
     var btn = this; btn.disabled = true; btn.textContent = '登录中...';
     try { await accountLogin(user, pass); }
@@ -5984,7 +5990,7 @@ function init() {
     var pass = document.getElementById('acct-reg-pass').value;
     var studentNo = document.getElementById('acct-reg-studentno').value.trim();
     var errEl = document.getElementById('acct-reg-error');
-    if (!user || !pass) { errEl.textContent = '请填写姓名和密码'; errEl.classList.remove('hidden'); return; }
+    if (!user || !pass) { errEl.textContent = '请填写姓名或学号和密码'; errEl.classList.remove('hidden'); return; }
     if (!studentNo) { errEl.textContent = '请填写学号'; errEl.classList.remove('hidden'); return; }
     var inviteCode = document.getElementById('acct-reg-class').value;
     if (!inviteCode) { errEl.textContent = '请选择加入的班级'; errEl.classList.remove('hidden'); return; }
