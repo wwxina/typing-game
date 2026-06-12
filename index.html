@@ -1472,13 +1472,19 @@ input { font-family: inherit; }
 
 <!-- 班级排行榜弹窗 -->
 <div id="modal-leaderboard" class="modal-overlay hidden">
-  <div class="modal-card" style="max-width:550px;">
+  <div class="modal-card" style="max-width:580px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
       <h3 id="leaderboard-title" style="margin:0;font-size:18px;">🏆 班级排行榜</h3>
-      <div style="display:flex;gap:6px;">
-        <button class="account-close" id="btn-leaderboard-close" style="position:static;">✕</button>
-      </div>
+      <button class="account-close" id="btn-leaderboard-close" style="position:static;">✕</button>
     </div>
+    <!-- 我的排名卡片 -->
+    <div id="my-rank-card" style="display:none;background:linear-gradient(135deg,#e0f2fe,#f0fdf4);border:2px solid var(--color-accent);border-radius:12px;padding:14px 16px;margin-bottom:16px;align-items:center;gap:12px;">
+      <span style="font-size:32px;">🏅</span>
+      <div style="flex:1;"><span style="font-weight:700;color:var(--color-accent);" id="my-rank-text"></span></div>
+    </div>
+    <!-- 前三名片卡 -->
+    <div id="top3-podium" style="display:none;justify-content:center;align-items:flex-end;gap:12px;margin-bottom:16px;"></div>
+    <!-- 完整榜单 -->
     <div id="leaderboard-body"></div>
     <div id="leaderboard-empty" class="hidden" style="text-align:center;color:var(--color-text-muted);padding:30px;">
       <div style="font-size:48px;">📭</div>
@@ -2552,37 +2558,74 @@ async function loadLeaderboard(classId, className) {
     // sort again by finalScore
     rankings.sort(function(a,b){return b.finalScore-a.finalScore||b.avgAccuracy-a.avgAccuracy;});
 
-    document.getElementById('leaderboard-empty').classList.add('hidden');
-    var medals = ['🥇', '🥈', '🥉'];
-    var html = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;table-layout:fixed;">' +
-      '<thead><tr style="border-bottom:2px solid var(--color-border);">' +
-      '<th style="padding:6px 6px;text-align:center;width:36px;">排名</th>' +
-      '<th style="padding:6px 4px;text-align:left;width:60px;">学号</th>' +
-      '<th style="padding:6px 8px;text-align:left;width:auto;">姓名</th>' +
-      '<th style="padding:6px 4px;text-align:right;width:70px;">最终评分</th>' +
-      '<th style="padding:6px 4px;text-align:right;width:50px;">正确率</th>' +
-      '<th style="padding:6px 4px;text-align:center;width:52px;">练习篇数</th>' +
-      '<th class="col-today" style="padding:6px 4px;text-align:left;width:120px;">今日练习</th></tr></thead><tbody>';
-    rankings.forEach(function(r, i) {
-      var rank = i < 3 ? medals[i] : (i + 1);
-      var scoreClass = r.finalScore >= r.avgSpeed ? 'color:#10B981;font-weight:700;' : '';
+    var myRankIdx = -1, myRank = null;
+    for (var i = 0; i < rankings.length; i++) {
+      if (AccountUser && rankings[i].userId === AccountUser.userId) { myRankIdx = i; myRank = rankings[i]; break; }
+    }
+    // 隐藏前三名片
+    var podiumEl = document.getElementById('top3-podium');
+    podiumEl.style.display = 'none';
+    podiumEl.innerHTML = '';
+
+    var myCardEl = document.getElementById('my-rank-card');
+    if (myRank) {
+      myCardEl.style.display = 'flex';
+      var myBonusHTML = myRank.bonus > 0 ? ' <span style=\"color:#10B981;\">+'+myRank.bonus+'</span>' : '';
+      var myToday = (myRank.todayLessons||[]).length>0 ? myRank.todayLessons.join('、') : '无今日练习';
+      document.getElementById('my-rank-text').innerHTML = '第 '+(myRankIdx+1)+' 名 · 最终评分 '+myRank.finalScore+myBonusHTML+' · 📖'+myRank.uniqueLessons+'篇 · 正确率 '+myRank.avgAccuracy+'%<br><span style=\"font-size:11px;color:var(--color-text-muted);\">今日：'+escHtml(myToday.length>25?myToday.slice(0,22)+'…':myToday)+'</span>';
+    } else {
+      myCardEl.style.display = 'none';
+    }
+
+    // 前三名卡片
+    if (rankings.length >= 1) {
+      podiumEl.style.display = 'flex';
+      var podiumHtml = '';
+      var tops = rankings.slice(0, 3);
+      var colors = ['#fbbf24','#cbd5e1','#d97706'];
+      var emojis = ['🥇','🥈','🥉'];
+      // Always show first place in the middle
+      function buildCard(r, idx, isFirst) {
+        var bonusTag = r.bonus>0?'<span style=\"color:#10B981;\">+'+r.bonus+'</span>':'';
+        var meTag = (AccountUser && r.userId===AccountUser.userId)?'<span style=\"font-size:10px;color:var(--color-accent);\"> 我</span>':'';
+        return '<div style=\"flex:1;text-align:center;background:#fff;border:2px solid '+colors[idx]+';border-radius:12px;padding:'+(isFirst?'16px 12px':'12px 8px')+';'+ (isFirst?'order:0;':'')+'\">'+
+          '<div style=\"font-size:'+(isFirst?'40px':'32px')+';margin-bottom:4px;\">'+emojis[idx]+'</div>'+
+          '<div style=\"font-weight:700;font-size:'+(isFirst?'16px':'14px')+';\">'+escHtml(r.username)+meTag+'</div>'+
+          '<div style=\"font-size:'+(isFirst?'22px':'18px')+';font-weight:700;color:#0ea5e9;\">'+r.finalScore+bonusTag+'</div>'+
+          '<div style=\"font-size:11px;color:#94a3b8;\">📖'+r.uniqueLessons+'篇 · '+r.avgAccuracy+'%</div>'+
+          '</div>';
+      }
+      for (var ti = 0; ti < 3 && ti < tops.length; ti++) {
+        podiumHtml += buildCard(tops[ti], ti, ti === 0);
+      }
+      podiumEl.innerHTML = podiumHtml;
+    }
+
+    // 完整榜单（全部学生，紧凑5列表格）
+    var html = '<div style=\"overflow-x:auto;margin-top:16px;\"><table style=\"width:100%;border-collapse:collapse;\">' +
+      '<thead><tr style=\"border-bottom:2px solid var(--color-border);\">' +
+      '<th style=\"padding:6px 4px;text-align:center;width:40px;\">排名</th>' +
+      '<th style=\"padding:6px 4px;text-align:left;\">姓名</th>' +
+      '<th style=\"padding:6px 4px;text-align:right;width:70px;\">评分</th>' +
+      '<th style=\"padding:6px 4px;text-align:center;width:44px;\">篇数</th>' +
+      '<th class=\"col-today\" style=\"padding:6px 4px;text-align:left;width:110px;\">今日练习</th></tr></thead><tbody>';
+    var sectionColors = ['#FFFBEB','#F8FAFC','transparent'];
+    for (var ri = 0; ri < rankings.length; ri++) {
+      var r = rankings[ri];
       var isMe = (AccountUser && r.userId === AccountUser.userId);
-      var bgStyle = isMe ? 'background:var(--color-accent-light);' : '';
+      var bg = isMe ? 'background:var(--color-accent-light);' : 'background:'+(ri<3?'#FFFBEB':(ri<10?'#F8FAFC':'transparent'))+';';
       var todayList = r.todayLessons||[];
       var todayHTML = todayList.length>0? todayList.map(function(t){return escHtml(t);}).join('、') : '-';
-      var todayShort = todayHTML.length>22? todayHTML.slice(0,20)+'…' : todayHTML;
-      var todayTip = todayHTML!=='-'? (' title=\"'+todayHTML.replace(/"/g,'&quot;')+'\"') : '';
-      var nameHtml = '<span style="font-weight:600;">' + escHtml(r.username) + '</span>' + (isMe ? ' <span style=\"font-size:10px;color:var(--color-accent);\">我</span>' : '') +
-        '<br><span style="font-size:10px;color:var(--color-text-muted);">' + escHtml(r.studentNo || '-') + '</span>';
-      html += '<tr style="border-bottom:1px solid var(--color-border);' + bgStyle + '">' +
-        '<td style="padding:6px 6px;text-align:center;font-size:16px;">' + rank + '</td>' +
-        '<td style="padding:6px 4px;font-size:12px;color:var(--color-text-muted);">' + escHtml(r.studentNo || '-') + '</td>' +
-        '<td style="padding:6px 8px;">' + nameHtml + '</td>' +
-        '<td style="padding:6px 4px;text-align:right;' + scoreClass + '">' + r.finalScore + (r.bonus>0?' <span style=\"font-size:9px;color:#10B981;\">+'+r.bonus+'</span>':'') + '</td>' +
-        '<td style="padding:6px 4px;text-align:right;">' + r.avgAccuracy + '%</td>' +
-        '<td style="padding:6px 4px;text-align:center;">' + r.uniqueLessons + '</td>' +
-        '<td class="col-today" style="padding:6px 4px;text-align:left;font-size:11px;color:var(--color-text-secondary);"' + todayTip + '>' + todayShort + '</td></tr>';
-    });
+      var todayShort = todayHTML.length>18? todayHTML.slice(0,16)+'…' : todayHTML;
+      var todayTip = todayHTML!=='-'? (' title=\"'+todayHTML.replace(/\"/g,'&quot;')+'\"') : '';
+      var bonusTag = r.bonus>0?' <span style=\"font-size:9px;color:#10B981;\">+'+r.bonus+'</span>':'';
+      html += '<tr style=\"border-bottom:1px solid var(--color-border);'+bg+'\">'+
+        '<td style=\"padding:6px 4px;text-align:center;'+(ri<3?'font-size:18px;':'font-size:14px;color:#94a3b8;')+'\">'+(ri<3?['🥇','🥈','🥉'][ri]:(ri+1))+'</td>'+
+        '<td style=\"padding:6px 4px;\"><span style=\"font-weight:600;\">'+escHtml(r.username)+'</span>'+(isMe?' <span style=\"font-size:10px;color:var(--color-accent);\">我</span>':'')+'</td>'+
+        '<td style=\"padding:6px 4px;text-align:right;font-weight:700;color:#0ea5e9;\">'+r.finalScore+bonusTag+'</td>'+
+        '<td style=\"padding:6px 4px;text-align:center;\">'+r.uniqueLessons+'</td>'+
+        '<td class=\"col-today\" style=\"padding:6px 4px;text-align:left;font-size:11px;color:var(--color-text-secondary);\"'+todayTip+'>'+todayShort+'</td></tr>';
+    }
     html += '</tbody></table></div>';
     document.getElementById('leaderboard-body').innerHTML = html;
   } catch(e) {
