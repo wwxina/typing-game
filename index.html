@@ -2311,6 +2311,7 @@ function _sbFetch(method,table,queryStr,body,extraHeaders){
 var __db={from:function(t){return _chain(t);}};
 function _chain(t){var s="*",q="",ms=false,c={
   select:function(x){s=x||"*";return c;},eq:function(k,v){q+=(q?"&":"?")+k+"=eq."+encodeURIComponent(v);return c;},
+  in:function(k,vals){q+=(q?"&":"?")+k+"=in.("+vals.map(function(v){return encodeURIComponent(v)}).join(",")+")";return c;},
   limit:function(n){if(n){q+="&limit="+n;}return c;},maybeSingle:function(){ms=true;return c;},
   insert:function(d){return _sbFetch("POST",t,"",d);},upsert:function(d){return _sbFetch("POST",t,"",d,{"Prefer":"resolution=merge-duplicates"});},
   update:function(d){return _sbFetch("PATCH",t,q,d);},delete:function(){return _sbFetch("DELETE",t,q);},
@@ -2755,14 +2756,20 @@ async function accountAPI(path, body) {
       if(!cid) throw new Error("缺少 classId");
       var cls=await __db.from("classes").select("*").eq("id",cid).maybeSingle();
       if(!cls.data) throw new Error("班级不存在");
+      var sids=cls.data.student_ids||[];
       var ranks=[];
-      for(var i=0;i<(cls.data.student_ids||[]).length;i++){
-        var sid=cls.data.student_ids[i];
-        var ud=await __db.from("user_data").select("records").eq("user_id",sid).maybeSingle();
-        var pf=await __db.from("profiles").select("username,student_no").eq("user_id",sid).maybeSingle();
-        var recs=ud.data?(ud.data.records||[]):[];
-        var ts=0,ta=0,msp=0;recs.forEach(function(r){ts+=r.speed||0;ta+=r.accuracy||0;if(r.speed>msp)msp=r.speed;});
-        ranks.push({userId:sid,username:pf.data?pf.data.username:sid,studentNo:pf.data?pf.data.student_no||"":"",avgSpeed:recs.length>0?Math.round(ts/recs.length):0,avgAccuracy:recs.length>0?Math.round(ta/recs.length):0,maxSpeed:msp,totalPractices:recs.length});
+      if(sids.length>0){
+        var udMap={},pfMap={};
+        var r1=await __db.from("user_data").select("records,user_id").in("user_id",sids);
+        if(r1.data)r1.data.forEach(function(d){udMap[d.user_id]=d;});
+        var r2=await __db.from("profiles").select("username,student_no,user_id").in("user_id",sids);
+        if(r2.data)r2.data.forEach(function(d){pfMap[d.user_id]=d;});
+        sids.forEach(function(sid){
+          var ud=udMap[sid]||{},pf=pfMap[sid]||{};
+          var recs=ud.records||[];
+          var ts=0,ta=0,msp=0;recs.forEach(function(r){ts+=r.speed||0;ta+=r.accuracy||0;if(r.speed>msp)msp=r.speed;});
+          ranks.push({userId:sid,username:pf.username||sid,studentNo:pf.student_no||"",avgSpeed:recs.length>0?Math.round(ts/recs.length):0,avgAccuracy:recs.length>0?Math.round(ta/recs.length):0,maxSpeed:msp,totalPractices:recs.length});
+        });
       }
       ranks.sort(function(a,b){return b.avgSpeed-a.avgSpeed||b.avgAccuracy-a.avgAccuracy;});
       return {rankings:ranks,className:cls.data.name};
