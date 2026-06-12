@@ -1411,15 +1411,28 @@ input { font-family: inherit; }
     <div class="account-form hidden" id="account-form-info">
       <div class="info-card">
         <div class="info-avatar">👤</div>
-        <div class="info-name" id="info-username">-</div>
-        <div class="info-studentno" id="info-studentno" style="font-size:13px;color:var(--color-text-secondary);margin-bottom:8px;">-</div>
+        <div class="form-group">
+          <label>姓名</label>
+          <input type="text" id="info-edit-name" class="form-input" placeholder="2-20个字符">
+        </div>
+        <div class="form-group">
+          <label>学号</label>
+          <input type="text" id="info-edit-sno" class="form-input" placeholder="请输入学号">
+        </div>
+        <div class="form-group">
+          <label>我的班级</label>
+          <div id="info-class-list" style="font-size:13px;color:var(--color-text-secondary);margin-bottom:4px;">加载中...</div>
+          <button class="btn btn-secondary btn-sm" id="btn-info-join-class" style="width:100%;">🏫 加入班级</button>
+        </div>
         <div class="info-meta">
           <div class="info-row"><span>⭐ 星星</span><span id="info-stars">0</span></div>
           <div class="info-row"><span>🐾 总经验</span><span id="info-xp">0</span></div>
           <div class="info-row"><span>🍖 食物</span><span id="info-food">0</span></div>
           <div class="info-row"><span>🎨 主题</span><span id="info-theme">海洋</span></div>
         </div>
-        <button class="btn btn-primary" id="btn-info-logout" style="margin-top:12px;width:100%;">🚪 退出登录</button>
+        <p class="form-error hidden" id="info-edit-error" style="color:var(--color-error);font-size:13px;"></p>
+        <button class="btn btn-primary" id="btn-info-save" style="width:100%;margin-top:8px;">💾 保存修改</button>
+        <button class="btn btn-secondary" id="btn-info-logout" style="margin-top:8px;width:100%;">🚪 退出登录</button>
       </div>
     </div>
     <button class="account-close" id="btn-acct-close">✕</button>
@@ -2590,19 +2603,20 @@ function hideAccountModal() {
   }
 }
 
+var _infoClassData = [];
 function showAccountInfo() {
   var modal = document.getElementById('modal-account');
   if (!modal) return;
-  // 隐藏登录/注册表单，显示信息视图
   document.getElementById('account-form-login').classList.add('hidden');
   document.getElementById('account-form-register').classList.add('hidden');
   document.getElementById('account-form-info').classList.remove('hidden');
   document.querySelectorAll('.account-tab').forEach(function(t) { t.style.display = 'none'; });
   document.getElementById('account-tabs-row').style.display = 'none';
-  // 填入数据
+  document.getElementById('info-edit-error').classList.add('hidden');
+  // Frame fields
+  document.getElementById('info-edit-name').value = AccountUser ? (AccountUser.username || '') : '';
+  document.getElementById('info-edit-sno').value = AccountUser ? (AccountUser.studentNo || '') : '';
   var petState = loadPetState();
-  document.getElementById('info-username').textContent = AccountUser ? AccountUser.username : '-';
-  document.getElementById('info-studentno').textContent = AccountUser && AccountUser.studentNo ? AccountUser.studentNo : '-';
   document.getElementById('info-stars').textContent = petState ? (petState.stars || 0) : 0;
   document.getElementById('info-xp').textContent = petState ? (petState.totalXP || 0) : 0;
   document.getElementById('info-food').textContent = petState ? (petState.food || 0) : 0;
@@ -2610,7 +2624,62 @@ function showAccountInfo() {
   var theme = 'ocean';
   try { theme = localStorage.getItem('typing2_theme') || 'ocean'; } catch(e) {}
   document.getElementById('info-theme').textContent = themeNames[theme] || '🐟 海洋';
+  // Load my classes
+  loadMyClassList();
   modal.classList.remove('hidden');
+}
+
+async function loadMyClassList() {
+  var el = document.getElementById('info-class-list');
+  if (!el) return;
+  try {
+    var data = await accountAPI('/api/class/my-classes');
+    _infoClassData = data.classes || [];
+    if (_infoClassData.length === 0) {
+      el.innerHTML = '<span style="color:var(--color-text-muted);">未加入任何班级</span>';
+    } else {
+      el.innerHTML = _infoClassData.map(function(c) {
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;">' +
+          '<span>🏫 ' + escHtml(c.className) + '</span>' +
+          '<button class="btn btn-sm btn-danger info-leave-class" data-cid="' + c.classId + '" style="padding:2px 10px;font-size:11px;">退出</button>' +
+          '</div>';
+      }).join('');
+      el.querySelectorAll('.info-leave-class').forEach(function(btn) {
+        btn.addEventListener('click', function() { leaveClassFromInfo(this.dataset.cid); });
+      });
+    }
+  } catch(e) {
+    el.innerHTML = '<span style="color:var(--color-error);">加载失败</span>';
+  }
+}
+
+async function leaveClassFromInfo(classId) {
+  if (!confirm('确定退出该班级？该班的练习将被清除。')) return;
+  try {
+    await accountAPI('/api/class/leave', { classId: classId });
+    showPetToast('已退出班级');
+    loadMyClassList();
+    updateJoinClassUI([]);
+  } catch(e) {
+    showPetToast('退出失败：' + e.message);
+  }
+}
+
+async function saveProfile() {
+  var nu = document.getElementById('info-edit-name').value.trim();
+  var ns = document.getElementById('info-edit-sno').value.trim();
+  var err = document.getElementById('info-edit-error');
+  if (!nu || nu.length < 2 || nu.length > 20) { err.textContent = '姓名需要2-20个字符'; err.classList.remove('hidden'); return; }
+  if (!ns || ns.length < 1 || ns.length > 30) { err.textContent = '学号需要1-30个字符'; err.classList.remove('hidden'); return; }
+  err.classList.add('hidden');
+  try {
+    await accountAPI('/api/profile/update', { username: nu, studentNo: ns });
+    showPetToast('个人信息已更新');
+    updateAccountUI();
+  } catch(e) {
+    err.textContent = e.message;
+    err.classList.remove('hidden');
+  }
 }
 
 // 调用后端 API（带离线降级）
@@ -2697,6 +2766,21 @@ async function accountAPI(path, body) {
       }
       ranks.sort(function(a,b){return b.avgSpeed-a.avgSpeed||b.avgAccuracy-a.avgAccuracy;});
       return {rankings:ranks,className:cls.data.name};
+    }
+    if (path === "/api/profile/update") {
+      var nu=body.username, ns=body.studentNo;
+      if(nu&&nu.length>=2&&nu.length<=20){
+        var chk=await __db.from("profiles").select("user_id").eq("username",nu).maybeSingle();
+        if(chk.data&&chk.data.user_id!==uid) throw new Error("该姓名已被注册");
+        await __db.from("profiles").eq("user_id",uid).update({username:nu});
+        AccountUser.username=nu;saveAccount();
+      }
+      if(ns!==undefined&&ns.length>=1&&ns.length<=30){
+        await __db.from("profiles").eq("user_id",uid).update({student_no:ns});
+        await __db.from("user_data").eq("user_id",uid).update({student_no:ns});
+        AccountUser.studentNo=ns;saveAccount();
+      }
+      return {success:true};
     }
     if (path === "/api/health") return {ok:true,time:Date.now()};
     throw new Error("API未实现: "+path);
@@ -5768,6 +5852,17 @@ function init() {
       }
     });
   }
+
+  // 个人信息保存
+  var btnInfoSave = document.getElementById('btn-info-save');
+  if (btnInfoSave) btnInfoSave.addEventListener('click', saveProfile);
+
+  // 信息页加入班级
+  var btnInfoJoin = document.getElementById('btn-info-join-class');
+  if (btnInfoJoin) btnInfoJoin.addEventListener('click', function() {
+    hideAccountModal();
+    showJoinClassModal();
+  });
 
   // 加入班级事件绑定
   var btnJoinClass = document.getElementById('btn-join-class');
