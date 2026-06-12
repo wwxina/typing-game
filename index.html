@@ -1332,7 +1332,7 @@ input { font-family: inherit; }
 </div>
 
 <!-- Single hidden input for stable IME capture -->
-<input id="hidden-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-hidden="true" tabindex="-1">
+<input id="hidden-input" type="text" autocomplete="nope" autocorrect="off" autocapitalize="off" spellcheck="false" aria-hidden="true" tabindex="-1" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" name="ime-capture" style="position:fixed;top:-9999px;left:-9999px;opacity:0;width:1px;height:1px;">
 
 
 <!-- PAGE 1: Course Selection -->
@@ -5492,7 +5492,7 @@ function jumpToPosition(segIdx, charIdx) {
 function focusHiddenInput() {
   if (AppState.currentPage !== 'typing-practice') return;
   if (AppState.isPaused) return;
-  SoundEngine.getCtx(); // pre-init AudioContext on user gesture
+  SoundEngine.getCtx();
   positionHiddenInput();
   hiddenInput.focus();
 }
