@@ -1332,7 +1332,8 @@ input { font-family: inherit; }
 </div>
 
 <!-- Single hidden input for stable IME capture -->
-<input id="hidden-input" type="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-hidden="true" tabindex="-1" data-form-type="other" data-lpignore="true" data-1p-ignore="true" name="q" style="position:fixed;top:-9999px;left:-9999px;opacity:0;width:1px;height:1px;">
+<!-- IME capture div (contenteditable avoids password manager detection) -->
+<div id="hidden-input" contenteditable="true" autocorrect="off" autocapitalize="off" spellcheck="false" aria-hidden="true" tabindex="-1" style="position:fixed;top:-9999px;left:-9999px;opacity:0;width:1px;height:1px;overflow:hidden;pointer-events:none;"></div>
 
 
 <!-- PAGE 1: Course Selection -->
@@ -5083,13 +5084,13 @@ hiddenInput.addEventListener('compositionstart', () => {
 
 function processHiddenInputText() {
   if (AppState.currentPage !== 'typing-practice') return;
-  var val = hiddenInput.value;
+  var val = hiddenInput.textContent;
   if (!val) return;
 
   // Dedup: same text within 300ms is a duplicate event
   var _now = Date.now();
   if (val === _lastInputText && _now - _lastInputTime < 300) {
-    hiddenInput.value = '';
+    hiddenInput.textContent = '';
     return;
   }
   _lastInputText = val;
@@ -5101,7 +5102,7 @@ function processHiddenInputText() {
   // Multi-char burst with no keyboard evidence = voice/handwriting
   if (chars.length > 1 && !_hasKeyEv) {
     showInputMethodWarning();
-    hiddenInput.value = '';
+    hiddenInput.textContent = '';
     return;
   }
 
@@ -5118,7 +5119,7 @@ function processHiddenInputText() {
     if (AppState.rollbackTriggered) break;
   }
   AppState.rollbackTriggered = false;
-  hiddenInput.value = '';
+  hiddenInput.textContent = '';
 }
 
 hiddenInput.addEventListener('compositionstart', () => {
