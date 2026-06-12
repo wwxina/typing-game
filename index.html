@@ -2379,10 +2379,7 @@ function updateJoinClassUI(classIds) {
   if (!btn) return;
   var hasClass = (classIds && classIds.length > 0);
   if (hasClass) {
-    btn.style.display = '';
-    btn.textContent = '🏫 我的班级';
-    btn.classList.add('joined');
-    btn.title = '查看班级信息';
+    btn.style.display = 'none';
     if (lbBtn) lbBtn.style.display = '';
   } else {
     btn.style.display = '';
@@ -2568,7 +2565,16 @@ async function loadLeaderboard(classId, className) {
     var podiumEl = document.getElementById('top3-podium');
     podiumEl.style.display = 'none';
     podiumEl.innerHTML = '';
-    document.getElementById('my-rank-card').style.display = 'none';
+
+    var myCardEl = document.getElementById('my-rank-card');
+    if (myRank && myRankIdx >= 3) {
+      myCardEl.style.display = 'flex';
+      var myBonusHTML = myRank.bonus > 0 ? ' <span style=\"color:#10B981;\">+'+myRank.bonus+'</span>' : '';
+      var myToday = (myRank.todayLessons||[]).length>0 ? myRank.todayLessons.join('、') : '无今日练习';
+      document.getElementById('my-rank-text').innerHTML = '第 '+(myRankIdx+1)+' 名 · 最终评分 '+myRank.finalScore+myBonusHTML+' · 📖'+myRank.uniqueLessons+'篇 · 正确率 '+myRank.avgAccuracy+'%<br><span style=\"font-size:11px;color:var(--color-text-muted);\">今日：'+escHtml(myToday.length>25?myToday.slice(0,22)+'…':myToday)+'</span>';
+    } else {
+      myCardEl.style.display = 'none';
+    }
 
     // 前三名卡片
     if (rankings.length >= 1) {
