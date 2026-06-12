@@ -1332,7 +1332,7 @@ input { font-family: inherit; }
 </div>
 
 <!-- Single hidden input for stable IME capture -->
-<input id="hidden-input" type="text" autocomplete="nope" autocorrect="off" autocapitalize="off" spellcheck="false" aria-hidden="true" tabindex="-1" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" name="ime-capture" style="position:fixed;top:-9999px;left:-9999px;opacity:0;width:1px;height:1px;">
+<input id="hidden-input" type="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-hidden="true" tabindex="-1" data-form-type="other" data-lpignore="true" data-1p-ignore="true" name="q" style="position:fixed;top:-9999px;left:-9999px;opacity:0;width:1px;height:1px;">
 
 
 <!-- PAGE 1: Course Selection -->
@@ -5494,7 +5494,10 @@ function focusHiddenInput() {
   if (AppState.isPaused) return;
   SoundEngine.getCtx();
   positionHiddenInput();
+  // 快速 blur + focus 防止密码管理器弹窗跟随
   hiddenInput.focus();
+  hiddenInput.blur();
+  setTimeout(function() { hiddenInput.focus(); }, 10);
 }
 function positionHiddenInput() {
   const cell = document.querySelector('.char-cell.current');
