@@ -1364,9 +1364,21 @@ input { font-family: inherit; }
       <button class="account-tab" data-tab="register">注册</button>
     </div>
     <div class="account-form" id="account-form-login">
-      <div class="form-group">
-        <label>姓名/学号</label>
-        <input type="text" id="acct-login-user" placeholder="姓名或学号均可登录" autocomplete="name">
+      <div class="form-group" id="login-class-group" style="display:none;">
+        <label>选择班级</label>
+        <select id="acct-login-class" style="width:100%;padding:10px 12px;border:1px solid var(--color-border);border-radius:8px;font-size:14px;background:var(--color-bg);color:var(--color-text-primary);cursor:pointer;">
+          <option value="">请选择班级...</option>
+        </select>
+      </div>
+      <div class="form-group" id="login-name-group" style="display:none;">
+        <label>选择姓名</label>
+        <select id="acct-login-student" style="width:100%;padding:10px 12px;border:1px solid var(--color-border);border-radius:8px;font-size:14px;background:var(--color-bg);color:var(--color-text-primary);cursor:pointer;">
+          <option value="">请先选择班级</option>
+        </select>
+      </div>
+      <div class="form-group" id="login-user-group">
+        <label>姓名</label>
+        <input type="text" id="acct-login-user" placeholder="请输入姓名" autocomplete="name">
       </div>
       <div class="form-group">
         <label>密码</label>
@@ -2604,6 +2616,42 @@ async function loadClassesForRegister() {
   }
 }
 
+// 加载班级列表到登录下拉框
+async function loadLoginClasses() {
+  var sel = document.getElementById('acct-login-class');
+  if (!sel) return;
+  try {
+    var all = await __db.from("classes").select("id,name,invite_code,student_ids");
+    var list = all.data || [];
+    sel.innerHTML = '<option value="">请选择班级...</option>' + list.map(function(c) {
+      return '<option value="' + c.id + '">' + c.name + '（' + (c.student_ids||[]).length + '人）</option>';
+    }).join('');
+  } catch(e) {
+    sel.innerHTML = '<option value="">暂不可用</option>';
+  }
+}
+
+// 班级下拉改变时加载该班学生名单
+async function loadLoginStudents() {
+  var cid = document.getElementById('acct-login-class').value;
+  var ss = document.getElementById('acct-login-student');
+  if (!ss) return;
+  if (!cid) { ss.innerHTML = '<option value="">请先选择班级</option>'; return; }
+  ss.innerHTML = '<option value="">加载中...</option>';
+  try {
+    var r = await __db.from("classes").select("student_ids").eq("id",cid).maybeSingle();
+    var sids = (r.data && r.data.student_ids) ? r.data.student_ids : [];
+    if (sids.length === 0) { ss.innerHTML = '<option value="">该班级暂无学生</option>'; return; }
+    var r2 = await __db.from("profiles").select("username,user_id,student_no").in("user_id",sids);
+    var list = r2.data || [];
+    ss.innerHTML = '<option value="">选择姓名...</option>' + list.map(function(p) {
+      return '<option value="' + p.username + '">' + p.username + '（' + (p.student_no || '无学号') + '）</option>';
+    }).join('');
+  } catch(e) {
+    ss.innerHTML = '<option value="">加载失败</option>';
+  }
+}
+
 // 打开登录弹窗
 function showAccountModal() {
   var modal = document.getElementById('modal-account');
@@ -2733,16 +2781,10 @@ async function accountAPI(path, body) {
       return {token:_mkToken(nid,un,role),userId:nid,username:un,role:role};
     }
     if (path === "/api/login") {
-      // 支持姓名或学号登录
       var r=await __db.from("profiles").select("*").eq("username",body.username);
-      if (!r.data||r.data.length===0){
-        // 尝试用学号查询
-        r=await __db.from("profiles").select("*").eq("student_no",body.username);
-      }
-      if (!r.data||r.data.length===0) throw new Error("姓名或学号不存在");
+      if (!r.data||r.data.length===0) throw new Error("姓名不存在");
       var u=r.data[0];
-      // 用数据库中实际的 username 做密码哈希
-      var h=await _hashPwd(body.password,u.username);
+      var h=await _hashPwd(body.password,body.username);
       if (h!==u.password_hash) throw new Error("密码错误");
       return {token:_mkToken(u.user_id,u.username,u.role),userId:u.user_id,username:u.username,role:u.role||"student",studentNo:u.student_no||""};
     }
@@ -5964,19 +6006,42 @@ function init() {
   });
 
   // 我是学生/我是老师 互斥
-  document.getElementById('acct-login-as-student').addEventListener('change', function() {
-    if (this.checked) document.getElementById('acct-login-as-teacher').checked = false;
+  var cbStudent = document.getElementById('acct-login-as-student');
+  var cbTeacher = document.getElementById('acct-login-as-teacher');
+  function _toggleLoginFields() {
+    var isStudent = cbStudent.checked;
+    document.getElementById('login-class-group').style.display = isStudent ? '' : 'none';
+    document.getElementById('login-name-group').style.display = isStudent ? '' : 'none';
+    document.getElementById('login-user-group').style.display = isStudent ? 'none' : '';
+    if (isStudent) loadLoginClasses();
+  }
+  cbStudent.addEventListener('change', function() {
+    if (this.checked) cbTeacher.checked = false;
+    _toggleLoginFields();
   });
-  document.getElementById('acct-login-as-teacher').addEventListener('change', function() {
-    if (this.checked) document.getElementById('acct-login-as-student').checked = false;
+  cbTeacher.addEventListener('change', function() {
+    if (this.checked) cbStudent.checked = false;
+    _toggleLoginFields();
   });
+  _toggleLoginFields(); // initialize
+
+  // 登录表单班级下拉→加载学生
+  document.getElementById('acct-login-class').addEventListener('change', loadLoginStudents);
 
   // 登录按钮
   document.getElementById('btn-login').addEventListener('click', async function() {
-    var user = document.getElementById('acct-login-user').value.trim();
     var pass = document.getElementById('acct-login-pass').value;
     var errEl = document.getElementById('acct-login-error');
-    if (!user || !pass) { errEl.textContent = '请填写姓名或学号和密码'; errEl.classList.remove('hidden'); return; }
+    if (!pass) { errEl.textContent = '请输入密码'; errEl.classList.remove('hidden'); return; }
+    var isStudent = cbStudent.checked;
+    var user;
+    if (isStudent) {
+      user = document.getElementById('acct-login-student').value;
+      if (!user) { errEl.textContent = '请选择姓名'; errEl.classList.remove('hidden'); return; }
+    } else {
+      user = document.getElementById('acct-login-user').value.trim();
+      if (!user) { errEl.textContent = '请输入姓名'; errEl.classList.remove('hidden'); return; }
+    }
     errEl.classList.add('hidden');
     var btn = this; btn.disabled = true; btn.textContent = '登录中...';
     try { await accountLogin(user, pass); }
