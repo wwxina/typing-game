@@ -5596,11 +5596,20 @@ function completeLesson(fullComplete) {
   const secs = Math.floor(elapsed % 60);
   const stars = getStars(speed, accuracy);
 
+  // 查历史最佳成绩
+  var prevScore = null, isNewBest = false;
+  try {
+    var scores = JSON.parse(localStorage.getItem('typing2_scores') || '{}');
+    prevScore = scores[AppState.currentLessonKey] || null;
+  } catch(e) {}
+
   if (AppState.retryMode) {
-    showResultModal({ speed, accuracy, timeStr: String(mins).padStart(2,'0') + '分' + String(secs).padStart(2,'0') + '秒', total, stars, isRetry: true });
+    showResultModal({ speed, accuracy, timeStr: String(mins).padStart(2,'0') + '分' + String(secs).padStart(2,'0') + '秒', total, stars, isRetry: true, prevScore: prevScore });
   } else {
     saveBestScore(AppState.currentLessonKey, speed, accuracy, stars);
     saveRecord({ lessonKey: AppState.currentLessonKey, grade: info.grade, title: lesson.title, speed: speed, accuracy: accuracy, duration: elapsed, totalChars: total, date: new Date().toISOString() });
+    // 判断是否新纪录
+    isNewBest = !prevScore || speed > (prevScore.bestSpeed || 0);
     // 每日任务
     if (getCurrentPetData().adopted) {
       PetState.daily.practiceCount++;
@@ -5614,7 +5623,7 @@ function completeLesson(fullComplete) {
       clearTimeout(_syncTimer);
       syncAccountData();
     }
-    showResultModal({ speed, accuracy, timeStr: String(mins).padStart(2,'0') + '分' + String(secs).padStart(2,'0') + '秒', total, stars, isRetry: false });
+    showResultModal({ speed, accuracy, timeStr: String(mins).padStart(2,'0') + '分' + String(secs).padStart(2,'0') + '秒', total, stars, isRetry: false, prevScore: prevScore, isNewBest: isNewBest });
   }
 
   // 教师练习完成上报
@@ -5645,8 +5654,15 @@ function completeLesson(fullComplete) {
 function showResultModal(stats) {
   // Big celebration header
   document.getElementById('celebration-stars').textContent = getStarDisplay(stats.stars);
-  document.getElementById('celebration-encourage').textContent = getEncourage(stats.stars);
-  document.getElementById('celebration-encourage').style.color = 'var(--color-accent)';
+  // 最佳成绩对比
+  var encourageText = getEncourage(stats.stars);
+  if (stats.isNewBest) {
+    encourageText = '🎉 ' + encourageText + ' · 新纪录！';
+  } else if (stats.prevScore && stats.prevScore.bestSpeed) {
+    encourageText = encourageText + ' · 最佳：' + stats.prevScore.bestSpeed + '字/分';
+  }
+  document.getElementById('celebration-encourage').textContent = encourageText;
+  document.getElementById('celebration-encourage').style.color = stats.isNewBest ? '#f59e0b' : 'var(--color-accent)';
 
   document.getElementById('modal-stats').innerHTML =
     '<div class="modal-stat"><div class="val">' + stats.speed + '</div><div class="lbl">速度（字/分）</div></div>' +
