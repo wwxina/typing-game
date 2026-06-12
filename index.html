@@ -2782,6 +2782,13 @@ async function accountAPI(path, body) {
       var u=r.data[0];
       var h=await _hashPwd(body.password,body.username);
       if (h!==u.password_hash) throw new Error("密码错误");
+      // 学生登录验证班级归属
+      if (body.classId && u.role !== 'teacher') {
+        var cls=await __db.from("classes").select("student_ids").eq("id",body.classId).maybeSingle();
+        if (!cls.data || (cls.data.student_ids||[]).indexOf(u.user_id)===-1) {
+          throw new Error("该学生不在所选班级中，请检查班级选择");
+        }
+      }
       return {token:_mkToken(u.user_id,u.username,u.role),userId:u.user_id,username:u.username,role:u.role||"student",studentNo:u.student_no||""};
     }
     if (path === "/api/sync" && body===undefined) {
@@ -2947,9 +2954,11 @@ async function downloadAndMerge() {
 }
 
 // 登录
-async function accountLogin(username, password) {
+async function accountLogin(username, password, classId) {
   if (ACCOUNT_API) {
-    var result = await accountAPI('/api/login', { username: username, password: password });
+    var body = { username: username, password: password };
+    if (classId) body.classId = classId;
+    var result = await accountAPI('/api/login', body);
     AccountUser = { token: result.token, userId: result.userId, username: result.username, role: result.role, studentNo: result.studentNo || '' };
     _accountPassword = password;
   } else {
@@ -6030,9 +6039,15 @@ function init() {
     var errEl = document.getElementById('acct-login-error');
     if (!user) { errEl.textContent = '请输入姓名'; errEl.classList.remove('hidden'); return; }
     if (!pass) { errEl.textContent = '请输入密码'; errEl.classList.remove('hidden'); return; }
+    var isStudent = cbStudent.checked;
+    var classId = null;
+    if (isStudent) {
+      classId = document.getElementById('acct-login-class').value;
+      if (!classId) { errEl.textContent = '请选择班级'; errEl.classList.remove('hidden'); return; }
+    }
     errEl.classList.add('hidden');
     var btn = this; btn.disabled = true; btn.textContent = '登录中...';
-    try { await accountLogin(user, pass); }
+    try { await accountLogin(user, pass, classId); }
     catch(e) { errEl.textContent = e.message; errEl.classList.remove('hidden'); }
     finally { btn.disabled = false; btn.textContent = '登录'; }
   });
