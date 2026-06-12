@@ -3902,8 +3902,18 @@ function loadRecords() {
 }
 function saveRecord(record) {
   const records = loadRecords();
-  records.unshift(record);
-  if (records.length > 50) records.length = 50;
+  // 每篇课文只保留一次最佳成绩：若速度没提升则忽略本次记录
+  var existIdx = -1;
+  for (var i = 0; i < records.length; i++) {
+    if (records[i].lessonKey === record.lessonKey) { existIdx = i; break; }
+  }
+  if (existIdx >= 0) {
+    if (record.speed <= records[existIdx].speed) return; // 没进步，放弃
+    records.splice(existIdx, 1);
+  }
+  records.push(record);
+  // 只保留最近300条
+  if (records.length > 300) records.shift();
   localStorage.setItem('typing2_records', JSON.stringify(records));
   autoSyncAccount();
 }
@@ -5161,7 +5171,7 @@ function processCharInput(char) {
     }
     if (AppState.globalCharIndex >= getTotalChars()) {
       updateCellByGlobalIndex(AppState.globalCharIndex - 1);
-      completeLesson();
+      completeLesson(true);
       return;
     }
   }
@@ -5456,7 +5466,7 @@ function updateStatsDisplay() {
 }
 
 /* ===== COMPLETION ===== */
-function completeLesson() {
+function completeLesson(fullComplete) {
   clearSession();
   const currentElapsed = AppState.startTime ? (Date.now() - AppState.startTime) : 0;
   const elapsed = Math.round((AppState.elapsedBeforePause + currentElapsed) / 1000);
@@ -5473,31 +5483,30 @@ function completeLesson() {
   const secs = Math.floor(elapsed % 60);
   const stars = getStars(speed, accuracy);
 
+  // 防刷分：必须完整打完 + 至少15秒 + 至少20字
+  var qualify = (fullComplete === true) && elapsed >= 15 && total >= 20;
+
   if (AppState.retryMode) {
-    // Retry mode: don't save, special modal
     showResultModal({ speed, accuracy, timeStr: String(mins).padStart(2,'0') + '分' + String(secs).padStart(2,'0') + '秒', total, stars, isRetry: true });
   } else {
-    saveBestScore(AppState.currentLessonKey, speed, accuracy, stars);
-    saveRecord({ lessonKey: AppState.currentLessonKey, grade: info.grade, title: lesson.title, speed: speed, accuracy: accuracy, duration: elapsed, totalChars: total, date: new Date().toISOString() });
-    // 更新每日任务进度
+    if (qualify) {
+      saveBestScore(AppState.currentLessonKey, speed, accuracy, stars);
+      saveRecord({ lessonKey: AppState.currentLessonKey, grade: info.grade, title: lesson.title, speed: speed, accuracy: accuracy, duration: elapsed, totalChars: total, date: new Date().toISOString() });
+    }
+    // 每日任务（练习即计数，不受门槛限制）
     if (getCurrentPetData().adopted) {
       PetState.daily.practiceCount++;
       if (stars >= 3) {
         PetState.daily.gotThreeStars = true;
-        // 首次获得三星评价，奖励星星货币
-        if (!_lessonMaxStars) {
-          PetState.stars += 3;
-        }
+        if (!_lessonMaxStars) { PetState.stars += 3; }
       }
       savePetState();
       updateDailyTasks();
-      // 更新随机挑战进度（速度类挑战在练习完成时检测）
       updateChallengeProgress(PetState.daily.totalChars, AppState.correctCount, _maxCombo, speed);
-      // 练习完成后立即同步（不等2秒debounce）
       clearTimeout(_syncTimer);
       syncAccountData();
     }
-    showResultModal({ speed, accuracy, timeStr: String(mins).padStart(2,'0') + '分' + String(secs).padStart(2,'0') + '秒', total, stars, isRetry: false });
+    showResultModal({ speed, accuracy, timeStr: String(mins).padStart(2,'0') + '分' + String(secs).padStart(2,'0') + '秒', total, stars, isRetry: false, qualify: qualify });
   }
 
   // 教师练习完成上报
@@ -5528,7 +5537,8 @@ function completeLesson() {
 function showResultModal(stats) {
   // Big celebration header
   document.getElementById('celebration-stars').textContent = getStarDisplay(stats.stars);
-  document.getElementById('celebration-encourage').textContent = getEncourage(stats.stars);
+  document.getElementById('celebration-encourage').textContent = stats.qualify === false ? '成绩未纳入排行榜' : getEncourage(stats.stars);
+  document.getElementById('celebration-encourage').style.color = stats.qualify === false ? 'var(--color-text-muted)' : 'var(--color-accent)';
 
   document.getElementById('modal-stats').innerHTML =
     '<div class="modal-stat"><div class="val">' + stats.speed + '</div><div class="lbl">速度（字/分）</div></div>' +
@@ -5716,7 +5726,7 @@ document.getElementById('btn-retry-errors').addEventListener('click', retryError
 document.getElementById('btn-back-course').addEventListener('click', () => { hideModal(); goBackToCourse(); });
 document.getElementById('btn-back-practice').addEventListener('click', goBackToCourse);
 document.getElementById('btn-submit-early').addEventListener('click', function(){
-  if(confirm('确定要提交当前练习成绩吗？')) completeLesson();
+  if(confirm('确定要提交当前练习成绩吗？\n⚠️ 提前提交不计入排行榜（需完整完成且用时≥15秒且字数≥20字）。')) completeLesson(false);
 });
 document.getElementById('btn-pause').addEventListener('click', togglePause);
 document.getElementById('btn-reset').addEventListener('click', resetLesson);
