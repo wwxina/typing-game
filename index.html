@@ -5850,7 +5850,24 @@ document.getElementById('btn-retry-errors').addEventListener('click', retryError
 document.getElementById('btn-back-course').addEventListener('click', () => { hideModal(); goBackToCourse(); });
 document.getElementById('btn-back-practice').addEventListener('click', goBackToCourse);
 document.getElementById('btn-submit-early').addEventListener('click', function(){
-  if(confirm('确定要提交当前练习成绩吗？')) completeLesson(false);
+  var currentElapsed = AppState.startTime ? (Date.now() - AppState.startTime) : 0;
+  var elapsed = Math.round((AppState.elapsedBeforePause + currentElapsed) / 1000);
+  var totalAttempts = AppState.correctCount + AppState.errorCount;
+  var accuracy = totalAttempts > 0 ? Math.round((AppState.correctCount / totalAttempts) * 100) : 100;
+  var speed = elapsed > 0 ? Math.round(AppState.correctCount / (elapsed / 60)) : 0;
+  var total = getTotalChars();
+  var mins = Math.floor(elapsed / 60);
+  var secs = Math.floor(elapsed % 60);
+  var timeStr = String(mins) + '分' + String(secs).padStart(2,'0') + '秒';
+  var stars = getStars(speed, accuracy);
+  var msg = '当前练习成绩\n\n' +
+    getStarDisplay(stars) + '\n' +
+    '速度：' + speed + ' 字/分\n' +
+    '正确率：' + accuracy + '%\n' +
+    '用时：' + timeStr + '\n' +
+    '进度：' + AppState.globalCharIndex + '/' + total + ' 字\n\n' +
+    '确定要提交当前成绩吗？';
+  if(confirm(msg)) completeLesson(false);
 });
 document.getElementById('btn-pause').addEventListener('click', togglePause);
 document.getElementById('btn-reset').addEventListener('click', resetLesson);
