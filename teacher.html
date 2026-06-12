@@ -873,8 +873,9 @@ async function accountAPI(method, path, body) {
     }
     if (path === "/api/login" && method === "POST") {
       var r=await __db.from("profiles").select("*").eq("username",body.username);
-      if (!r.data||r.data.length===0) throw new Error("用户名不存在");
-      var u=r.data[0];var h=await _hashPwd(body.password,body.username);
+      if (!r.data||r.data.length===0) r=await __db.from("profiles").select("*").eq("student_no",body.username);
+      if (!r.data||r.data.length===0) throw new Error("姓名或学号不存在");
+      var u=r.data[0];var h=await _hashPwd(body.password,u.username);
       if (h!==u.password_hash) throw new Error("密码错误");
       return {token:_mkToken(u.user_id,u.username,u.role),userId:u.user_id,username:u.username,role:u.role||"student",studentNo:u.student_no||""};
     }
