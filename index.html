@@ -1370,12 +1370,6 @@ input { font-family: inherit; }
           <option value="">请选择班级...</option>
         </select>
       </div>
-      <div class="form-group" id="login-name-group" style="display:none;">
-        <label>选择姓名</label>
-        <select id="acct-login-student" style="width:100%;padding:10px 12px;border:1px solid var(--color-border);border-radius:8px;font-size:14px;background:var(--color-bg);color:var(--color-text-primary);cursor:pointer;">
-          <option value="">请先选择班级</option>
-        </select>
-      </div>
       <div class="form-group" id="login-user-group">
         <label>姓名</label>
         <input type="text" id="acct-login-user" placeholder="请输入姓名" autocomplete="name">
@@ -6011,8 +6005,7 @@ function init() {
   function _toggleLoginFields() {
     var isStudent = cbStudent.checked;
     document.getElementById('login-class-group').style.display = isStudent ? '' : 'none';
-    document.getElementById('login-name-group').style.display = isStudent ? '' : 'none';
-    document.getElementById('login-user-group').style.display = isStudent ? 'none' : '';
+    document.getElementById('login-user-group').style.display = ''; // always show
     if (isStudent) loadLoginClasses();
   }
   cbStudent.addEventListener('change', function() {
@@ -6030,18 +6023,11 @@ function init() {
 
   // 登录按钮
   document.getElementById('btn-login').addEventListener('click', async function() {
+    var user = document.getElementById('acct-login-user').value.trim();
     var pass = document.getElementById('acct-login-pass').value;
     var errEl = document.getElementById('acct-login-error');
+    if (!user) { errEl.textContent = '请输入姓名'; errEl.classList.remove('hidden'); return; }
     if (!pass) { errEl.textContent = '请输入密码'; errEl.classList.remove('hidden'); return; }
-    var isStudent = cbStudent.checked;
-    var user;
-    if (isStudent) {
-      user = document.getElementById('acct-login-student').value;
-      if (!user) { errEl.textContent = '请选择姓名'; errEl.classList.remove('hidden'); return; }
-    } else {
-      user = document.getElementById('acct-login-user').value.trim();
-      if (!user) { errEl.textContent = '请输入姓名'; errEl.classList.remove('hidden'); return; }
-    }
     errEl.classList.add('hidden');
     var btn = this; btn.disabled = true; btn.textContent = '登录中...';
     try { await accountLogin(user, pass); }
