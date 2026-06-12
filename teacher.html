@@ -899,7 +899,7 @@ async function accountAPI(method, path, body) {
       for(var i=0;i<(cls.student_ids||[]).length;i++){var sid=cls.student_ids[i];
         var ud=await __db.from("user_data").select("*").eq("user_id",sid).maybeSingle();
         if(ud.data){var nc=(ud.data.class_ids||[]).filter(function(id){return id!==cls.id;});var ne=(ud.data.teacher_exercises||[]).filter(function(e){return e.classId!==cls.id;});await __db.from("user_data").eq("user_id",sid).update({class_ids:nc,teacher_exercises:ne,updated_at:Date.now()});}}
-      await __db.from("classes").delete().eq("id",cls.id);
+      await __db.from("classes").eq("id",cls.id).delete();
       return {success:true};
     }
     if (path.indexOf("/api/class/info")===0) {
