@@ -2556,12 +2556,13 @@ async function loadLeaderboard(classId, className) {
     var medals = ['🥇', '🥈', '🥉'];
     var html = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;table-layout:fixed;">' +
       '<thead><tr style="border-bottom:2px solid var(--color-border);">' +
-      '<th style="padding:6px 6px;text-align:center;width:36px;">#</th>' +
+      '<th style="padding:6px 6px;text-align:center;width:36px;">排名</th>' +
+      '<th style="padding:6px 4px;text-align:left;width:60px;">学号</th>' +
       '<th style="padding:6px 8px;text-align:left;width:auto;">姓名</th>' +
-      '<th style="padding:6px 4px;text-align:right;width:70px;">评分</th>' +
-      '<th style="padding:6px 4px;text-align:right;width:60px;">正确率</th>' +
-      '<th style="padding:6px 4px;text-align:center;width:52px;">篇数</th>' +
-      '<th class="col-today" style="padding:6px 4px;text-align:left;width:130px;">今日练习</th></tr></thead><tbody>';
+      '<th style="padding:6px 4px;text-align:right;width:70px;">最终评分</th>' +
+      '<th style="padding:6px 4px;text-align:right;width:50px;">正确率</th>' +
+      '<th style="padding:6px 4px;text-align:center;width:52px;">练习篇数</th>' +
+      '<th class="col-today" style="padding:6px 4px;text-align:left;width:120px;">今日练习</th></tr></thead><tbody>';
     rankings.forEach(function(r, i) {
       var rank = i < 3 ? medals[i] : (i + 1);
       var scoreClass = r.finalScore >= r.avgSpeed ? 'color:#10B981;font-weight:700;' : '';
@@ -2575,6 +2576,7 @@ async function loadLeaderboard(classId, className) {
         '<br><span style="font-size:10px;color:var(--color-text-muted);">' + escHtml(r.studentNo || '-') + '</span>';
       html += '<tr style="border-bottom:1px solid var(--color-border);' + bgStyle + '">' +
         '<td style="padding:6px 6px;text-align:center;font-size:16px;">' + rank + '</td>' +
+        '<td style="padding:6px 4px;font-size:12px;color:var(--color-text-muted);">' + escHtml(r.studentNo || '-') + '</td>' +
         '<td style="padding:6px 8px;">' + nameHtml + '</td>' +
         '<td style="padding:6px 4px;text-align:right;' + scoreClass + '">' + r.finalScore + (r.bonus>0?' <span style=\"font-size:9px;color:#10B981;\">+'+r.bonus+'</span>':'') + '</td>' +
         '<td style="padding:6px 4px;text-align:right;">' + r.avgAccuracy + '%</td>' +
