@@ -2527,24 +2527,51 @@ async function loadLeaderboard(classId, className) {
       document.getElementById('leaderboard-empty').classList.remove('hidden');
       return;
     }
+    // Step: cluster each student's records per lesson
+    var today=new Date().toISOString().slice(0,10);
+    rankings.forEach(function(r){
+      var recs = r._records || [];
+      var lkeys={}, daily=[];
+      recs.forEach(function(rec){
+        var k=rec.lessonKey||rec.title;
+        if(!lkeys[k]||rec.speed>lkeys[k].speed) lkeys[k]=rec;
+        if((rec.date||'').slice(0,10)===today) daily.push(rec.title||'练习');
+      });
+      r.uniqueLessons=Object.keys(lkeys).length;
+      var bonus= r.uniqueLessons>=16?10: r.uniqueLessons>=8?8: r.uniqueLessons>=4?5:0;
+      r.bonus=bonus;
+      r.finalScore=r.avgSpeed+bonus;
+      r.todayLessons=daily.filter(function(v,i,a){return a.indexOf(v)===i;}).slice(0,5);
+    });
+    // sort again by finalScore
+    rankings.sort(function(a,b){return b.finalScore-a.finalScore||b.avgAccuracy-a.avgAccuracy;});
+
     document.getElementById('leaderboard-empty').classList.add('hidden');
     var medals = ['🥇', '🥈', '🥉'];
     var html = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">' +
       '<thead><tr style="border-bottom:2px solid var(--color-border);">' +
-      '<th style="padding:8px;text-align:center;">排名</th><th style="padding:8px;text-align:left;">姓名</th>' +
-      '<th style="padding:8px;text-align:right;">速度</th><th style="padding:8px;text-align:right;">正确率</th>' +
-      '<th style="padding:8px;text-align:right;">练习次数</th></tr></thead><tbody>';
+      '<th style="padding:8px;text-align:center;">排名</th><th style="padding:8px;text-align:left;">学号</th><th style="padding:8px;text-align:left;">姓名</th>' +
+      '<th style="padding:8px;text-align:right;">最终评分</th>' +
+      '<th style="padding:8px;text-align:right;">正确率</th>' +
+      '<th style="padding:8px;text-align:center;">练习篇数</th>' +
+      '<th style="padding:8px;text-align:left;">今日练习</th></tr></thead><tbody>';
     rankings.forEach(function(r, i) {
       var rank = i < 3 ? medals[i] : (i + 1);
-      var speedClass = r.avgSpeed >= 40 ? 'color:#10B981;font-weight:700;' : (r.avgSpeed >= 25 ? 'color:#F59E0B;font-weight:700;' : '');
+      var scoreClass = r.finalScore >= r.avgSpeed ? 'color:#10B981;font-weight:700;' : '';
       var isMe = (AccountUser && r.userId === AccountUser.userId);
       var bgStyle = isMe ? 'background:var(--color-accent-light);' : '';
+      var todayList = r.todayLessons||[];
+      var todayHTML = todayList.length>0? todayList.map(function(t){return escHtml(t);}).join('、') : '-';
+      var todayShort = todayHTML.length>28? todayHTML.slice(0,25)+'...' : todayHTML;
+      var todayTip = todayHTML!=='-'? (' title=\"'+todayHTML.replace(/"/g,'&quot;')+'\"') : '';
       html += '<tr style="border-bottom:1px solid var(--color-border);' + bgStyle + '">' +
         '<td style="padding:8px;text-align:center;font-size:18px;">' + rank + '</td>' +
-        '<td style="padding:8px;">' + escHtml(r.username) + (isMe ? ' <span style="font-size:11px;color:var(--color-accent);">(我)</span>' : '') + '</td>' +
-        '<td style="padding:8px;text-align:right;' + speedClass + '">' + r.avgSpeed + ' 字/分</td>' +
+        '<td style="padding:8px;font-size:12px;color:var(--color-text-muted);">' + escHtml(r.studentNo || '-') + '</td>' +
+        '<td style="padding:8px;">' + escHtml(r.username) + (isMe ? ' <span style=\"font-size:11px;color:var(--color-accent);\">(我)</span>' : '') + '</td>' +
+        '<td style="padding:8px;text-align:right;' + scoreClass + '">' + r.finalScore + (r.bonus>0?' <span style=\"font-size:10px;color:#10B981;\">+'+r.bonus+'</span>':'') + '</td>' +
         '<td style="padding:8px;text-align:right;">' + r.avgAccuracy + '%</td>' +
-        '<td style="padding:8px;text-align:right;">' + r.totalPractices + ' 次</td></tr>';
+        '<td style="padding:8px;text-align:center;">' + r.uniqueLessons + ' 篇</td>' +
+        '<td style="padding:8px;text-align:left;font-size:12px;color:var(--color-text-secondary);"' + todayTip + '>' + todayShort + '</td></tr>';
     });
     html += '</tbody></table></div>';
     document.getElementById('leaderboard-body').innerHTML = html;
@@ -2768,7 +2795,7 @@ async function accountAPI(path, body) {
           var ud=udMap[sid]||{},pf=pfMap[sid]||{};
           var recs=ud.records||[];
           var ts=0,ta=0,msp=0;recs.forEach(function(r){ts+=r.speed||0;ta+=r.accuracy||0;if(r.speed>msp)msp=r.speed;});
-          ranks.push({userId:sid,username:pf.username||sid,studentNo:pf.student_no||"",avgSpeed:recs.length>0?Math.round(ts/recs.length):0,avgAccuracy:recs.length>0?Math.round(ta/recs.length):0,maxSpeed:msp,totalPractices:recs.length});
+          ranks.push({userId:sid,username:pf.username||sid,studentNo:pf.student_no||"",avgSpeed:recs.length>0?Math.round(ts/recs.length):0,avgAccuracy:recs.length>0?Math.round(ta/recs.length):0,maxSpeed:msp,totalPractices:recs.length,_records:recs});
         });
       }
       ranks.sort(function(a,b){return b.avgSpeed-a.avgSpeed||b.avgAccuracy-a.avgAccuracy;});
