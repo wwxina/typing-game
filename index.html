@@ -2604,11 +2604,11 @@ async function loadLeaderboard(classId, className) {
     var html = '<div style=\"overflow-x:auto;margin-top:16px;\"><table style=\"width:100%;border-collapse:collapse;table-layout:fixed;\">' +
       '<thead><tr style=\"border-bottom:2px solid var(--color-border);\">' +
       '<th style=\"padding:6px 2px;text-align:center;width:10%;\">排名</th>' +
-      '<th style=\"padding:6px 2px;text-align:left;width:22%;\">姓名</th>' +
+      '<th style=\"padding:6px 2px;text-align:left;width:16%;\">姓名</th>' +
       '<th style=\"padding:6px 2px;text-align:right;width:16%;\">评分</th>' +
       '<th style=\"padding:6px 2px;text-align:center;width:12%;\">正确率</th>' +
       '<th style=\"padding:6px 2px;text-align:center;width:12%;\">篇数</th>' +
-      '<th class=\"col-today\" style=\"padding:6px 2px;text-align:left;width:28%;\">今日练习</th></tr></thead><tbody>';
+      '<th class=\"col-today\" style=\"padding:6px 2px;text-align:left;width:34%;\">今日练习</th></tr></thead><tbody>';
     var sectionColors = ['#FFFBEB','#F8FAFC','transparent'];
     for (var ri = 0; ri < rankings.length; ri++) {
       var r = rankings[ri];
