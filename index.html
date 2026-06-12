@@ -5596,17 +5596,12 @@ function completeLesson(fullComplete) {
   const secs = Math.floor(elapsed % 60);
   const stars = getStars(speed, accuracy);
 
-  // 防刷分：必须完整打完 + 至少15秒 + 至少20字
-  var qualify = (fullComplete === true) && elapsed >= 15 && total >= 20;
-
   if (AppState.retryMode) {
     showResultModal({ speed, accuracy, timeStr: String(mins).padStart(2,'0') + '分' + String(secs).padStart(2,'0') + '秒', total, stars, isRetry: true });
   } else {
-    if (qualify) {
-      saveBestScore(AppState.currentLessonKey, speed, accuracy, stars);
-      saveRecord({ lessonKey: AppState.currentLessonKey, grade: info.grade, title: lesson.title, speed: speed, accuracy: accuracy, duration: elapsed, totalChars: total, date: new Date().toISOString() });
-    }
-    // 每日任务（练习即计数，不受门槛限制）
+    saveBestScore(AppState.currentLessonKey, speed, accuracy, stars);
+    saveRecord({ lessonKey: AppState.currentLessonKey, grade: info.grade, title: lesson.title, speed: speed, accuracy: accuracy, duration: elapsed, totalChars: total, date: new Date().toISOString() });
+    // 每日任务
     if (getCurrentPetData().adopted) {
       PetState.daily.practiceCount++;
       if (stars >= 3) {
@@ -5619,7 +5614,7 @@ function completeLesson(fullComplete) {
       clearTimeout(_syncTimer);
       syncAccountData();
     }
-    showResultModal({ speed, accuracy, timeStr: String(mins).padStart(2,'0') + '分' + String(secs).padStart(2,'0') + '秒', total, stars, isRetry: false, qualify: qualify });
+    showResultModal({ speed, accuracy, timeStr: String(mins).padStart(2,'0') + '分' + String(secs).padStart(2,'0') + '秒', total, stars, isRetry: false });
   }
 
   // 教师练习完成上报
@@ -5650,8 +5645,8 @@ function completeLesson(fullComplete) {
 function showResultModal(stats) {
   // Big celebration header
   document.getElementById('celebration-stars').textContent = getStarDisplay(stats.stars);
-  document.getElementById('celebration-encourage').textContent = stats.qualify === false ? '成绩未纳入排行榜' : getEncourage(stats.stars);
-  document.getElementById('celebration-encourage').style.color = stats.qualify === false ? 'var(--color-text-muted)' : 'var(--color-accent)';
+  document.getElementById('celebration-encourage').textContent = getEncourage(stats.stars);
+  document.getElementById('celebration-encourage').style.color = 'var(--color-accent)';
 
   document.getElementById('modal-stats').innerHTML =
     '<div class="modal-stat"><div class="val">' + stats.speed + '</div><div class="lbl">速度（字/分）</div></div>' +
@@ -5839,7 +5834,7 @@ document.getElementById('btn-retry-errors').addEventListener('click', retryError
 document.getElementById('btn-back-course').addEventListener('click', () => { hideModal(); goBackToCourse(); });
 document.getElementById('btn-back-practice').addEventListener('click', goBackToCourse);
 document.getElementById('btn-submit-early').addEventListener('click', function(){
-  if(confirm('确定要提交当前练习成绩吗？\n⚠️ 提前提交不计入排行榜（需完整完成且用时≥15秒且字数≥20字）。')) completeLesson(false);
+  if(confirm('确定要提交当前练习成绩吗？')) completeLesson(false);
 });
 document.getElementById('btn-pause').addEventListener('click', togglePause);
 document.getElementById('btn-reset').addEventListener('click', resetLesson);
