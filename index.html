@@ -1429,14 +1429,6 @@ input { font-family: inherit; }
           <div id="info-class-list" style="font-size:13px;color:var(--color-text-secondary);margin-bottom:4px;">加载中...</div>
           <button class="btn btn-secondary btn-sm" id="btn-info-join-class" style="width:100%;">🏫 加入班级</button>
         </div>
-        <!-- 每日任务 -->
-        <div style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--color-border);">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-            <span style="font-size:13px;font-weight:600;">📋 今日任务</span>
-            <span style="font-size:12px;color:var(--color-text-muted);" id="info-daily-count">0/3</span>
-          </div>
-          <div id="info-daily-tasks" style="display:flex;flex-direction:column;gap:4px;"></div>
-        </div>
         <div class="info-meta">
           <div class="info-row"><span>⭐ 星星</span><span id="info-stars">0</span></div>
           <div class="info-row"><span>🐾 总经验</span><span id="info-xp">0</span></div>
@@ -2737,31 +2729,9 @@ function showAccountInfo() {
   var theme = 'ocean';
   try { theme = localStorage.getItem('typing2_theme') || 'ocean'; } catch(e) {}
   document.getElementById('info-theme').textContent = themeNames[theme] || '🐟 海洋';
-  // 渲染每日任务完成状态
-  renderInfoDailyTasks(petState);
   // Load my classes
   loadMyClassList();
   modal.classList.remove('hidden');
-}
-
-function renderInfoDailyTasks(petState) {
-  var today = new Date().toISOString().slice(0, 10);
-  var d = (petState && petState.daily && petState.daily.date === today)
-    ? petState.daily
-    : { date: '', completed: [false, false, false], practiceCount: 0, gotThreeStars: false, totalChars: 0, challengeCount: 0 };
-  if (!d.completed) d.completed = [false, false, false];
-  var done = d.completed.filter(function(v) { return v; }).length;
-  document.getElementById('info-daily-count').textContent = done + '/3';
-  var tasksEl = document.getElementById('info-daily-tasks');
-  if (!tasksEl) return;
-  tasksEl.innerHTML = DAILY_TASKS.map(function(task, i) {
-    var ok = d.completed[i];
-    return '<div style=\"display:flex;align-items:center;gap:8px;padding:6px 8px;background:' + (ok ? '#ECFDF5' : '#FEF2F2') + ';border-radius:6px;font-size:13px;\">' +
-      '<span style=\"font-size:16px;\">' + (ok ? '✅' : task.icon) + '</span>' +
-      '<span style=\"flex:1;color:' + (ok ? '#10B981' : 'var(--color-text-secondary)') + ';\">' + task.desc + '</span>' +
-      '<span style=\"font-size:11px;color:' + (ok ? '#10B981' : 'var(--color-text-muted)') + ';\">' + task.reward + '</span>' +
-      '</div>';
-  }).join('');
 }
 
 async function loadMyClassList() {
