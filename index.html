@@ -1349,7 +1349,8 @@ input { font-family: inherit; }
       <button class="btn-join-class" id="btn-leaderboard" title="班级排行榜">🏆 排行榜</button>
 <button class="btn-account" id="btn-account" title="登录/注册">👤 登录</button>
       <div class="account-dropdown hidden" id="account-dropdown">
-        <button class="dropdown-item dropdown-item-danger" data-action="logout">🚪 退出登录</button>
+        <button class="dropdown-item" id="btn-show-profile">👤 个人信息</button>
+        <button class="dropdown-item dropdown-item-danger" id="btn-dropdown-logout">🚪 退出登录</button>
       </div>
     </div>
   </header>
@@ -5953,13 +5954,21 @@ function init() {
       }
     });
   }
-  if (accountDropdown) {
-    accountDropdown.querySelectorAll('.dropdown-item').forEach(function(item) {
-      item.addEventListener('click', function(e) {
-        e.stopPropagation();
-        accountDropdown.classList.add('hidden');
-        if (confirm('确定要退出登录吗？')) accountLogout();
-      });
+  // 个人信息/退出登录
+  var btnProfile = document.getElementById('btn-show-profile');
+  if (btnProfile) {
+    btnProfile.addEventListener('click', function(e) {
+      e.stopPropagation();
+      accountDropdown.classList.add('hidden');
+      showAccountInfo();
+    });
+  }
+  var btnLogout = document.getElementById('btn-dropdown-logout');
+  if (btnLogout) {
+    btnLogout.addEventListener('click', function(e) {
+      e.stopPropagation();
+      accountDropdown.classList.add('hidden');
+      if (confirm('确定要退出登录吗？')) accountLogout();
     });
   }
   document.addEventListener('click', function() {
