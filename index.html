@@ -1433,6 +1433,7 @@ input { font-family: inherit; }
         <div class="info-meta">
           <div class="info-row"><span>⭐ 星星</span><span id="info-stars">0</span></div>
           <div class="info-row"><span>🐾 总经验</span><span id="info-xp">0</span></div>
+          <div class="info-row"><span>📝 今日篇数</span><span id="info-today-lessons">0</span></div>
           <div class="info-row"><span>🍖 食物</span><span id="info-food">0</span></div>
           <div class="info-row"><span>🎨 主题</span><span id="info-theme">海洋</span></div>
         </div>
@@ -2733,6 +2734,14 @@ function showAccountInfo() {
   document.getElementById('info-stars').textContent = petState ? (petState.stars || 0) : 0;
   document.getElementById('info-xp').textContent = petState ? (petState.totalXP || 0) : 0;
   document.getElementById('info-food').textContent = petState ? (petState.food || 0) : 0;
+  // 计算今日篇数
+  var today = new Date().toISOString().slice(0, 10);
+  var todayLessonKeys = {};
+  try {
+    var recs = JSON.parse(localStorage.getItem('typing2_records') || '[]');
+    recs.forEach(function(r) { if ((r.date||'').slice(0,10) === today) todayLessonKeys[r.lessonKey] = true; });
+  } catch(e) {}
+  document.getElementById('info-today-lessons').textContent = Object.keys(todayLessonKeys).length;
   var themeNames = { ocean: '🐟 海洋', forest: '🌲 森林', space: '🚀 太空', candy: '🍬 糖果' };
   var theme = 'ocean';
   try { theme = localStorage.getItem('typing2_theme') || 'ocean'; } catch(e) {}
