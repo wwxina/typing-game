@@ -1332,8 +1332,7 @@ input { font-family: inherit; }
 </div>
 
 <!-- Single hidden input for stable IME capture -->
-<!-- IME capture div (contenteditable avoids password manager detection) -->
-<div id="hidden-input" contenteditable="true" autocorrect="off" autocapitalize="off" spellcheck="false" aria-hidden="true" tabindex="-1" style="position:fixed;top:-9999px;left:-9999px;opacity:0;width:1px;height:1px;overflow:hidden;pointer-events:none;"></div>
+<input id="hidden-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-hidden="true" tabindex="-1">
 
 
 <!-- PAGE 1: Course Selection -->
@@ -1433,7 +1432,6 @@ input { font-family: inherit; }
         <div class="info-meta">
           <div class="info-row"><span>⭐ 星星</span><span id="info-stars">0</span></div>
           <div class="info-row"><span>🐾 总经验</span><span id="info-xp">0</span></div>
-          <div class="info-row"><span>📝 今日篇数</span><span id="info-today-lessons">0</span></div>
           <div class="info-row"><span>🍖 食物</span><span id="info-food">0</span></div>
           <div class="info-row"><span>🎨 主题</span><span id="info-theme">海洋</span></div>
         </div>
@@ -2535,19 +2533,12 @@ async function loadLeaderboard(classId, className) {
     rankings.forEach(function(r){
       var recs = r._records || [];
       var lkeys={}, daily=[];
-      if (recs.length > 0) {
-        recs.forEach(function(rec){
-          var k=rec.lessonKey||rec.title;
-          if(!lkeys[k]||rec.speed>lkeys[k].speed) lkeys[k]=rec;
-          if((rec.date||'').slice(0,10)===today) daily.push(rec.title||'练习');
-        });
-        r.uniqueLessons=Object.keys(lkeys).length;
-        r.todayLessons=daily.filter(function(v,i,a){return a.indexOf(v)===i;}).slice(0,5);
-      } else {
-        // 轻量统计后端：用练习次数近似
-        r.uniqueLessons = Math.max(1, r.totalPractices > 0 ? Math.ceil(r.totalPractices/3) : 0);
-        r.todayLessons = [];
-      }
+      recs.forEach(function(rec){
+        var k=rec.lessonKey||rec.title;
+        if(!lkeys[k]||rec.speed>lkeys[k].speed) lkeys[k]=rec;
+        if((rec.date||'').slice(0,10)===today) daily.push(rec.title||'练习');
+      });
+      r.uniqueLessons=Object.keys(lkeys).length;
       var bonus= r.uniqueLessons>=16?10: r.uniqueLessons>=8?8: r.uniqueLessons>=4?5:0;
       r.bonus=bonus;
       r.finalScore=r.avgSpeed+bonus;
@@ -2569,7 +2560,7 @@ async function loadLeaderboard(classId, className) {
       myCardEl.style.display = 'flex';
       var myBonusHTML = myRank.bonus > 0 ? ' <span style=\"color:#10B981;\">+'+myRank.bonus+'</span>' : '';
       var myToday = (myRank.todayLessons||[]).length>0 ? myRank.todayLessons.join('、') : '无今日练习';
-      document.getElementById('my-rank-text').innerHTML = '<strong>'+escHtml(myRank.username)+'</strong> · 第 '+(myRankIdx+1)+' 名 · 最终评分 '+myRank.finalScore+myBonusHTML+' · 📖'+myRank.uniqueLessons+'篇 · 正确率 '+myRank.avgAccuracy+'%<br><span style=\"font-size:11px;color:var(--color-text-muted);\">今日：'+escHtml(myToday.length>25?myToday.slice(0,22)+'…':myToday)+'</span>';
+      document.getElementById('my-rank-text').innerHTML = '第 '+(myRankIdx+1)+' 名 · 最终评分 '+myRank.finalScore+myBonusHTML+' · 📖'+myRank.uniqueLessons+'篇 · 正确率 '+myRank.avgAccuracy+'%<br><span style=\"font-size:11px;color:var(--color-text-muted);\">今日：'+escHtml(myToday.length>25?myToday.slice(0,22)+'…':myToday)+'</span>';
     } else {
       myCardEl.style.display = 'none';
     }
@@ -2734,14 +2725,6 @@ function showAccountInfo() {
   document.getElementById('info-stars').textContent = petState ? (petState.stars || 0) : 0;
   document.getElementById('info-xp').textContent = petState ? (petState.totalXP || 0) : 0;
   document.getElementById('info-food').textContent = petState ? (petState.food || 0) : 0;
-  // 计算今日篇数
-  var today = new Date().toISOString().slice(0, 10);
-  var todayLessonKeys = {};
-  try {
-    var recs = JSON.parse(localStorage.getItem('typing2_records') || '[]');
-    recs.forEach(function(r) { if ((r.date||'').slice(0,10) === today) todayLessonKeys[r.lessonKey] = true; });
-  } catch(e) {}
-  document.getElementById('info-today-lessons').textContent = Object.keys(todayLessonKeys).length;
   var themeNames = { ocean: '🐟 海洋', forest: '🌲 森林', space: '🚀 太空', candy: '🍬 糖果' };
   var theme = 'ocean';
   try { theme = localStorage.getItem('typing2_theme') || 'ocean'; } catch(e) {}
@@ -2845,16 +2828,8 @@ async function accountAPI(path, body) {
       var d=r.data;return {pet:d.pet,scores:d.scores||{},records:d.records||[],theme:d.theme||"ocean",classIds:d.class_ids||[],teacherExercises:d.teacher_exercises||[],studentNo:d.student_no||"",updatedAt:d.updated_at||0};
     }
     if (path === "/api/sync") {
-      var recs=body.records||[];
-      var ts=0,ta=0,ms=0;recs.forEach(function(r){ts+=r.speed||0;ta+=r.accuracy||0;if(r.speed>ms)ms=r.speed;});
-      var ds={};recs.forEach(function(r){var d=(r.date||"").slice(0,10);if(d)ds[d]=true;});
-      var stat_avg_speed=recs.length>0?Math.round(ts/recs.length):0;
-      var stat_avg_accuracy=recs.length>0?Math.round(ta/recs.length):0;
-      var stat_max_speed=ms;
-      var stat_practice_count=recs.length;
-      var stat_active_days=Object.keys(ds).length;
       var r=await __db.from("user_data").select("class_ids").eq("user_id",uid).maybeSingle();
-      await __db.from("user_data").upsert({user_id:uid,pet:body.pet||{},scores:body.scores||{},records:recs,theme:body.theme||"ocean",class_ids:body.classIds!==undefined?body.classIds:(r.data?(r.data.class_ids||[]):[]),teacher_exercises:body.teacherExercises!==undefined?body.teacherExercises:[],stat_avg_speed:stat_avg_speed,stat_avg_accuracy:stat_avg_accuracy,stat_max_speed:stat_max_speed,stat_practice_count:stat_practice_count,stat_active_days:stat_active_days,updated_at:Date.now()});
+      await __db.from("user_data").upsert({user_id:uid,pet:body.pet||{},scores:body.scores||{},records:body.records||[],theme:body.theme||"ocean",class_ids:body.classIds!==undefined?body.classIds:(r.data?(r.data.class_ids||[]):[]),teacher_exercises:body.teacherExercises!==undefined?body.teacherExercises:[],updated_at:Date.now()});
       return {success:true,updatedAt:Date.now()};
     }
     if (path === "/api/class/join") {
@@ -2896,24 +2871,15 @@ async function accountAPI(path, body) {
       var ranks=[];
       if(sids.length>0){
         var udMap={},pfMap={};
-        // 兼容：先拉 records 兜底，新数据已有 stat 字段
-        var r1=await __db.from("user_data").select("user_id,records,stat_avg_speed,stat_avg_accuracy,stat_max_speed,stat_practice_count").in("user_id",sids);
+        var r1=await __db.from("user_data").select("records,user_id").in("user_id",sids);
         if(r1.data)r1.data.forEach(function(d){udMap[d.user_id]=d;});
         var r2=await __db.from("profiles").select("username,student_no,user_id").in("user_id",sids);
         if(r2.data)r2.data.forEach(function(d){pfMap[d.user_id]=d;});
         sids.forEach(function(sid){
           var ud=udMap[sid]||{},pf=pfMap[sid]||{};
           var recs=ud.records||[];
-          var ts,ta,msp;
-          if(ud.stat_avg_speed!==null&&ud.stat_avg_speed!==undefined){
-            ts=ud.stat_avg_speed;ta=ud.stat_avg_accuracy||0;msp=ud.stat_max_speed||0;
-          } else {
-            ts=0;ta=0;msp=0;
-            recs.forEach(function(r){ts+=r.speed||0;ta+=r.accuracy||0;if(r.speed>msp)msp=r.speed;});
-            ts=recs.length>0?Math.round(ts/recs.length):0;
-            ta=recs.length>0?Math.round(ta/recs.length):0;
-          }
-          ranks.push({userId:sid,username:pf.username||sid,studentNo:pf.student_no||"",avgSpeed:ts,avgAccuracy:ta,maxSpeed:msp,totalPractices:recs.length,_records:recs});
+          var ts=0,ta=0,msp=0;recs.forEach(function(r){ts+=r.speed||0;ta+=r.accuracy||0;if(r.speed>msp)msp=r.speed;});
+          ranks.push({userId:sid,username:pf.username||sid,studentNo:pf.student_no||"",avgSpeed:recs.length>0?Math.round(ts/recs.length):0,avgAccuracy:recs.length>0?Math.round(ta/recs.length):0,maxSpeed:msp,totalPractices:recs.length,_records:recs});
         });
       }
       ranks.sort(function(a,b){return b.avgSpeed-a.avgSpeed||b.avgAccuracy-a.avgAccuracy;});
@@ -5117,13 +5083,13 @@ hiddenInput.addEventListener('compositionstart', () => {
 
 function processHiddenInputText() {
   if (AppState.currentPage !== 'typing-practice') return;
-  var val = hiddenInput.textContent;
+  var val = hiddenInput.value;
   if (!val) return;
 
   // Dedup: same text within 300ms is a duplicate event
   var _now = Date.now();
   if (val === _lastInputText && _now - _lastInputTime < 300) {
-    hiddenInput.textContent = '';
+    hiddenInput.value = '';
     return;
   }
   _lastInputText = val;
@@ -5135,7 +5101,7 @@ function processHiddenInputText() {
   // Multi-char burst with no keyboard evidence = voice/handwriting
   if (chars.length > 1 && !_hasKeyEv) {
     showInputMethodWarning();
-    hiddenInput.textContent = '';
+    hiddenInput.value = '';
     return;
   }
 
@@ -5152,7 +5118,7 @@ function processHiddenInputText() {
     if (AppState.rollbackTriggered) break;
   }
   AppState.rollbackTriggered = false;
-  hiddenInput.textContent = '';
+  hiddenInput.value = '';
 }
 
 hiddenInput.addEventListener('compositionstart', () => {
@@ -5526,12 +5492,9 @@ function jumpToPosition(segIdx, charIdx) {
 function focusHiddenInput() {
   if (AppState.currentPage !== 'typing-practice') return;
   if (AppState.isPaused) return;
-  SoundEngine.getCtx();
+  SoundEngine.getCtx(); // pre-init AudioContext on user gesture
   positionHiddenInput();
-  // 快速 blur + focus 防止密码管理器弹窗跟随
   hiddenInput.focus();
-  hiddenInput.blur();
-  setTimeout(function() { hiddenInput.focus(); }, 10);
 }
 function positionHiddenInput() {
   const cell = document.querySelector('.char-cell.current');
@@ -5633,21 +5596,17 @@ function completeLesson(fullComplete) {
   const secs = Math.floor(elapsed % 60);
   const stars = getStars(speed, accuracy);
 
-  // 查历史最佳成绩
-  var prevScore = null, isNewBest = false;
-  try {
-    var scores = JSON.parse(localStorage.getItem('typing2_scores') || '{}');
-    prevScore = scores[AppState.currentLessonKey] || null;
-  } catch(e) {}
+  // 防刷分：必须完整打完 + 至少15秒 + 至少20字
+  var qualify = (fullComplete === true) && elapsed >= 15 && total >= 20;
 
   if (AppState.retryMode) {
-    showResultModal({ speed, accuracy, timeStr: String(mins).padStart(2,'0') + '分' + String(secs).padStart(2,'0') + '秒', total, stars, isRetry: true, prevScore: prevScore });
+    showResultModal({ speed, accuracy, timeStr: String(mins).padStart(2,'0') + '分' + String(secs).padStart(2,'0') + '秒', total, stars, isRetry: true });
   } else {
-    saveBestScore(AppState.currentLessonKey, speed, accuracy, stars);
-    saveRecord({ lessonKey: AppState.currentLessonKey, grade: info.grade, title: lesson.title, speed: speed, accuracy: accuracy, duration: elapsed, totalChars: total, date: new Date().toISOString() });
-    // 判断是否新纪录
-    isNewBest = !prevScore || speed > (prevScore.bestSpeed || 0);
-    // 每日任务
+    if (qualify) {
+      saveBestScore(AppState.currentLessonKey, speed, accuracy, stars);
+      saveRecord({ lessonKey: AppState.currentLessonKey, grade: info.grade, title: lesson.title, speed: speed, accuracy: accuracy, duration: elapsed, totalChars: total, date: new Date().toISOString() });
+    }
+    // 每日任务（练习即计数，不受门槛限制）
     if (getCurrentPetData().adopted) {
       PetState.daily.practiceCount++;
       if (stars >= 3) {
@@ -5660,7 +5619,7 @@ function completeLesson(fullComplete) {
       clearTimeout(_syncTimer);
       syncAccountData();
     }
-    showResultModal({ speed, accuracy, timeStr: String(mins).padStart(2,'0') + '分' + String(secs).padStart(2,'0') + '秒', total, stars, isRetry: false, prevScore: prevScore, isNewBest: isNewBest });
+    showResultModal({ speed, accuracy, timeStr: String(mins).padStart(2,'0') + '分' + String(secs).padStart(2,'0') + '秒', total, stars, isRetry: false, qualify: qualify });
   }
 
   // 教师练习完成上报
@@ -5691,15 +5650,8 @@ function completeLesson(fullComplete) {
 function showResultModal(stats) {
   // Big celebration header
   document.getElementById('celebration-stars').textContent = getStarDisplay(stats.stars);
-  // 最佳成绩对比
-  var encourageText = getEncourage(stats.stars);
-  if (stats.isNewBest) {
-    encourageText = '🎉 ' + encourageText + ' · 新纪录！';
-  } else if (stats.prevScore && stats.prevScore.bestSpeed) {
-    encourageText = encourageText + ' · 最佳：' + stats.prevScore.bestSpeed + '字/分';
-  }
-  document.getElementById('celebration-encourage').textContent = encourageText;
-  document.getElementById('celebration-encourage').style.color = stats.isNewBest ? '#f59e0b' : 'var(--color-accent)';
+  document.getElementById('celebration-encourage').textContent = stats.qualify === false ? '成绩未纳入排行榜' : getEncourage(stats.stars);
+  document.getElementById('celebration-encourage').style.color = stats.qualify === false ? 'var(--color-text-muted)' : 'var(--color-accent)';
 
   document.getElementById('modal-stats').innerHTML =
     '<div class="modal-stat"><div class="val">' + stats.speed + '</div><div class="lbl">速度（字/分）</div></div>' +
@@ -5887,24 +5839,7 @@ document.getElementById('btn-retry-errors').addEventListener('click', retryError
 document.getElementById('btn-back-course').addEventListener('click', () => { hideModal(); goBackToCourse(); });
 document.getElementById('btn-back-practice').addEventListener('click', goBackToCourse);
 document.getElementById('btn-submit-early').addEventListener('click', function(){
-  var currentElapsed = AppState.startTime ? (Date.now() - AppState.startTime) : 0;
-  var elapsed = Math.round((AppState.elapsedBeforePause + currentElapsed) / 1000);
-  var totalAttempts = AppState.correctCount + AppState.errorCount;
-  var accuracy = totalAttempts > 0 ? Math.round((AppState.correctCount / totalAttempts) * 100) : 100;
-  var speed = elapsed > 0 ? Math.round(AppState.correctCount / (elapsed / 60)) : 0;
-  var total = getTotalChars();
-  var mins = Math.floor(elapsed / 60);
-  var secs = Math.floor(elapsed % 60);
-  var timeStr = String(mins) + '分' + String(secs).padStart(2,'0') + '秒';
-  var stars = getStars(speed, accuracy);
-  var msg = '当前练习成绩\n\n' +
-    getStarDisplay(stars) + '\n' +
-    '速度：' + speed + ' 字/分\n' +
-    '正确率：' + accuracy + '%\n' +
-    '用时：' + timeStr + '\n' +
-    '进度：' + AppState.globalCharIndex + '/' + total + ' 字\n\n' +
-    '确定要提交当前成绩吗？';
-  if(confirm(msg)) completeLesson(false);
+  if(confirm('确定要提交当前练习成绩吗？\n⚠️ 提前提交不计入排行榜（需完整完成且用时≥15秒且字数≥20字）。')) completeLesson(false);
 });
 document.getElementById('btn-pause').addEventListener('click', togglePause);
 document.getElementById('btn-reset').addEventListener('click', resetLesson);
