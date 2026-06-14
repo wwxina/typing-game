@@ -2887,13 +2887,24 @@ async function accountAPI(path, body) {
       var ranks=[];
       if(sids.length>0){
         var udMap={},pfMap={};
-        var r1=await __db.from("user_data").select("user_id,stat_avg_speed,stat_avg_accuracy,stat_max_speed,stat_practice_count,stat_active_days").in("user_id",sids);
+        // 兼容：先拉 records 兜底，新数据已有 stat 字段
+        var r1=await __db.from("user_data").select("user_id,records,stat_avg_speed,stat_avg_accuracy,stat_max_speed,stat_practice_count").in("user_id",sids);
         if(r1.data)r1.data.forEach(function(d){udMap[d.user_id]=d;});
         var r2=await __db.from("profiles").select("username,student_no,user_id").in("user_id",sids);
         if(r2.data)r2.data.forEach(function(d){pfMap[d.user_id]=d;});
         sids.forEach(function(sid){
           var ud=udMap[sid]||{},pf=pfMap[sid]||{};
-          ranks.push({userId:sid,username:pf.username||sid,studentNo:pf.student_no||"",avgSpeed:ud.stat_avg_speed||0,avgAccuracy:ud.stat_avg_accuracy||0,maxSpeed:ud.stat_max_speed||0,totalPractices:ud.stat_practice_count||0,_records:[]});
+          var recs=ud.records||[];
+          var ts,ta,msp;
+          if(ud.stat_avg_speed!==null&&ud.stat_avg_speed!==undefined){
+            ts=ud.stat_avg_speed;ta=ud.stat_avg_accuracy||0;msp=ud.stat_max_speed||0;
+          } else {
+            ts=0;ta=0;msp=0;
+            recs.forEach(function(r){ts+=r.speed||0;ta+=r.accuracy||0;if(r.speed>msp)msp=r.speed;});
+            ts=recs.length>0?Math.round(ts/recs.length):0;
+            ta=recs.length>0?Math.round(ta/recs.length):0;
+          }
+          ranks.push({userId:sid,username:pf.username||sid,studentNo:pf.student_no||"",avgSpeed:ts,avgAccuracy:ta,maxSpeed:msp,totalPractices:recs.length,_records:recs});
         });
       }
       ranks.sort(function(a,b){return b.avgSpeed-a.avgSpeed||b.avgAccuracy-a.avgAccuracy;});
