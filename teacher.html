@@ -687,6 +687,21 @@ tr:hover td { background: var(--color-bg); }
   </div>
 </div>
 
+<!-- 提交详情弹窗 -->
+<div class="modal-overlay hidden" id="modal-submissions">
+  <div class="trend-card" style="background:var(--color-bg);border-radius:var(--radius-lg);padding:var(--space-lg);max-width:800px;width:95%;max-height:85vh;overflow-y:auto;position:relative;box-shadow:var(--shadow-lg);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-md);">
+      <h3 id="submissions-title" style="margin:0;">📤 练习提交详情</h3>
+      <button id="btn-submissions-close" style="font-size:20px;line-height:1;padding:4px 8px;">✕</button>
+    </div>
+    <div id="submissions-content"></div>
+    <div id="submissions-empty" class="empty-state hidden">
+      <div class="empty-icon">📭</div>
+      <div class="empty-text">还没有提交记录</div>
+    </div>
+  </div>
+</div>
+
 <!-- 分发练习弹窗 -->
 <div class="modal-overlay hidden" id="modal-distribute">
   <div style="background:#fff;border-radius:16px;padding:24px;max-width:420px;width:92%;position:relative;box-shadow:0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);">
@@ -812,7 +827,7 @@ async function _fmtStudent(sid,classExercises){
   var adoptedTypes=ap.map(function(p){return{type:p.type,emoji:PET_EMOJI[p.type]||"🐾",name:PET_NAME[p.type]||p.name}});
   var exs=classExercises||[];var exTotal=exs.length,exCompleted=0;
   if(exTotal>0){var em={};te.forEach(function(e){em[e.exerciseId]=e;});exs.forEach(function(ex){if(em[ex.id]&&em[ex.id].completed)exCompleted++;});}
-  var est={};if(exTotal>0){var em2={};te.forEach(function(e){em2[e.exerciseId]=e;});exs.forEach(function(ex){var st=em2[ex.id];est[ex.id]={title:ex.title,completed:st?st.completed:false,bestSpeed:st?(st.bestSpeed||0):0,bestAccuracy:st?(st.bestAccuracy||0):0,stars:st?(st.stars||0):0};});}
+  var est={};if(exTotal>0){var em2={};te.forEach(function(e){em2[e.exerciseId]=e;});exs.forEach(function(ex){var st=em2[ex.id];est[ex.id]={title:ex.title,completed:st?st.completed:false,bestSpeed:st?(st.bestSpeed||0):0,bestAccuracy:st?(st.bestAccuracy||0):0,stars:st?(st.stars||0):0,submissions:st?(st.submissions||[]):[]};});}
   return{userId:sid,username:pf?pf.username:sid,studentNo:(pf&&pf.student_no)||"",
     totalPractices:total,avgSpeed:total>0?Math.round(ts/total):0,maxSpeed:ms,
     avgAccuracy:total>0?Math.round(ta/total):0,activeDays:Object.keys(ds).length,
@@ -841,7 +856,7 @@ function _buildStudentInfo(sid,ud,pf,classExercises){
   var adoptedTypes=ap.map(function(p){return{type:p.type,emoji:PET_EMOJI[p.type]||"🐾",name:PET_NAME[p.type]||p.name}});
   var exs=classExercises||[];var exTotal=exs.length,exCompleted=0;
   if(exTotal>0){var em={};te.forEach(function(e){em[e.exerciseId]=e;});exs.forEach(function(ex){if(em[ex.id]&&em[ex.id].completed)exCompleted++;});}
-  var est={};if(exTotal>0){var em2={};te.forEach(function(e){em2[e.exerciseId]=e;});exs.forEach(function(ex){var st=em2[ex.id];est[ex.id]={title:ex.title,completed:st?st.completed:false,bestSpeed:st?(st.bestSpeed||0):0,bestAccuracy:st?(st.bestAccuracy||0):0,stars:st?(st.stars||0):0};});}
+  var est={};if(exTotal>0){var em2={};te.forEach(function(e){em2[e.exerciseId]=e;});exs.forEach(function(ex){var st=em2[ex.id];est[ex.id]={title:ex.title,completed:st?st.completed:false,bestSpeed:st?(st.bestSpeed||0):0,bestAccuracy:st?(st.bestAccuracy||0):0,stars:st?(st.stars||0):0,submissions:st?(st.submissions||[]):[]};});}
   return{userId:sid,username:pf?pf.username:sid,studentNo:(pf&&pf.student_no)||"",
     totalPractices:total,avgSpeed:total>0?Math.round(ts/total):0,maxSpeed:ms,
     avgAccuracy:total>0?Math.round(ta/total):0,activeDays:Object.keys(ds).length,
@@ -1736,10 +1751,11 @@ function renderDashboard() {
       } else {
         petHTML = '-';
       }
-      return '<tr class="dashboard-row" data-student-id="' + s.userId + '" style="cursor:pointer;" title="点击查看趋势图">' +
+      return '<tr class="dashboard-row" data-student-id="' + s.userId + '" data-student-name="' + escHtml(s.username) + '">' +
         '<td>' + escHtml(s.studentNo || '-') + '</td>' +
         '<td><strong>' + escHtml(s.username) + '</strong></td>' +
         '<td>' + s.totalPractices + ' 次</td>' +
+        '<td class="ex-col" style="cursor:pointer;color:var(--color-accent);" title="点击查看提交详情">' + exText + '</td>' +
         '<td class="' + speedClass + '">' + s.avgSpeed + ' 字/分</td>' +
         '<td>' + s.maxSpeed + ' 字/分</td>' +
         '<td>' + s.avgAccuracy + '%</td>' +
@@ -1976,6 +1992,68 @@ function drawTrendChart(canvas, records) {
   ctx.beginPath(); ctx.moveTo(lx2, ly + 1.5); ctx.lineTo(lx2 + 16, ly + 1.5); ctx.stroke();
   ctx.setLineDash([]);
   ctx.fillText('正确率(%)', lx2 + 22, ly + 8);
+}
+
+// ---- 练习提交详情 ----
+function showSubmissionsModal(studentId, studentName) {
+  var students = TeacherState.dashboardData ? TeacherState.dashboardData.students : [];
+  var student = null;
+  for (var i = 0; i < students.length; i++) {
+    if (students[i].userId === studentId) { student = students[i]; break; }
+  }
+  if (!student) return;
+  var es = student.exerciseStatus || {};
+  document.getElementById('submissions-title').textContent = '📤 ' + studentName + ' - 练习提交详情';
+  document.getElementById('modal-submissions').classList.remove('hidden');
+
+  var allSubs = [];
+  Object.keys(es).forEach(function(exId) {
+    var exInfo = es[exId];
+    var subs = exInfo.submissions || [];
+    subs.forEach(function(sub) {
+      sub.exerciseTitle = exInfo.title;
+      allSubs.push(sub);
+    });
+  });
+  // 按提交时间倒序
+  allSubs.sort(function(a, b) {
+    return (b.submittedAt || '').localeCompare(a.submittedAt || '');
+  });
+
+  var emptyEl = document.getElementById('submissions-empty');
+  var contentEl = document.getElementById('submissions-content');
+  if (allSubs.length === 0) {
+    emptyEl.classList.remove('hidden');
+    contentEl.innerHTML = '';
+  } else {
+    emptyEl.classList.add('hidden');
+    contentEl.innerHTML = '<div class="table-wrap"><table><thead><tr>' +
+      '<th>练习标题</th><th>提交时间</th><th>速度</th><th>正确率</th><th>用时</th><th>已打/总字数</th><th>进度</th><th>⭐</th><th>是否完成</th>' +
+      '</tr></thead><tbody>' +
+      allSubs.map(function(sub) {
+        var submittedAt = sub.submittedAt ? new Date(sub.submittedAt).toLocaleString('zh-CN') : '-';
+        var mins = sub.duration > 0 ? Math.floor(sub.duration / 60) + '分' + (sub.duration % 60) + '秒' : '0分';
+        var progressPct = sub.progressPct !== undefined ? sub.progressPct + '%' : '-';
+        return '<tr>' +
+          '<td><strong>' + escHtml(sub.exerciseTitle || '-') + '</strong></td>' +
+          '<td style="font-size:12px;">' + submittedAt + '</td>' +
+          '<td>' + (sub.speed || 0) + ' 字/分</td>' +
+          '<td>' + (sub.accuracy || 0) + '%</td>' +
+          '<td>' + mins + '</td>' +
+          '<td>' + (sub.typedChars || 0) + '/' + (sub.totalChars || 0) + '</td>' +
+          '<td>' + progressPct + '</td>' +
+          '<td>' + getStarDisplay(sub.stars || 0) + '</td>' +
+          '<td>' + (sub.fullComplete ? '✅ 完整' : '\U0001f536 部分') + '</td>' +
+          '</tr>';
+      }).join('') +
+      '</tbody></table></div>';
+  }
+}
+function getStarDisplay(stars) {
+  if (stars >= 3) return '⭐⭐⭐';
+  if (stars >= 2) return '⭐⭐';
+  if (stars >= 1) return '⭐';
+  return '-';
 }
 
 // ---- 工具函数 ----
@@ -2222,11 +2300,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // 看板学生行点击 → 趋势图（事件委托）
   document.getElementById('dashboard-tbody').addEventListener('click', function(e) {
+    var exCol = e.target.closest('.ex-col');
     var row = e.target.closest('.dashboard-row');
     if (!row) return;
     var studentId = row.dataset.studentId;
-    var studentName = row.querySelector('strong').textContent;
-    showTrendModal(studentId, studentName);
+    var studentName = row.dataset.studentName || row.querySelector('strong').textContent;
+    if (exCol) {
+      showSubmissionsModal(studentId, studentName);
+    } else {
+      showTrendModal(studentId, studentName);
+    }
   });
 
   // 关闭趋势弹窗
@@ -2234,6 +2317,13 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('modal-trend').classList.add('hidden');
   });
   document.getElementById('modal-trend').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.add('hidden');
+  });
+  // 关闭提交详情弹窗
+  document.getElementById('btn-submissions-close').addEventListener('click', function() {
+    document.getElementById('modal-submissions').classList.add('hidden');
+  });
+  document.getElementById('modal-submissions').addEventListener('click', function(e) {
     if (e.target === this) this.classList.add('hidden');
   });
 
