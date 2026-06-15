@@ -1290,10 +1290,15 @@ function refreshExerciseClassSelector() {
 async function createExercise(title, text) {
   var cid = TeacherState.exerciseClassId || TeacherState.currentClassId;
   if (!cid) { showToast('请先选择班级'); return; }
-  var data = await accountAPI('POST', '/api/class/exercise/create', { title: title, text: text, classId: cid });
-  showToast('练习创建成功');
-  await loadClassInfoForExercise(cid);
-  return data;
+  try {
+    var data = await accountAPI('POST', '/api/class/exercise/create', { title: title, text: text, classId: cid });
+    showToast('练习创建成功');
+    await loadClassInfoForExercise(cid);
+    return data;
+  } catch(e) {
+    showToast('创建失败: ' + e.message);
+    throw e;
+  }
 }
 
 async function loadClassInfoForExercise(cid) {
@@ -1318,13 +1323,17 @@ function showDistributeModal(exerciseId) {
   // 填充班级下拉
   var sel = document.getElementById('distribute-class-select');
   var classes = TeacherState.classList || [];
-  sel.innerHTML = classes.map(function(c) {
-    return '<option value="' + c.classId + '">' + c.name + '（' + c.studentCount + '人）</option>';
-  }).join('');
-  if (classes.length > 0 && !TeacherState.exerciseClassId) {
-    TeacherState.exerciseClassId = classes[0].classId;
+  if (classes.length === 0) {
+    sel.innerHTML = '<option value="">-- 暂无班级 --</option>';
+  } else {
+    sel.innerHTML = classes.map(function(c) {
+      return '<option value="' + c.classId + '">' + c.name + '（' + c.studentCount + '人）</option>';
+    }).join('');
+    if (!TeacherState.exerciseClassId) {
+      TeacherState.exerciseClassId = classes[0].classId;
+    }
+    if (TeacherState.exerciseClassId) sel.value = TeacherState.exerciseClassId;
   }
-  if (TeacherState.exerciseClassId) sel.value = TeacherState.exerciseClassId;
   document.getElementById('distribute-result').style.display = 'none';
   document.getElementById('modal-distribute').classList.remove('hidden');
 }
@@ -1332,14 +1341,18 @@ function hideDistributeModal() {
   document.getElementById('modal-distribute').classList.add('hidden');
 }
 async function confirmDistribute() {
-  if (!_pendingDistributeExId) return;
+  if (!_pendingDistributeExId) { showToast('请先选择要分发的练习'); return; }
   var cid = document.getElementById('distribute-class-select').value;
   if (!cid) { showToast('请选择班级'); return; }
   TeacherState.exerciseClassId = cid;
-  var data = await accountAPI('POST', '/api/class/exercise/distribute', { exerciseId: _pendingDistributeExId, classId: cid });
-  document.getElementById('distribute-result').textContent = '已分发到 ' + data.count + ' 名学生';
-  document.getElementById('distribute-result').style.display = '';
-  setTimeout(function() { hideDistributeModal(); _pendingDistributeExId = null; loadClassInfoForExercise(cid); }, 800);
+  try {
+    var data = await accountAPI('POST', '/api/class/exercise/distribute', { exerciseId: _pendingDistributeExId, classId: cid });
+    document.getElementById('distribute-result').textContent = '✅ 已分发到 ' + data.count + ' 名学生';
+    document.getElementById('distribute-result').style.display = '';
+    setTimeout(function() { hideDistributeModal(); _pendingDistributeExId = null; loadClassInfoForExercise(cid); }, 800);
+  } catch(e) {
+    showToast('分发失败: ' + e.message);
+  }
 }
 
 async function deleteExercise(exerciseId) {
