@@ -715,7 +715,7 @@ tr:hover td { background: var(--color-bg); }
       <select id="distribute-class-select" style="width:100%;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;outline:none;background:#fff;cursor:pointer;margin-bottom:8px;"></select>
       <button class="btn btn-secondary btn-sm" id="btn-distribute-refresh-classes" style="width:100%;">🔄 刷新班级列表</button>
     </div>
-    <button class="btn btn-primary" id="btn-distribute-confirm" style="width:100%;padding:12px;font-size:15px;font-weight:600;border-radius:10px;">✅ 确认分发</button>
+    <button class="btn btn-primary" id="btn-distribute-confirm" onclick="confirmDistribute()" style="width:100%;padding:12px;font-size:15px;font-weight:600;border-radius:10px;">✅ 确认分发</button>
     <div id="distribute-result" style="text-align:center;font-size:13px;color:#10b981;margin-top:8px;display:none;"></div>
   </div>
 </div>
@@ -1347,9 +1347,17 @@ async function confirmDistribute() {
   TeacherState.exerciseClassId = cid;
   try {
     var data = await accountAPI('POST', '/api/class/exercise/distribute', { exerciseId: _pendingDistributeExId, classId: cid });
-    document.getElementById('distribute-result').textContent = '✅ 已分发到 ' + data.count + ' 名学生';
+    if (data.count > 0) {
+      document.getElementById('distribute-result').textContent = '✅ 已分发到 ' + data.count + ' 名学生';
+      document.getElementById('distribute-result').style.color = '#10b981';
+      showToast('已分发到 ' + data.count + ' 名学生');
+    } else {
+      document.getElementById('distribute-result').textContent = '📋 所有学生已有该练习，无需重新分发';
+      document.getElementById('distribute-result').style.color = '#f59e0b';
+      showToast('所有学生已有该练习');
+    }
     document.getElementById('distribute-result').style.display = '';
-    setTimeout(function() { hideDistributeModal(); _pendingDistributeExId = null; loadClassInfoForExercise(cid); }, 800);
+    setTimeout(function() { hideDistributeModal(); _pendingDistributeExId = null; loadClassInfoForExercise(cid); }, 2000);
   } catch(e) {
     showToast('分发失败: ' + e.message);
   }
