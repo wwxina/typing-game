@@ -711,16 +711,17 @@ tr:hover td { background: var(--color-bg); }
     </div>
     <p id="distribute-ex-title" style="font-size:14px;color:#555;margin-bottom:16px;padding:10px 12px;background:#f8f9fa;border-radius:8px;"></p>
     <div style="margin-bottom:16px;">
-      <label style="display:block;font-size:13px;font-weight:600;color:#555;margin-bottom:6px;">📋 选择班级（选中即分发）</label>
-      <select id="distribute-class-select" onchange="confirmDistribute()" style="width:100%;padding:12px 14px;border:2px solid #0ea5e9;border-radius:10px;font-size:15px;outline:none;background:#fff;cursor:pointer;margin-bottom:8px;font-weight:600;color:#1B3A4B;"></select>
+      <label style="display:block;font-size:13px;font-weight:600;color:#555;margin-bottom:6px;">📋 分发到班级</label>
+      <select id="distribute-class-select" style="width:100%;padding:12px 14px;border:2px solid #e0e0e0;border-radius:10px;font-size:15px;outline:none;background:#fff;cursor:pointer;margin-bottom:8px;font-weight:600;color:#1B3A4B;"></select>
       <button class="btn btn-secondary btn-sm" id="btn-distribute-refresh-classes" style="width:100%;">🔄 刷新班级列表</button>
     </div>
-    <div id="distribute-loading" style="text-align:center;padding:16px;display:none;">
-      <span style="font-size:24px;">⏳</span> <span style="color:#666;font-size:14px;">正在分发...</span>
+    <button class="btn btn-primary" id="btn-distribute-confirm" onclick="confirmDistribute()" style="width:100%;padding:14px;font-size:16px;font-weight:700;border-radius:12px;background:linear-gradient(135deg,#0ea5e9,#0284c7);">✅ 确认分发</button>
+    <div id="distribute-loading" style="text-align:center;padding:20px;display:none;">
+      <span style="font-size:28px;">⏳</span><br><span style="color:#666;font-size:14px;">正在分发...</span>
     </div>
-    <div id="distribute-result" style="text-align:center;padding:16px 12px;margin-top:8px;border-radius:10px;display:none;animation:fadeInUp 0.3s ease;">
-      <div id="distribute-result-icon" style="font-size:36px;margin-bottom:4px;"></div>
-      <div id="distribute-result-text" style="font-size:16px;font-weight:700;"></div>
+    <div id="distribute-result" style="text-align:center;padding:20px 12px;margin-top:12px;border-radius:12px;display:none;animation:fadeInUp 0.3s ease;">
+      <div id="distribute-result-icon" style="font-size:40px;margin-bottom:6px;"></div>
+      <div id="distribute-result-text" style="font-size:17px;font-weight:700;"></div>
       <div id="distribute-result-detail" style="font-size:13px;color:#666;margin-top:4px;"></div>
     </div>
   </div>
@@ -1342,6 +1343,7 @@ function showDistributeModal(exerciseId) {
   }
   document.getElementById('distribute-result').style.display = 'none';
   document.getElementById('distribute-loading').style.display = 'none';
+  document.getElementById('btn-distribute-confirm').style.display = '';
   _distributing = false;
   document.getElementById('modal-distribute').classList.remove('hidden');
 }
@@ -1351,14 +1353,15 @@ function hideDistributeModal() {
 async function confirmDistribute() {
   if (!_pendingDistributeExId) { showToast('请先选择要分发的练习'); return; }
   var cid = document.getElementById('distribute-class-select').value;
-  if (!cid) return; // 默认选项不触发分发
+  if (!cid) { showToast('请选择班级'); return; }
   // 防止重复提交
   if (_distributing) return;
   _distributing = true;
   TeacherState.exerciseClassId = cid;
-  // 显示加载状态
+  // 显示加载状态，隐藏按钮
   document.getElementById('distribute-result').style.display = 'none';
   document.getElementById('distribute-loading').style.display = '';
+  document.getElementById('btn-distribute-confirm').style.display = 'none';
   try {
     var data = await accountAPI('POST', '/api/class/exercise/distribute', { exerciseId: _pendingDistributeExId, classId: cid });
     document.getElementById('distribute-loading').style.display = 'none';
@@ -1368,9 +1371,9 @@ async function confirmDistribute() {
     var resultEl = document.getElementById('distribute-result');
     if (data.count > 0) {
       iconEl.textContent = '✅';
-      textEl.textContent = '已分发到 ' + data.count + ' 名学生';
+      textEl.textContent = '分发成功！已发送给 ' + data.count + ' 名学生';
       textEl.style.color = '#059669';
-      detailEl.textContent = '学生端刷新后可看到该练习';
+      detailEl.textContent = '学生端刷新后即可看到该练习';
       resultEl.style.background = '#ECFDF5';
       resultEl.style.border = '2px solid #10b981';
       showToast('✅ 已分发到 ' + data.count + ' 名学生');
@@ -1378,21 +1381,24 @@ async function confirmDistribute() {
       iconEl.textContent = '📋';
       textEl.textContent = '所有学生已有该练习';
       textEl.style.color = '#d97706';
-      detailEl.textContent = '无需重新分发';
+      detailEl.textContent = '无需重复分发';
       resultEl.style.background = '#FFFBEB';
       resultEl.style.border = '2px solid #f59e0b';
       showToast('📋 所有学生已有该练习');
     }
     resultEl.style.display = '';
-    // 3秒后关弹窗并重置
-    setTimeout(function() {
+    _distributing = false;
+    // 点击结果区域关闭
+    resultEl.onclick = function() {
       hideDistributeModal();
       _pendingDistributeExId = null;
-      _distributing = false;
       loadClassInfoForExercise(cid);
-    }, 3000);
+    };
+    resultEl.style.cursor = 'pointer';
+    resultEl.title = '点击关闭';
   } catch(e) {
     document.getElementById('distribute-loading').style.display = 'none';
+    document.getElementById('btn-distribute-confirm').style.display = '';
     var iconEl2 = document.getElementById('distribute-result-icon');
     var textEl2 = document.getElementById('distribute-result-text');
     var resultEl2 = document.getElementById('distribute-result');
@@ -1405,6 +1411,11 @@ async function confirmDistribute() {
     resultEl2.style.display = '';
     showToast('分发失败: ' + e.message);
     _distributing = false;
+    resultEl2.onclick = function() {
+      document.getElementById('distribute-result').style.display = 'none';
+      document.getElementById('btn-distribute-confirm').style.display = '';
+    };
+    resultEl2.style.cursor = 'pointer';
   }
 }
 var _distributing = false;
