@@ -810,7 +810,12 @@ input { font-family: inherit; }
 .stats-bottom.compact .btn-pinyin,
 .stats-bottom.compact .btn-submit-early { display: none !important; }
 .stats-bottom.compact #btn-toggle-pinyin-compact,
-.stats-bottom.compact #btn-submit-early-compact { display: inline-block !important; }
+.stats-bottom.compact #btn-submit-early-compact {
+  display: inline-block !important;
+  background: var(--color-accent) !important;
+  color: #fff !important;
+  border-color: var(--color-accent) !important;
+}
 .stats-bottom .btn-pinyin.on { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
 
 /* ===== MODAL ===== */
@@ -5949,7 +5954,7 @@ document.getElementById('btn-toggle-pinyin').addEventListener('click', function(
   this.classList.toggle('on', AppState.showPinyin);
   this.textContent = AppState.showPinyin ? '隐藏拼音' : '显示拼音';
   var c=document.getElementById('btn-toggle-pinyin-compact');
-  if(c) c.textContent = AppState.showPinyin ? '隐藏拼音' : '显示拼音';
+  if(c){ c.textContent=AppState.showPinyin?'隐藏拼音':'显示拼音'; c.style.background=AppState.showPinyin?'':'#fff'; c.style.color=AppState.showPinyin?'':'var(--color-text-secondary)'; c.style.borderColor=AppState.showPinyin?'':'var(--color-border)'; }
   renderAllSegments();
   focusHiddenInput();
 });
