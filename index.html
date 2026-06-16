@@ -806,9 +806,11 @@ input { font-family: inherit; }
   min-width: 88px; text-align: center; cursor: pointer;
 }
 .stats-bottom .btn-submit-early:hover { background: var(--color-accent-dark); border-color: var(--color-accent-dark); }
-.stats-bottom.compact .btn-submit-early {
-  padding: 3px 10px; font-size: 12px; min-width: auto; border-radius: 12px;
-}
+/* 紧凑模式：stats-row 中的按钮隐藏，改到 stats-actions 中显示 */
+.stats-bottom.compact .btn-pinyin,
+.stats-bottom.compact .btn-submit-early { display: none !important; }
+.stats-bottom.compact #btn-toggle-pinyin-compact,
+.stats-bottom.compact #btn-submit-early-compact { display: inline-block !important; }
 .stats-bottom .btn-pinyin.on { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
 
 /* ===== MODAL ===== */
@@ -962,9 +964,6 @@ input { font-family: inherit; }
 .stats-bottom.compact .stat-item { font-size: 13px; gap: 2px; }
 .stats-bottom.compact .stat-sep { margin: 0 2px; font-size: 13px; }
 .stats-bottom.compact .stats-actions { gap: 4px; }
-.stats-bottom.compact .btn-pinyin {
-  padding: 3px 10px; font-size: 12px; min-width: auto; border-radius: 12px;
-}
 .stats-bottom.compact .btn-sm {
   padding: 3px 10px; font-size: 12px; border-radius: 12px;
 }
@@ -1637,6 +1636,8 @@ input { font-family: inherit; }
       <div class="stats-actions">
         <button class="btn-sm" id="btn-pause">⏸️ 暂停</button>
         <button class="btn-sm" id="btn-reset">🔄 重置</button>
+        <button class="btn-sm" id="btn-toggle-pinyin-compact" style="display:none" onclick="document.getElementById('btn-toggle-pinyin').click()">拼音</button>
+        <button class="btn-sm" id="btn-submit-early-compact" style="display:none" onclick="document.getElementById('btn-submit-early').click()">确认提交</button>
       </div>
     </div>
   </div>
