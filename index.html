@@ -2846,8 +2846,22 @@ async function accountAPI(path, body) {
       var d=r.data;return {pet:d.pet,scores:d.scores||{},records:d.records||[],theme:d.theme||"ocean",classIds:d.class_ids||[],teacherExercises:d.teacher_exercises||[],studentNo:d.student_no||"",updatedAt:d.updated_at||0};
     }
     if (path === "/api/sync") {
-      var r=await __db.from("user_data").select("class_ids").eq("user_id",uid).maybeSingle();
-      await __db.from("user_data").upsert({user_id:uid,pet:body.pet||{},scores:body.scores||{},records:body.records||[],theme:body.theme||"ocean",class_ids:body.classIds!==undefined?body.classIds:(r.data?(r.data.class_ids||[]):[]),teacher_exercises:body.teacherExercises!==undefined?body.teacherExercises:[],updated_at:Date.now()});
+      var r=await __db.from("user_data").select("class_ids,teacher_exercises").eq("user_id",uid).maybeSingle();
+      // 合并教师练习：服务端有的练习才更新（防止学生端把教师已删的练习写回）
+      var existingTe=r.data?(r.data.teacher_exercises||[]):[];
+      var incomingTe=body.teacherExercises||[];
+      var mergedTe=existingTe.map(function(serverEx){
+        var inc=incomingTe.find(function(e){return e.exerciseId===serverEx.exerciseId;});
+        if(inc){
+          serverEx.completed=inc.completed||serverEx.completed;
+          serverEx.bestSpeed=Math.max(serverEx.bestSpeed||0,inc.bestSpeed||0);
+          serverEx.bestAccuracy=Math.max(serverEx.bestAccuracy||0,inc.bestAccuracy||0);
+          serverEx.stars=Math.max(serverEx.stars||0,inc.stars||0);
+          if(inc.submissions&&inc.submissions.length>0) serverEx.submissions=inc.submissions;
+        }
+        return serverEx;
+      });
+      await __db.from("user_data").upsert({user_id:uid,pet:body.pet||{},scores:body.scores||{},records:body.records||[],theme:body.theme||"ocean",class_ids:body.classIds!==undefined?body.classIds:(r.data?(r.data.class_ids||[]):[]),teacher_exercises:mergedTe,updated_at:Date.now()});
       return {success:true,updatedAt:Date.now()};
     }
     if (path === "/api/class/join") {
@@ -3108,6 +3122,12 @@ async function syncAccountData() {
     if (recordsRaw) body.records = JSON.parse(recordsRaw);
     if (TeacherExercises.length > 0) body.teacherExercises = TeacherExercises;
     await accountAPI('/api/sync', body);
+    // 同步后拉取服务端最新数据（获取教师可能删除的练习列表）
+    var latest = await accountAPI('/api/sync');
+    if (latest && latest.teacherExercises !== undefined) {
+      TeacherExercises = latest.teacherExercises;
+      saveTeacherExercises();
+    }
     console.log('数据已同步到云端');
   } catch(e) {
     console.log('同步失败:', e.message);
