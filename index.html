@@ -1630,13 +1630,13 @@ input { font-family: inherit; }
         <span class="stat-sep">|</span>
         <div class="stat-item"><span class="stat-label">进度</span> <span class="stat-value" id="stat-progress">0/0</span></div>
         <span class="stat-sep">|</span>
-        <button class="btn-pinyin on" id="btn-toggle-pinyin">拼音</button>
+        <button class="btn-pinyin on" id="btn-toggle-pinyin">隐藏拼音</button>
         <button class="btn-submit-early" id="btn-submit-early" style="display:none">确认提交</button>
       </div>
       <div class="stats-actions">
         <button class="btn-sm" id="btn-pause">⏸️ 暂停</button>
         <button class="btn-sm" id="btn-reset">🔄 重置</button>
-        <button class="btn-sm" id="btn-toggle-pinyin-compact" style="display:none" onclick="document.getElementById('btn-toggle-pinyin').click()">拼音</button>
+        <button class="btn-sm" id="btn-toggle-pinyin-compact" style="display:none" onclick="document.getElementById('btn-toggle-pinyin').click()">隐藏拼音</button>
         <button class="btn-sm" id="btn-submit-early-compact" style="display:none" onclick="document.getElementById('btn-submit-early').click()">确认提交</button>
       </div>
     </div>
@@ -5948,6 +5948,8 @@ document.getElementById('btn-toggle-pinyin').addEventListener('click', function(
   AppState.showPinyin = !AppState.showPinyin;
   this.classList.toggle('on', AppState.showPinyin);
   this.textContent = AppState.showPinyin ? '隐藏拼音' : '显示拼音';
+  var c=document.getElementById('btn-toggle-pinyin-compact');
+  if(c) c.textContent = AppState.showPinyin ? '隐藏拼音' : '显示拼音';
   renderAllSegments();
   focusHiddenInput();
 });
