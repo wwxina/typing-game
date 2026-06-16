@@ -1049,14 +1049,33 @@ async function accountAPI(method, path, body) {
     if (path === "/api/class/exercise/delete" && method === "POST") {
       if (!body.exerciseId) throw new Error("缺少练习ID");
       var cid=body.classId;if(!cid){var r0=await __db.from("classes").select("id").eq("teacher_id",uid).limit(1).maybeSingle();if(!r0.data) throw new Error("尚未创建班级");cid=r0.data.id;}
+      // 从源班级删除练习
       var r=await __db.from("classes").select("*").eq("id",cid).maybeSingle();
-      if (!r.data) throw new Error("班级不存在");
-      var exs=r.data.exercises||[];var idx=exs.findIndex(function(e){return e.id===body.exerciseId;});
-      if(idx===-1) throw new Error("练习不存在");exs.splice(idx,1);await __db.from("classes").eq("id",cid).update({exercises:exs});
-      for(var i=0;i<(r.data.student_ids||[]).length;i++){var sid=r.data.student_ids[i];
-        var r2=await __db.from("user_data").select("teacher_exercises").eq("user_id",sid).maybeSingle();
-        if(r2.data&&r2.data.teacher_exercises){var ne=r2.data.teacher_exercises.filter(function(e){return e.exerciseId!==body.exerciseId;});await __db.from("user_data").eq("user_id",sid).update({teacher_exercises:ne,updated_at:Date.now()});}}
-      return {success:true};
+      if(r.data){
+        var exs=r.data.exercises||[];var idx=exs.findIndex(function(e){return e.id===body.exerciseId;});
+        if(idx>=0){exs.splice(idx,1);await __db.from("classes").eq("id",cid).update({exercises:exs});}
+      }
+      // 查出教师所有班级的全部学生（该练习可能分发到了多个班级）
+      var allClasses=await __db.from("classes").select("id,student_ids").eq("teacher_id",uid);
+      var allSids=[];if(allClasses.data) allClasses.data.forEach(function(c){allSids=allSids.concat(c.student_ids||[]);});
+      // 去重
+      var seen={};allSids=allSids.filter(function(s){if(seen[s])return false;seen[s]=true;return true;});
+      if(allSids.length===0) return {success:true,removedFrom:0};
+      // 批量查出所有学生的 teacher_exercises
+      var udMap={};var batchR=await __db.from("user_data").select("user_id,teacher_exercises").in("user_id",allSids);
+      if(batchR.data) batchR.data.forEach(function(d){udMap[d.user_id]=d;});
+      // 并发删除
+      var count=0;var updates=[];
+      allSids.forEach(function(sid){
+        var ud=udMap[sid];if(!ud) return;
+        var te=ud.teacher_exercises||[];
+        var ne=te.filter(function(e){return e.exerciseId!==body.exerciseId;});
+        if(ne.length<te.length){updates.push({user_id:sid,teacher_exercises:ne,updated_at:Date.now()});count++;}
+      });
+      await Promise.all(updates.map(function(u){
+        return __db.from("user_data").eq("user_id",u.user_id).update({teacher_exercises:u.teacher_exercises,updated_at:u.updated_at}).then(function(){},function(){});
+      }));
+      return {success:true,removedFrom:count};
     }
     if (path.indexOf("/api/class/dashboard")===0) {
       var cid=q.classId;if(!cid){var r0=await __db.from("classes").select("id").eq("teacher_id",uid).limit(1).maybeSingle();if(!r0.data) throw new Error("尚未创建班级");cid=r0.data.id;}
