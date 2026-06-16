@@ -712,7 +712,7 @@ tr:hover td { background: var(--color-bg); }
     <p id="distribute-ex-title" style="font-size:14px;color:#555;margin-bottom:16px;padding:10px 12px;background:#f8f9fa;border-radius:8px;"></p>
     <div style="margin-bottom:16px;">
       <label style="display:block;font-size:13px;font-weight:600;color:#555;margin-bottom:6px;">📋 分发到班级</label>
-      <select id="distribute-class-select" style="width:100%;padding:12px 14px;border:2px solid #e0e0e0;border-radius:10px;font-size:15px;outline:none;background:#fff;cursor:pointer;margin-bottom:8px;font-weight:600;color:#1B3A4B;"></select>
+      <select id="distribute-class-select" onchange="confirmDistribute()" style="width:100%;padding:12px 14px;border:2px solid #0ea5e9;border-radius:10px;font-size:15px;outline:none;background:#fff;cursor:pointer;margin-bottom:8px;font-weight:600;color:#1B3A4B;"></select>
       <button class="btn btn-secondary btn-sm" id="btn-distribute-refresh-classes" style="width:100%;">🔄 刷新班级列表</button>
     </div>
     <button class="btn btn-primary" id="btn-distribute-confirm" onclick="confirmDistribute()" style="width:100%;padding:14px;font-size:16px;font-weight:700;border-radius:12px;background:linear-gradient(135deg,#0ea5e9,#0284c7);">✅ 确认分发</button>
@@ -1017,11 +1017,24 @@ async function accountAPI(method, path, body) {
       var r=await __db.from("classes").select("*").eq("id",cid).maybeSingle();
       if (!r.data) throw new Error("班级不存在");
       var cls=r.data;var ex=(cls.exercises||[]).find(function(e){return e.id===body.exerciseId;});
-      if (!ex) throw new Error("练习不存在");var count=0;
-      for(var i=0;i<(cls.student_ids||[]).length;i++){var sid=cls.student_ids[i];
+      // 直接使用传入的练习数据（支持跨班分发）
+      if(!body.exerciseTitle||!body.exerciseText){
+        var exData=null;var srcR2=await __db.from("classes").select("exercises").eq("id",cid).maybeSingle();
+        if(srcR2.data){exData=(srcR2.data.exercises||[]).find(function(e){return e.id===body.exerciseId;});}
+        if(!exData) throw new Error("练习不存在");
+        body.exerciseTitle=exData.title;body.exerciseText=exData.text;
+      }
+      if((cls.student_ids||[]).length===0) throw new Error("班级没有学生");
+      var count=0;
+      for(var i=0;i<cls.student_ids.length;i++){var sid=cls.student_ids[i];
         var r2=await __db.from("user_data").select("teacher_exercises").eq("user_id",sid).maybeSingle();
-        if(r2.data){var te=r2.data.teacher_exercises||[];
-          if(!te.find(function(e){return e.exerciseId===body.exerciseId;})){te.push({exerciseId:ex.id,classId:cid,title:ex.title,text:ex.text,completed:false,bestSpeed:0,bestAccuracy:0,stars:0});await __db.from("user_data").eq("user_id",sid).update({teacher_exercises:te,updated_at:Date.now()});count++;}}}
+        if(!r2.data){continue;}
+        var te=r2.data.teacher_exercises||[];
+        if(!te.find(function(e){return e.exerciseId===body.exerciseId;})){
+          te.push({exerciseId:body.exerciseId,classId:cid,title:body.exerciseTitle,text:body.exerciseText,completed:false,bestSpeed:0,bestAccuracy:0,stars:0,submissions:[]});
+          await __db.from("user_data").eq("user_id",sid).update({teacher_exercises:te,updated_at:Date.now()});
+          count++;
+        }}
       return {distributed:true,count:count};
     }
     if (path === "/api/class/exercise/delete" && method === "POST") {
@@ -1319,12 +1332,14 @@ async function loadClassInfoForExercise(cid) {
 }
 
 var _pendingDistributeExId = null;
+var _pendingDistributeEx = null; // 缓存完整练习数据
 function showDistributeModal(exerciseId) {
   _pendingDistributeExId = exerciseId;
+  _pendingDistributeEx = null;
   var exTitle = '练习';
   if (TeacherState.classData && TeacherState.classData.exercises) {
     var ex = TeacherState.classData.exercises.find(function(e) { return e.id === exerciseId; });
-    if (ex) exTitle = ex.title;
+    if (ex) { exTitle = ex.title; _pendingDistributeEx = ex; }
   }
   document.getElementById('distribute-ex-title').textContent = '📝 ' + exTitle;
   // 填充班级下拉
@@ -1363,7 +1378,9 @@ async function confirmDistribute() {
   document.getElementById('distribute-loading').style.display = '';
   document.getElementById('btn-distribute-confirm').style.display = 'none';
   try {
-    var data = await accountAPI('POST', '/api/class/exercise/distribute', { exerciseId: _pendingDistributeExId, classId: cid });
+    var distBody = { exerciseId: _pendingDistributeExId, classId: cid };
+    if (_pendingDistributeEx) { distBody.exerciseTitle = _pendingDistributeEx.title; distBody.exerciseText = _pendingDistributeEx.text; }
+    var data = await accountAPI('POST', '/api/class/exercise/distribute', distBody);
     document.getElementById('distribute-loading').style.display = 'none';
     var iconEl = document.getElementById('distribute-result-icon');
     var textEl = document.getElementById('distribute-result-text');
