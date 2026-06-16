@@ -798,6 +798,14 @@ input { font-family: inherit; }
   min-width: 88px; text-align: center;
 }
 .stats-bottom .btn-pinyin:hover { background: var(--color-accent-dark); border-color: var(--color-accent-dark); }
+.stats-bottom .btn-submit-early {
+  padding: 8px 16px; border-radius: var(--radius-sm); font-size: var(--font-size-base);
+  font-weight: 600; color: #fff; background: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  transition: all var(--transition-fast); margin-left: var(--space-sm);
+  min-width: 88px; text-align: center; cursor: pointer;
+}
+.stats-bottom .btn-submit-early:hover { background: var(--color-accent-dark); border-color: var(--color-accent-dark); }
 .stats-bottom .btn-pinyin.on { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
 
 /* ===== MODAL ===== */
@@ -1621,7 +1629,7 @@ input { font-family: inherit; }
         <div class="stat-item"><span class="stat-label">进度</span> <span class="stat-value" id="stat-progress">0/0</span></div>
         <span class="stat-sep">|</span>
         <button class="btn-pinyin on" id="btn-toggle-pinyin">拼音</button>
-        <button class="btn-submit-early" id="btn-submit-early" style="display:none;padding:8px 16px;border-radius:var(--radius-sm);font-size:var(--font-size-base);font-weight:600;color:#fff;background:#f59e0b;border:1px solid #f59e0b;transition:all var(--transition-fast);min-width:88px;text-align:center;cursor:pointer;margin-left:var(--space-sm);">📤 提前提交</button>
+        <button class="btn-submit-early" id="btn-submit-early" style="display:none">📤 提前提交</button>
       </div>
       <div class="stats-actions">
         <button class="btn-sm" id="btn-pause">⏸️ 暂停</button>
