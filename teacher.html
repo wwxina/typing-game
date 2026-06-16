@@ -712,7 +712,7 @@ tr:hover td { background: var(--color-bg); }
     <p id="distribute-ex-title" style="font-size:14px;color:#555;margin-bottom:16px;padding:10px 12px;background:#f8f9fa;border-radius:8px;"></p>
     <div style="margin-bottom:16px;">
       <label style="display:block;font-size:13px;font-weight:600;color:#555;margin-bottom:6px;">📋 分发到班级</label>
-      <select id="distribute-class-select" onchange="confirmDistribute()" style="width:100%;padding:12px 14px;border:2px solid #0ea5e9;border-radius:10px;font-size:15px;outline:none;background:#fff;cursor:pointer;margin-bottom:8px;font-weight:600;color:#1B3A4B;"></select>
+      <select id="distribute-class-select" style="width:100%;padding:12px 14px;border:2px solid #0ea5e9;border-radius:10px;font-size:15px;outline:none;background:#fff;cursor:pointer;margin-bottom:8px;font-weight:600;color:#1B3A4B;"></select>
       <button class="btn btn-secondary btn-sm" id="btn-distribute-refresh-classes" style="width:100%;">🔄 刷新班级列表</button>
     </div>
     <button class="btn btn-primary" id="btn-distribute-confirm" onclick="confirmDistribute()" style="width:100%;padding:14px;font-size:16px;font-weight:700;border-radius:12px;background:linear-gradient(135deg,#0ea5e9,#0284c7);">✅ 确认分发</button>
@@ -1025,16 +1025,25 @@ async function accountAPI(method, path, body) {
         body.exerciseTitle=exData.title;body.exerciseText=exData.text;
       }
       if((cls.student_ids||[]).length===0) throw new Error("班级没有学生");
-      var count=0;
-      for(var i=0;i<cls.student_ids.length;i++){var sid=cls.student_ids[i];
-        var r2=await __db.from("user_data").select("teacher_exercises").eq("user_id",sid).maybeSingle();
-        if(!r2.data){continue;}
-        var te=r2.data.teacher_exercises||[];
+      // 批量查询所有学生数据（一次查询替代 N 次）
+      var udMap={};
+      var batchR=await __db.from("user_data").select("user_id,teacher_exercises").in("user_id",cls.student_ids);
+      if(batchR.data) batchR.data.forEach(function(d){udMap[d.user_id]=d;});
+      var count=0;var updates=[];
+      cls.student_ids.forEach(function(sid){
+        var ud=udMap[sid];
+        if(!ud) return;
+        var te=ud.teacher_exercises||[];
         if(!te.find(function(e){return e.exerciseId===body.exerciseId;})){
           te.push({exerciseId:body.exerciseId,classId:cid,title:body.exerciseTitle,text:body.exerciseText,completed:false,bestSpeed:0,bestAccuracy:0,stars:0,submissions:[]});
-          await __db.from("user_data").eq("user_id",sid).update({teacher_exercises:te,updated_at:Date.now()});
+          updates.push({user_id:sid,teacher_exercises:te,updated_at:Date.now()});
           count++;
-        }}
+        }
+      });
+      // 并发写入
+      for(var j=0;j<updates.length;j++){
+        await __db.from("user_data").eq("user_id",updates[j].user_id).update({teacher_exercises:updates[j].teacher_exercises,updated_at:updates[j].updated_at});
+      }
       return {distributed:true,count:count};
     }
     if (path === "/api/class/exercise/delete" && method === "POST") {
