@@ -2331,9 +2331,13 @@ document.addEventListener('DOMContentLoaded', function() {
     reader.onload = function(e) {
       document.getElementById('input-ex-text').value = e.target.result;
       // 自动用文件名填充标题（去掉 .txt 后缀）
-      var titleFromFile = file.name.replace(/\.txt$/i, '');
-      document.getElementById('input-ex-title').value = titleFromFile;
-      document.getElementById('import-file-name').textContent = '已导入：' + file.name;
+      var titleFromFile = file.name.replace(/\.(txt|text)$/i, '').replace(/\.$/,'');
+      var titleInput = document.getElementById('input-ex-title');
+      // 只在标题为空或没填过时自动填充
+      if (!titleInput.value || titleInput.value === titleInput.placeholder) {
+        titleInput.value = titleFromFile;
+      }
+      document.getElementById('import-file-name').textContent = '已导入：' + file.name + '（标题已自动填入）';
     };
     reader.onerror = function() {
       showToast('文件读取失败，请重试');
