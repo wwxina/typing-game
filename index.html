@@ -4828,6 +4828,9 @@ function renderPracticePage() {
   document.getElementById('typing-stars').style.color = '#d1d5db';
   renderAllSegments();
   updateStatsDisplay();
+  // 提前提交按钮：进入打字页即显示
+  var btnSubmit=document.getElementById('btn-submit-early');
+  if(btnSubmit) btnSubmit.style.display='';
 }
 
 function buildCharCellHTML(char, pinyin, si, ci, globalIdx) {
@@ -5332,7 +5335,7 @@ function processCharInput(char) {
   positionHiddenInput();
   document.getElementById('click-to-start').classList.add('hidden');
   var btnSubmit=document.getElementById('btn-submit-early');
-  if(btnSubmit && AppState.correctCount>0) btnSubmit.style.display='';
+  if(btnSubmit) btnSubmit.style.display='';
   updateStatsDisplay();
   saveSession();
 }
