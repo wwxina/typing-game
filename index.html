@@ -4222,9 +4222,9 @@ function navigateTo(page) {
 function updateStatsCompact() {
   var stats = document.querySelector('.stats-bottom');
   if (!stats || AppState.currentPage !== 'typing-practice') return;
-  var rect = stats.getBoundingClientRect();
-  var docRemaining = document.documentElement.scrollHeight - window.scrollY - window.innerHeight;
-  var isSticky = Math.abs(rect.bottom - window.innerHeight) < 3 && docRemaining > 50;
+  var scrollY = window.scrollY || document.documentElement.scrollTop;
+  // 只有页面真正向下滚动超过 30px 才触发紧凑模式
+  var isSticky = scrollY > 30;
   stats.classList.toggle('compact', isSticky);
 }
 
