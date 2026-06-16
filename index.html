@@ -4826,6 +4826,8 @@ function renderToc() {
 /* ===== PRACTICE PAGE ===== */
 function renderPracticePage() {
   window.scrollTo(0, 0);
+  // 滚动到顶后重新判断紧凑模式
+  updateStatsCompact();
   const info = getCurrentLessonInfo();
   document.getElementById('crumb-course').textContent = info.grade;
   document.getElementById('crumb-lesson').textContent = info.title;
