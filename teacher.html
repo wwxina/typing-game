@@ -572,7 +572,7 @@ tr:hover td { background: var(--color-bg); }
           <table id="dashboard-table">
             <thead>
               <tr>
-                <th>学号</th><th>姓名</th><th>练习次数</th><th>教师练习</th><th>平均速度</th><th>最高速度</th><th>正确率</th><th>⭐</th><th>宠物</th>
+                <th>学号</th><th>姓名</th><th>练习次数</th><th>教师练习</th><th>最高得分</th><th>平均速度</th><th>最高速度</th><th>正确率</th><th>⭐</th><th>宠物</th>
               </tr>
             </thead>
             <tbody id="dashboard-tbody"></tbody>
@@ -827,7 +827,7 @@ async function _fmtStudent(sid,classExercises){
   var r2=await __db.from("profiles").select("*").eq("user_id",sid).maybeSingle();
   var ud=r1.data,pf=r2.data;
   var recs=ud?(ud.records||[]):[];var pet=ud?(ud.pet||{}):{};var te=ud?(ud.teacher_exercises||[]):[];
-  var total=recs.length,ts=0,ta=0,ms=0;recs.forEach(function(r){ts+=r.speed||0;ta+=r.accuracy||0;if(r.speed>ms)ms=r.speed;});
+  var total=recs.length,ts=0,ta=0,ms=0,bs=0;recs.forEach(function(r){ts+=r.speed||0;ta+=r.accuracy||0;if(r.speed>ms)ms=r.speed;var s=r.score||(Math.min(r.speed||0,100)*Math.pow((r.accuracy||0)/100,2)-(r.errorCount||0)*0.2);if(s>bs)bs=s;});
   var ds={};recs.forEach(function(r){var d=(r.date||"").slice(0,10);if(d)ds[d]=true;});
   var pets=pet.pets||[],ap=pets.filter(function(p){return p.adopted;}),mp=pets.filter(function(p){return p.maxLevel;}),hs=0;
   pets.forEach(function(p){if(p.stage>hs)hs=p.stage;});
@@ -837,6 +837,7 @@ async function _fmtStudent(sid,classExercises){
   var est={};if(exTotal>0){var em2={};te.forEach(function(e){em2[e.exerciseId]=e;});exs.forEach(function(ex){var st=em2[ex.id];est[ex.id]={title:ex.title,completed:st?st.completed:false,bestSpeed:st?(st.bestSpeed||0):0,bestAccuracy:st?(st.bestAccuracy||0):0,stars:st?(st.stars||0):0,submissions:st?(st.submissions||[]):[]};});}
   return{userId:sid,username:pf?pf.username:sid,studentNo:(pf&&pf.student_no)||"",
     totalPractices:total,avgSpeed:total>0?Math.round(ts/total):0,maxSpeed:ms,
+    bestScore:Math.round(bs*10)/10,
     avgAccuracy:total>0?Math.round(ta/total):0,activeDays:Object.keys(ds).length,
     lastPracticeAt:recs.length>0?recs[recs.length-1].time:0,
     totalChars:recs.reduce(function(s,r){return s+(r.totalChars||0)},0),
@@ -856,7 +857,7 @@ async function _fmtStudentsBulk(sids,classExercises){
 }
 function _buildStudentInfo(sid,ud,pf,classExercises){
   var recs=ud?(ud.records||[]):[];var pet=ud?(ud.pet||{}):{};var te=ud?(ud.teacher_exercises||[]):[];
-  var total=recs.length,ts=0,ta=0,ms=0;recs.forEach(function(r){ts+=r.speed||0;ta+=r.accuracy||0;if(r.speed>ms)ms=r.speed;});
+  var total=recs.length,ts=0,ta=0,ms=0,bs=0;recs.forEach(function(r){ts+=r.speed||0;ta+=r.accuracy||0;if(r.speed>ms)ms=r.speed;var s=r.score||(Math.min(r.speed||0,100)*Math.pow((r.accuracy||0)/100,2)-(r.errorCount||0)*0.2);if(s>bs)bs=s;});
   var ds={};recs.forEach(function(r){var d=(r.date||"").slice(0,10);if(d)ds[d]=true;});
   var pets=pet.pets||[],ap=pets.filter(function(p){return p.adopted;}),mp=pets.filter(function(p){return p.maxLevel;}),hs=0;
   pets.forEach(function(p){if(p.stage>hs)hs=p.stage;});
@@ -866,6 +867,7 @@ function _buildStudentInfo(sid,ud,pf,classExercises){
   var est={};if(exTotal>0){var em2={};te.forEach(function(e){em2[e.exerciseId]=e;});exs.forEach(function(ex){var st=em2[ex.id];est[ex.id]={title:ex.title,completed:st?st.completed:false,bestSpeed:st?(st.bestSpeed||0):0,bestAccuracy:st?(st.bestAccuracy||0):0,stars:st?(st.stars||0):0,submissions:st?(st.submissions||[]):[]};});}
   return{userId:sid,username:pf?pf.username:sid,studentNo:(pf&&pf.student_no)||"",
     totalPractices:total,avgSpeed:total>0?Math.round(ts/total):0,maxSpeed:ms,
+    bestScore:Math.round(bs*10)/10,
     avgAccuracy:total>0?Math.round(ta/total):0,activeDays:Object.keys(ds).length,
     lastPracticeAt:recs.length>0?recs[recs.length-1].time:0,
     totalChars:recs.reduce(function(s,r){return s+(r.totalChars||0)},0),
@@ -1885,6 +1887,7 @@ function renderDashboard() {
         '<td><strong>' + escHtml(s.username) + '</strong></td>' +
         '<td>' + s.totalPractices + ' 次</td>' +
         '<td class="ex-col" style="cursor:pointer;color:var(--color-accent);" title="点击查看提交详情">' + exText + '</td>' +
+        '<td style="font-weight:700;color:#0ea5e9;">' + (s.bestScore||0) + '</td>' +
         '<td class="' + speedClass + '">' + s.avgSpeed + ' 字/分</td>' +
         '<td>' + s.maxSpeed + ' 字/分</td>' +
         '<td>' + s.avgAccuracy + '%</td>' +
@@ -1902,13 +1905,13 @@ function exportCSV() {
     showToast('没有数据可导出');
     return;
   }
-  var header = ['学号', '姓名', '练习次数', '教师练习', '平均速度(字/分)', '最高速度(字/分)', '正确率(%)', '活跃天数', '经验值', '星星', '宠物领养', '满级', '最后练习时间'];
+  var header = ['学号', '姓名', '练习次数', '教师练习', '最高得分', '平均速度(字/分)', '最高速度(字/分)', '正确率(%)', '活跃天数', '经验值', '星星', '宠物领养', '满级', '最后练习时间'];
   var rows = data.students.map(function(s) {
     var lastTime = s.lastPracticeAt ? new Date(s.lastPracticeAt).toLocaleString('zh-CN') : '暂无';
     var ep = s.exerciseProgress;
     var exText = ep ? ep.completed + '/' + ep.total : '-';
     var pet = s.pet || {};
-    return [s.studentNo || '', s.username, s.totalPractices, exText, s.avgSpeed, s.maxSpeed, s.avgAccuracy, s.activeDays, pet.totalXP, pet.stars, pet.adoptedCount, pet.maxLevelCount, lastTime];
+    return [s.studentNo || '', s.username, s.totalPractices, exText, s.bestScore||0, s.avgSpeed, s.maxSpeed, s.avgAccuracy, s.activeDays, pet.totalXP, pet.stars, pet.adoptedCount, pet.maxLevelCount, lastTime];
   });
   var csvContent = '﻿' + header.join(',') + '\n' + rows.map(function(r) { return r.join(','); }).join('\n');
   var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
