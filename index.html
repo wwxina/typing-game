@@ -2569,7 +2569,7 @@ async function loadLeaderboard(classId, className) {
       var recs = r._records || [];
       var bestScore=0, daily=[];
       recs.forEach(function(rec){
-        var s=rec.score||calcScore(rec.speed||0,rec.accuracy||0,rec.errorCount||0);
+        var s=calcScore(rec.speed||0,rec.accuracy||0,rec.errorCount||0);
         if(s>bestScore) bestScore=s;
         if((rec.date||'').slice(0,10)===today) daily.push(rec.title||'练习');
       });
@@ -2924,7 +2924,7 @@ async function accountAPI(path, body) {
           var recs=ud.records||[];
           var ts=0,ta=0,msp=0,bs=0;recs.forEach(function(r){
             ts+=r.speed||0;ta+=r.accuracy||0;if(r.speed>msp)msp=r.speed;
-            var s=r.score||calcScore(r.speed||0,r.accuracy||0,r.errorCount||0);
+            var s=calcScore(r.speed||0,r.accuracy||0,r.errorCount||0);
             if(s>bs)bs=s;
           });
           ranks.push({userId:sid,username:pf.username||sid,studentNo:pf.student_no||"",avgSpeed:recs.length>0?Math.round(ts/recs.length):0,avgAccuracy:recs.length>0?Math.round(ta/recs.length):0,maxSpeed:msp,totalPractices:recs.length,bestScore:Math.round(bs*10)/10,_records:recs});
