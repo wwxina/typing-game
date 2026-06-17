@@ -4088,7 +4088,7 @@ function loadBestScores() {
   try { return JSON.parse(localStorage.getItem('typing2_scores')) || {}; } catch(e) { return {}; }
 }
 function calcScore(speed, accuracy, errorCount) {
-  return Math.round((Math.min(speed, 100) * Math.pow(accuracy / 100, 2) - (errorCount || 0) * 0.2) * 10) / 10;
+  return Math.round((Math.sqrt(speed) * Math.pow(accuracy / 100, 2) * 10 - (errorCount || 0) * 0.5) * 10) / 10;
 }
 function getStars(speed, accuracy) {
   if (speed >= 30 && accuracy >= 95) return 3;
