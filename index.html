@@ -569,7 +569,6 @@ input { font-family: inherit; }
 }
 .btn-back-to-top:hover { opacity: 1; transform: scale(1.08); }
 .btn-back-to-top.visible { opacity: 0.85; pointer-events: auto; }
-#btn-toc { bottom: 128px; }
 
 /* ===== TABLE OF CONTENTS PANEL ===== */
 .toc-panel {
@@ -6272,11 +6271,9 @@ function init() {
 
 var _lastScrollY = 0;
 function fixTopBtn() {
-  const btnTop = document.getElementById('btn-back-to-top');
   const btnToc = document.getElementById('btn-toc');
-  // 滚动超过 300px 显示按钮
+  // 滚动超过 300px 显示目录按钮
   var scrolled = window.scrollY;
-  if (btnTop) btnTop.classList.toggle('visible', scrolled > 300);
   if (btnToc) btnToc.classList.toggle('visible', scrolled > 300);
 
   // 顶部导航栏下滑隐藏，上滑显示
@@ -6345,6 +6342,5 @@ document.addEventListener('DOMContentLoaded', init);
 </script>
 <!-- 回到顶部 & 目录按钮（固定右下角，不受页面滚动影响） -->
 <button class="btn-back-to-top" id="btn-toc" title="课程目录" onclick="openToc()">☰</button>
-<button class="btn-back-to-top" id="btn-back-to-top" title="回到顶部">⬆</button>
 </body>
 </html>
