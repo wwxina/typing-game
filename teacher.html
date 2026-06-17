@@ -1737,13 +1737,13 @@ async function batchMove(){
   var ids=getSelectedIds();if(!ids.length){showToast('请先选择学生');return;}
   var tid=document.getElementById('batch-move-class').value;if(!tid){showToast('请选择目标班级');return;}
   if(!confirm('将 '+ids.length+' 名学生移动到目标班级？')) return;
-  for(var i=0;i<ids.length;i++){await accountAPI('POST','/api/class/move-student',{studentId:ids[i],fromClassId:TeacherState.currentClassId,toClassId:tid});}
+  await Promise.all(ids.map(function(sid){return accountAPI('POST','/api/class/move-student',{studentId:sid,fromClassId:TeacherState.currentClassId,toClassId:tid});}));
   showToast('已移动 '+ids.length+' 人');await loadClassInfo();
 }
 async function batchResetPwd(){
   var ids=getSelectedIds();if(!ids.length){showToast('请先选择学生');return;}
   if(!confirm('将 '+ids.length+' 名学生的密码重置为 123456？')) return;
-  for(var i=0;i<ids.length;i++){await accountAPI('POST','/api/class/update-student',{studentId:ids[i],classId:TeacherState.currentClassId,action:'resetPassword'});}
+  await Promise.all(ids.map(function(sid){return accountAPI('POST','/api/class/update-student',{studentId:sid,classId:TeacherState.currentClassId,action:'resetPassword'});}));
   showToast('已重置 '+ids.length+' 人');
 }
 async function deleteStudentForever(sid){
@@ -1752,14 +1752,14 @@ async function deleteStudentForever(sid){
 async function batchRemove(){
   var ids=getSelectedIds();if(!ids.length){showToast('请先选择学生');return;}
   if(!confirm('将 '+ids.length+' 名学生移出班级？数据保留。')) return;
-  for(var i=0;i<ids.length;i++){await accountAPI('POST','/api/class/remove-student',{studentId:ids[i],classId:TeacherState.currentClassId});}
+  await Promise.all(ids.map(function(sid){return accountAPI('POST','/api/class/remove-student',{studentId:sid,classId:TeacherState.currentClassId});}));
   showToast('已移除 '+ids.length+' 人');await loadClassInfo();
 }
 async function batchDeleteStudents(){
   var ids=getSelectedIds();if(!ids.length){showToast('请先选择学生');return;}
   if(!confirm('⚠️ 将彻底删除 '+ids.length+' 名学生的所有数据，不可恢复！')) return;
   if(!confirm('再次确认：永久删除 '+ids.length+' 人？')) return;
-  for(var i=0;i<ids.length;i++){await accountAPI('POST','/api/class/delete-student',{studentId:ids[i]});}
+  await Promise.all(ids.map(function(sid){return accountAPI('POST','/api/class/delete-student',{studentId:sid});}));
   showToast('已彻底删除 '+ids.length+' 人');await loadClassInfo();
 }
 function batchExport(){
