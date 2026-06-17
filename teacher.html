@@ -1183,6 +1183,12 @@ async function loadClassList() {
   try {
     var data = await accountAPI('GET', '/api/class/list');
     TeacherState.classList = data.classes || [];
+    // 按班级名称数字排序（501/502/503...）
+    TeacherState.classList.sort(function(a,b){
+      var na=parseInt(a.name), nb=parseInt(b.name);
+      if(!isNaN(na)&&!isNaN(nb)) return na-nb;
+      return a.name.localeCompare(b.name);
+    });
   } catch(e) {
     TeacherState.classList = [];
   }
