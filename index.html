@@ -1701,7 +1701,7 @@ input { font-family: inherit; }
     <div class="modal-stats" id="submit-stats"></div>
     <p style="color:var(--color-text-muted);margin-bottom:var(--space-lg);font-size:var(--font-size-sm);line-height:1.6;">
       ⚠️ 中途提交不会计入排行榜<br>
-      <span style="font-size:12px;">（排行榜仅记录完整完成 + 用时≥15秒 + 字数≥20字）</span>
+      <span style="font-size:12px;">（排行榜仅记录完整完成 + 用时≥5秒 + 字数≥5字）</span>
     </p>
     <div class="modal-actions" style="display:flex;gap:var(--space-sm);justify-content:center;">
       <button class="btn btn-secondary" id="btn-submit-cancel" style="min-width:100px;">继续打字</button>
@@ -5659,8 +5659,8 @@ function completeLesson(fullComplete) {
   const secs = Math.floor(elapsed % 60);
   const stars = getStars(speed, accuracy);
 
-  // 防刷分：必须完整打完 + 至少15秒 + 至少20字
-  var qualify = (fullComplete === true) && elapsed >= 15 && total >= 20;
+  // 防刷分：必须完整打完 + 至少5秒 + 至少5字
+  var qualify = (fullComplete === true) && elapsed >= 5 && total >= 5;
 
   if (AppState.retryMode) {
     showResultModal({ speed, accuracy, timeStr: String(mins).padStart(2,'0') + '分' + String(secs).padStart(2,'0') + '秒', total, stars, isRetry: true });
