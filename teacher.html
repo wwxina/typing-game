@@ -986,9 +986,9 @@ async function accountAPI(method, path, body) {
       if (body.action === "resetPassword") {
         var r=await __db.from("profiles").select("*").eq("user_id",body.studentId).maybeSingle();
         if (!r.data) throw new Error("用户不存在");
-        var h=await _hashPwd("123456",r.data.username);
+        var h=await _hashPwd("123",r.data.username);
         await __db.from("profiles").eq("user_id",body.studentId).update({password_hash:h});
-        return {success:true,message:"密码已重置为 123456"};
+        return {success:true,message:"密码已重置为 123"};
       } else if (body.action === "updateStudentNo") {
         if (!body.studentNo||body.studentNo.length<1||body.studentNo.length>30) throw new Error("学号需要1-30个字符");
         await __db.from("profiles").eq("user_id",body.studentId).update({student_no:body.studentNo});
@@ -1301,10 +1301,10 @@ async function saveEditStudent() {
 async function resetPasswordInModal() {
   var studentId = document.getElementById('edit-st-id').value;
   var studentName = document.getElementById('edit-st-name-label').textContent;
-  if (!confirm('确定要将「' + studentName + '」的密码重置为 123456 吗？')) return;
+  if (!confirm('确定要将「' + studentName + '」的密码重置为 123 吗？')) return;
   try {
     await accountAPI('POST', '/api/class/update-student', { studentId: studentId, classId: TeacherState.currentClassId, action: 'resetPassword' });
-    showToast(studentName + ' 的密码已重置为 123456');
+    showToast(studentName + ' 的密码已重置为 123');
   } catch(e) {
     showToast('重置失败：' + e.message);
   }
@@ -1742,7 +1742,7 @@ async function batchMove(){
 }
 async function batchResetPwd(){
   var ids=getSelectedIds();if(!ids.length){showToast('请先选择学生');return;}
-  if(!confirm('将 '+ids.length+' 名学生的密码重置为 123456？')) return;
+  if(!confirm('将 '+ids.length+' 名学生的密码重置为 123？')) return;
   await Promise.all(ids.map(function(sid){return accountAPI('POST','/api/class/update-student',{studentId:sid,classId:TeacherState.currentClassId,action:'resetPassword'});}));
   showToast('已重置 '+ids.length+' 人');
 }
