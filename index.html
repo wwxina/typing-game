@@ -1701,7 +1701,7 @@ input { font-family: inherit; }
     <div class="modal-stats" id="submit-stats"></div>
     <p style="color:var(--color-text-muted);margin-bottom:var(--space-lg);font-size:var(--font-size-sm);line-height:1.6;">
       ⚠️ 中途提交不会计入排行榜<br>
-      <span style="font-size:12px;">（排行榜仅记录完整完成 + 用时≥5秒 + 字数≥5字）</span>
+      <span style="font-size:12px;">（排行榜仅记录完整完成 + 用时≥8秒 + 字数≥10字 + 正确率≥60%）</span>
     </p>
     <div class="modal-actions" style="display:flex;gap:var(--space-sm);justify-content:center;">
       <button class="btn btn-secondary" id="btn-submit-cancel" style="min-width:100px;">继续打字</button>
@@ -2563,24 +2563,22 @@ async function loadLeaderboard(classId, className) {
       document.getElementById('leaderboard-empty').classList.remove('hidden');
       return;
     }
-    // Step: cluster each student's records per lesson
+    // 新计分规则：得分 = min(速度,100) × 正确率² - 错误数×0.2，取所有记录中的最高分
     var today=new Date().toISOString().slice(0,10);
     rankings.forEach(function(r){
       var recs = r._records || [];
-      var lkeys={}, daily=[];
+      var bestScore=0, daily=[];
       recs.forEach(function(rec){
-        var k=rec.lessonKey||rec.title;
-        if(!lkeys[k]||rec.speed>lkeys[k].speed) lkeys[k]=rec;
+        var s=rec.score||calcScore(rec.speed||0,rec.accuracy||0,rec.errorCount||0);
+        if(s>bestScore) bestScore=s;
         if((rec.date||'').slice(0,10)===today) daily.push(rec.title||'练习');
       });
-      r.uniqueLessons=Object.keys(lkeys).length;
-      var bonus= r.uniqueLessons>=16?10: r.uniqueLessons>=8?8: r.uniqueLessons>=4?5:0;
-      r.bonus=bonus;
-      r.finalScore=r.avgSpeed+bonus;
+      r.bestScore=Math.round(bestScore*10)/10;
+      r.uniqueLessons=recs.length;
       r.todayLessons=daily.filter(function(v,i,a){return a.indexOf(v)===i;}).slice(0,5);
     });
-    // sort again by finalScore
-    rankings.sort(function(a,b){return b.finalScore-a.finalScore||b.avgAccuracy-a.avgAccuracy;});
+    // 按最高得分排序
+    rankings.sort(function(a,b){return b.bestScore-a.bestScore||b.avgAccuracy-a.avgAccuracy;});
 
     var myRankIdx = -1, myRank = null;
     for (var i = 0; i < rankings.length; i++) {
@@ -2593,9 +2591,8 @@ async function loadLeaderboard(classId, className) {
     var myCardEl = document.getElementById('my-rank-card');
     if (myRank && myRankIdx >= 3) {
       myCardEl.style.display = 'flex';
-      var myBonusHTML = myRank.bonus > 0 ? ' <span style=\"color:#10B981;\">+'+myRank.bonus+'</span>' : '';
       var myToday = (myRank.todayLessons||[]).length>0 ? myRank.todayLessons.join('、') : '无今日练习';
-      document.getElementById('my-rank-text').innerHTML = '第 '+(myRankIdx+1)+' 名 · 最终评分 '+myRank.finalScore+myBonusHTML+' · 📖'+myRank.uniqueLessons+'篇 · 正确率 '+myRank.avgAccuracy+'%<br><span style=\"font-size:11px;color:var(--color-text-muted);\">今日：'+escHtml(myToday.length>25?myToday.slice(0,22)+'…':myToday)+'</span>';
+      document.getElementById('my-rank-text').innerHTML = '第 '+(myRankIdx+1)+' 名 · 最高得分 '+myRank.bestScore+' · 📖'+myRank.uniqueLessons+'篇 · 正确率 '+myRank.avgAccuracy+'%<br><span style=\"font-size:11px;color:var(--color-text-muted);\">今日：'+escHtml(myToday.length>25?myToday.slice(0,22)+'…':myToday)+'</span>';
     } else {
       myCardEl.style.display = 'none';
     }
@@ -2609,12 +2606,11 @@ async function loadLeaderboard(classId, className) {
       var emojis = ['🥇','🥈','🥉'];
       // Always show first place in the middle
       function buildCard(r, idx, isFirst) {
-        var bonusTag = r.bonus>0?'<span style=\"color:#10B981;\">+'+r.bonus+'</span>':'';
         var meTag = (AccountUser && r.userId===AccountUser.userId)?'<span style=\"font-size:10px;color:var(--color-accent);\"> 我</span>':'';
         return '<div style=\"flex:1;text-align:center;background:#fff;border:2px solid '+colors[idx]+';border-radius:12px;padding:'+(isFirst?'16px 12px':'12px 8px')+';'+ (isFirst?'order:0;':'')+'\">'+
           '<div style=\"font-size:'+(isFirst?'40px':'32px')+';margin-bottom:4px;\">'+emojis[idx]+'</div>'+
           '<div style=\"font-weight:700;font-size:'+(isFirst?'16px':'14px')+';\">'+escHtml(r.username)+meTag+'</div>'+
-          '<div style=\"font-size:'+(isFirst?'22px':'18px')+';font-weight:700;color:#0ea5e9;\">'+r.finalScore+bonusTag+'</div>'+
+          '<div style=\"font-size:'+(isFirst?'22px':'18px')+';font-weight:700;color:#0ea5e9;\">'+r.bestScore+'</div>'+
           '<div style=\"font-size:11px;color:#94a3b8;\">📖'+r.uniqueLessons+'篇 · '+r.avgAccuracy+'%</div>'+
           '</div>';
       }
@@ -2641,11 +2637,10 @@ async function loadLeaderboard(classId, className) {
       var todayHTML = todayList.length>0? todayList.map(function(t){return escHtml(t);}).join('、') : '-';
       var todayShort = todayHTML.length>18? todayHTML.slice(0,16)+'…' : todayHTML;
       var todayTip = todayHTML!=='-'? (' title=\"'+todayHTML.replace(/\"/g,'&quot;')+'\"') : '';
-      var bonusTag = r.bonus>0?' <span style=\"font-size:9px;color:#10B981;\">+'+r.bonus+'</span>':'';
       html += '<tr style=\"border-bottom:1px solid var(--color-border);'+bg+'\">'+
         '<td style=\"padding:6px 2px;text-align:center;'+(ri<3?'font-size:18px;':'font-size:14px;color:#94a3b8;')+'\">'+(ri<3?['🥇','🥈','🥉'][ri]:(ri+1))+'</td>'+
         '<td style=\"padding:6px 2px;\"><span style=\"font-weight:600;\">'+escHtml(r.username)+'</span>'+(isMe?' <span style=\"font-size:10px;color:var(--color-accent);\">我</span>':'')+'</td>'+
-        '<td style=\"padding:6px 2px;text-align:center;font-weight:700;color:#0ea5e9;\">'+r.finalScore+bonusTag+'</td>'+
+        '<td style=\"padding:6px 2px;text-align:center;font-weight:700;color:#0ea5e9;\">'+r.bestScore+'</td>'+
         '<td style=\"padding:6px 2px;text-align:center;\">'+r.avgAccuracy+'%</td>'+
         '<td class=\"col-today\" style=\"padding:6px 2px;text-align:left;font-size:11px;color:var(--color-text-secondary);\"'+todayTip+'>'+todayShort+'</td></tr>';
     }
@@ -2927,11 +2922,15 @@ async function accountAPI(path, body) {
         sids.forEach(function(sid){
           var ud=udMap[sid]||{},pf=pfMap[sid]||{};
           var recs=ud.records||[];
-          var ts=0,ta=0,msp=0;recs.forEach(function(r){ts+=r.speed||0;ta+=r.accuracy||0;if(r.speed>msp)msp=r.speed;});
-          ranks.push({userId:sid,username:pf.username||sid,studentNo:pf.student_no||"",avgSpeed:recs.length>0?Math.round(ts/recs.length):0,avgAccuracy:recs.length>0?Math.round(ta/recs.length):0,maxSpeed:msp,totalPractices:recs.length,_records:recs});
+          var ts=0,ta=0,msp=0,bs=0;recs.forEach(function(r){
+            ts+=r.speed||0;ta+=r.accuracy||0;if(r.speed>msp)msp=r.speed;
+            var s=r.score||calcScore(r.speed||0,r.accuracy||0,r.errorCount||0);
+            if(s>bs)bs=s;
+          });
+          ranks.push({userId:sid,username:pf.username||sid,studentNo:pf.student_no||"",avgSpeed:recs.length>0?Math.round(ts/recs.length):0,avgAccuracy:recs.length>0?Math.round(ta/recs.length):0,maxSpeed:msp,totalPractices:recs.length,bestScore:Math.round(bs*10)/10,_records:recs});
         });
       }
-      ranks.sort(function(a,b){return b.avgSpeed-a.avgSpeed||b.avgAccuracy-a.avgAccuracy;});
+      ranks.sort(function(a,b){return b.bestScore-a.bestScore||b.avgAccuracy-a.avgAccuracy;});
       return {rankings:ranks,className:cls.data.name};
     }
     if (path === "/api/profile/update") {
@@ -4076,7 +4075,7 @@ function saveRecord(record) {
     if (records[i].lessonKey === record.lessonKey) { existIdx = i; break; }
   }
   if (existIdx >= 0) {
-    if (record.speed <= records[existIdx].speed) return; // 没进步，放弃
+    if ((record.score||0) <= (records[existIdx].score||0)) return; // 得分没进步，放弃
     records.splice(existIdx, 1);
   }
   records.push(record);
@@ -4087,6 +4086,9 @@ function saveRecord(record) {
 }
 function loadBestScores() {
   try { return JSON.parse(localStorage.getItem('typing2_scores')) || {}; } catch(e) { return {}; }
+}
+function calcScore(speed, accuracy, errorCount) {
+  return Math.round((Math.min(speed, 100) * Math.pow(accuracy / 100, 2) - (errorCount || 0) * 0.2) * 10) / 10;
 }
 function getStars(speed, accuracy) {
   if (speed >= 30 && accuracy >= 95) return 3;
@@ -4107,13 +4109,13 @@ function getEncourage(stars) {
   return '再练一次会更厉害！';
 }
 
-function saveBestScore(lessonKey, speed, accuracy, stars) {
+function saveBestScore(lessonKey, speed, accuracy, stars, score) {
   const scores = loadBestScores();
   const prev = scores[lessonKey];
-  if (!prev || speed > prev.bestSpeed || (speed === prev.bestSpeed && accuracy > prev.bestAccuracy)) {
-    scores[lessonKey] = { bestSpeed: speed, bestAccuracy: accuracy, stars: stars, completed: true };
+  if (!prev || (score||0) > (prev.bestScore||0)) {
+    scores[lessonKey] = { bestSpeed: speed, bestAccuracy: accuracy, stars: stars, bestScore: score, completed: true };
   } else if (!prev.completed) {
-    scores[lessonKey] = { bestSpeed: prev.bestSpeed || speed, bestAccuracy: prev.bestAccuracy || accuracy, stars: stars, completed: true };
+    scores[lessonKey] = { bestSpeed: prev.bestSpeed || speed, bestAccuracy: prev.bestAccuracy || accuracy, stars: stars, bestScore: score, completed: true };
   } else if (stars > (prev.stars || 0)) {
     scores[lessonKey].stars = stars;
   }
@@ -5659,15 +5661,16 @@ function completeLesson(fullComplete) {
   const secs = Math.floor(elapsed % 60);
   const stars = getStars(speed, accuracy);
 
-  // 防刷分：必须完整打完 + 至少5秒 + 至少5字
-  var qualify = (fullComplete === true) && elapsed >= 5 && total >= 5;
+  // 防刷分：完整完成 + ≥8秒 + ≥10字 + ≥60%正确率
+  var qualify = (fullComplete === true) && elapsed >= 8 && total >= 10 && accuracy >= 60;
+  var score = calcScore(speed, accuracy, AppState.errorCount);
 
   if (AppState.retryMode) {
     showResultModal({ speed, accuracy, timeStr: String(mins).padStart(2,'0') + '分' + String(secs).padStart(2,'0') + '秒', total, stars, isRetry: true });
   } else {
     if (qualify) {
-      saveBestScore(AppState.currentLessonKey, speed, accuracy, stars);
-      saveRecord({ lessonKey: AppState.currentLessonKey, grade: info.grade, title: lesson.title, speed: speed, accuracy: accuracy, duration: elapsed, totalChars: total, date: new Date().toISOString() });
+      saveBestScore(AppState.currentLessonKey, speed, accuracy, stars, score);
+      saveRecord({ lessonKey: AppState.currentLessonKey, grade: info.grade, title: lesson.title, speed: speed, accuracy: accuracy, score: score, duration: elapsed, totalChars: total, date: new Date().toISOString() });
     }
     // 每日任务（练习即计数，不受门槛限制）
     if (getCurrentPetData().adopted) {
