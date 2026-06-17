@@ -827,7 +827,7 @@ async function _fmtStudent(sid,classExercises){
   var r2=await __db.from("profiles").select("*").eq("user_id",sid).maybeSingle();
   var ud=r1.data,pf=r2.data;
   var recs=ud?(ud.records||[]):[];var pet=ud?(ud.pet||{}):{};var te=ud?(ud.teacher_exercises||[]):[];
-  var total=recs.length,ts=0,ta=0,ms=0,bs=0;recs.forEach(function(r){ts+=r.speed||0;ta+=r.accuracy||0;if(r.speed>ms)ms=r.speed;var s=r.score||(Math.min(r.speed||0,100)*Math.pow((r.accuracy||0)/100,2)-(r.errorCount||0)*0.2);if(s>bs)bs=s;});
+  var total=recs.length,ts=0,ta=0,ms=0,bs=0;recs.forEach(function(r){ts+=r.speed||0;ta+=r.accuracy||0;if(r.speed>ms)ms=r.speed;var s=r.score||(Math.sqrt(r.speed||0)*Math.pow((r.accuracy||0)/100,2)*10-(r.errorCount||0)*0.5);if(s>bs)bs=s;});
   var ds={};recs.forEach(function(r){var d=(r.date||"").slice(0,10);if(d)ds[d]=true;});
   var pets=pet.pets||[],ap=pets.filter(function(p){return p.adopted;}),mp=pets.filter(function(p){return p.maxLevel;}),hs=0;
   pets.forEach(function(p){if(p.stage>hs)hs=p.stage;});
@@ -857,7 +857,7 @@ async function _fmtStudentsBulk(sids,classExercises){
 }
 function _buildStudentInfo(sid,ud,pf,classExercises){
   var recs=ud?(ud.records||[]):[];var pet=ud?(ud.pet||{}):{};var te=ud?(ud.teacher_exercises||[]):[];
-  var total=recs.length,ts=0,ta=0,ms=0,bs=0;recs.forEach(function(r){ts+=r.speed||0;ta+=r.accuracy||0;if(r.speed>ms)ms=r.speed;var s=r.score||(Math.min(r.speed||0,100)*Math.pow((r.accuracy||0)/100,2)-(r.errorCount||0)*0.2);if(s>bs)bs=s;});
+  var total=recs.length,ts=0,ta=0,ms=0,bs=0;recs.forEach(function(r){ts+=r.speed||0;ta+=r.accuracy||0;if(r.speed>ms)ms=r.speed;var s=r.score||(Math.sqrt(r.speed||0)*Math.pow((r.accuracy||0)/100,2)*10-(r.errorCount||0)*0.5);if(s>bs)bs=s;});
   var ds={};recs.forEach(function(r){var d=(r.date||"").slice(0,10);if(d)ds[d]=true;});
   var pets=pet.pets||[],ap=pets.filter(function(p){return p.adopted;}),mp=pets.filter(function(p){return p.maxLevel;}),hs=0;
   pets.forEach(function(p){if(p.stage>hs)hs=p.stage;});
