@@ -4554,7 +4554,9 @@ function renderAllLessons() {
         '</div></div>';
     }).join('');
     return '<section class="grade-section" id="grade-sec-' + gi + '">' +
-      '<h2 class="grade-heading">' + gradeGroup.grade + '</h2>' +
+      '<h2 class="grade-heading">' + gradeGroup.grade +
+      (gi === 0 ? ' <button class="btn-back-to-top" id="btn-toc" title="课程目录" onclick="openToc()" style="position:static;display:inline-flex;vertical-align:middle;margin-left:8px;opacity:1;pointer-events:auto;">☰</button>' : '') +
+      '</h2>' +
       '<div class="grade-section-grid">' + cardsHTML + '</div>' +
       '</section>';
   }).join('');
@@ -6271,11 +6273,6 @@ function init() {
 
 var _lastScrollY = 0;
 function fixTopBtn() {
-  const btnToc = document.getElementById('btn-toc');
-  // 滚动超过 300px 显示目录按钮
-  var scrolled = window.scrollY;
-  if (btnToc) btnToc.classList.toggle('visible', scrolled > 300);
-
   // 顶部导航栏下滑隐藏，上滑显示
   const nav = document.getElementById('grade-quick-nav');
   if (nav) {
@@ -6341,6 +6338,5 @@ function initTheme() {
 document.addEventListener('DOMContentLoaded', init);
 </script>
 <!-- 回到顶部 & 目录按钮（固定右下角，不受页面滚动影响） -->
-<button class="btn-back-to-top" id="btn-toc" title="课程目录" onclick="openToc()">☰</button>
 </body>
 </html>
