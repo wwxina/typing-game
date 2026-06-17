@@ -560,13 +560,16 @@ input { font-family: inherit; }
 .grade-heading-row { margin-bottom: var(--space-md); }
 .btn-back-to-top {
   position: fixed; z-index: 100;
-  width: 32px; height: 32px; border-radius: 50%;
+  width: 40px; height: 40px; border-radius: 50%;
   background: var(--color-accent); color: #fff; border: none;
-  cursor: pointer; box-shadow: var(--shadow-md);
+  cursor: pointer; box-shadow: 0 2px 12px rgba(0,0,0,0.18);
   display: flex; align-items: center; justify-content: center;
-  font-size: 15px; transition: opacity 0.2s ease;
+  font-size: 18px; transition: opacity 0.3s, transform 0.2s;
+  right: 16px; bottom: 80px; opacity: 0; pointer-events: none;
 }
-.btn-back-to-top:hover { opacity: 0.85; }
+.btn-back-to-top:hover { opacity: 1; transform: scale(1.08); }
+.btn-back-to-top.visible { opacity: 0.85; pointer-events: auto; }
+#btn-toc { bottom: 128px; }
 
 /* ===== TABLE OF CONTENTS PANEL ===== */
 .toc-panel {
@@ -6286,20 +6289,14 @@ var _lastScrollY = 0;
 function fixTopBtn() {
   const btnTop = document.getElementById('btn-back-to-top');
   const btnToc = document.getElementById('btn-toc');
-  if (!btnTop || !btnTop.isConnected) return;
-  const heading = document.querySelector('.grade-heading');
-  if (!heading) return;
-  const hRect = heading.getBoundingClientRect();
-  const top = Math.max(hRect.top, 12);
-  const left = Math.max(hRect.left - 42, 4);
-  if (btnToc) { btnToc.style.top = top + 'px'; btnToc.style.left = left + 'px'; }
-  btnTop.style.top = (top + 38) + 'px';
-  btnTop.style.left = left + 'px';
+  // 滚动超过 300px 显示按钮
+  var scrolled = window.scrollY;
+  if (btnTop) btnTop.classList.toggle('visible', scrolled > 300);
+  if (btnToc) btnToc.classList.toggle('visible', scrolled > 300);
 
   // 顶部导航栏下滑隐藏，上滑显示
   const nav = document.getElementById('grade-quick-nav');
   if (!nav) return;
-  var scrolled = window.scrollY;
   if (scrolled > _lastScrollY && scrolled > 100) {
     nav.style.transform = 'translateY(-100%)';
     nav.style.opacity = '0';
