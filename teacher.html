@@ -999,12 +999,10 @@ async function accountAPI(method, path, body) {
       var un=body.username, pw=body.password, role=body.role||"student", sno=body.studentNo||"";
       if (!un||!pw) throw new Error("用户名和密码不能为空");
       // 重名检查由客户端完成，API 只负责注册+入班
-      // 临时清除 AccountUser，用 anon key 创建档案（绕过 RLS 教师无权创建学生档案的限制）
-      var savedAU=AccountUser;AccountUser=null;
+      // 用 anon key 创建档案（绕过 RLS 教师无权创建学生档案的限制）
       var nid="u_"+Date.now()+"_"+Math.random().toString(36).slice(2,8);
       var hash=await _hashPwd(pw,un);
-      await __db.from("profiles").insert({user_id:nid,username:un,password_hash:hash,role:role,student_no:sno,created_at:Date.now()});
-      AccountUser=savedAU;
+      await _sbFetch('POST','profiles','',JSON.stringify({user_id:nid,username:un,password_hash:hash,role:role,student_no:sno,created_at:Date.now()}),null);
       var classId=body.classId||"";
       var cids=classId?[classId]:[];
       // 获取班级练习
@@ -1942,11 +1940,11 @@ async function confirmImport() {
       var no = s.studentNo || '';
       return accountAPI('POST', '/api/class/batch-register', { username: s.name, password: '123', studentNo: no, role: 'student', classId: cid })
         .then(function(reg) { return reg && reg.userId ? 'ok' : 'fail'; })
-        .catch(function(e) { return 'fail'; });
+        .catch(function(e) { console.error('import error:',e.message); return 'fail:'+(e.message||'未知'); });
     }));
     results.forEach(function(r) {
       if (r === 'ok') success++;
-      else fail++;
+      else { fail++; if(r!=='fail') console.log('import fail detail:',r); }
     });
   }
   result.style.display = 'block';
