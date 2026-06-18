@@ -1012,7 +1012,7 @@ async function accountAPI(method, path, body) {
         var s=students[i];
         try{
           if(existingNames.indexOf(s.username)>=0){skip++;continue;}
-          var nid="u_"+Date.now()+"_"+Math.random().toString(36).slice(2,8)+"_"+i;
+          var nid="u_"+(Date.now()+i)+"_"+Math.random().toString(36).slice(2,8);
           var hash=await _hashPwd(s.password||"123",s.username);
           await __db.from("profiles").insert({user_id:nid,username:s.username,password_hash:hash,role:"student",student_no:s.studentNo||"",created_at:Date.now()});
           var ip={currentPet:0,food:0,totalXP:0,stars:0,ownedAccessories:[],pets:[],daily:{date:"",completed:[false,false,false],practiceCount:0,gotThreeStars:false,totalChars:0,challengeCount:0}};
