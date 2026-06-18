@@ -1947,8 +1947,8 @@ async function confirmImport() {
   var cid = TeacherState.currentClassId;
   var err = document.getElementById('import-error');
   var result = document.getElementById('import-result');
-  err.style.display = 'none';
-  result.style.display = 'none';
+  if(err) err.style.display = 'none';
+  if(result) result.style.display = 'none';
   // 获取当前班级已有学生
   var existing = [];
   var clsData = TeacherState.classData;
@@ -1965,13 +1965,13 @@ async function confirmImport() {
   var success = 0, fail = 0, skip2 = 0;
   // 一次请求批量导入全部学生（避免逐个调用的性能问题）
   try {
-    var result = await accountAPI('POST', '/api/class/batch-import-all', {
+    var batchResult = await accountAPI('POST', '/api/class/batch-import-all', {
       classId: cid,
       students: toImport.map(function(s){ return {username:s.name, studentNo:s.studentNo||'', password:'123'}; })
     });
-    success = result.success || 0;
-    fail = result.fail || 0;
-    skip2 = result.skip || 0;
+    success = batchResult.success || 0;
+    fail = batchResult.fail || 0;
+    skip2 = batchResult.skip || 0;
   } catch(e) {
     fail = toImport.length;
     showToast('导入失败: '+e.message);
