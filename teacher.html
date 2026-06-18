@@ -998,26 +998,7 @@ async function accountAPI(method, path, body) {
       // 教师批量注册学生并直接加入班级（一步完成，避免RLS拦截）
       var un=body.username, pw=body.password, role=body.role||"student", sno=body.studentNo||"";
       if (!un||!pw) throw new Error("用户名和密码不能为空");
-      // 只检查本班是否重名（不同班同名视为不同学生）
-      var duplicateId=null;
-      var classId3=body.classId||"";
-      if(classId3){
-        var clsChk=await __db.from("classes").select("student_ids").eq("id",classId3).eq("teacher_id",uid).maybeSingle();
-        if(clsChk.data){
-          var classSids=clsChk.data.student_ids||[];
-          if(classSids.length>0){
-            var dupProfiles=await __db.from("profiles").select("user_id,username").in("user_id",classSids);
-            if(dupProfiles.data){
-              var dup=dupProfiles.data.find(function(p){return p.username===un;});
-              if(dup) duplicateId=dup.user_id;
-            }
-          }
-        }
-      }
-      if (duplicateId) {
-        // 本班已存在：跳过
-        return {userId:duplicateId,username:un,existed:true};
-      }
+      // 重名检查由客户端完成，API 只负责注册+入班
       var nid="u_"+Date.now()+"_"+Math.random().toString(36).slice(2,8);
       var hash=await _hashPwd(pw,un);
       await __db.from("profiles").insert({user_id:nid,username:un,password_hash:hash,role:role,student_no:sno,created_at:Date.now()});
@@ -1950,8 +1931,8 @@ async function confirmImport() {
   });
   var success = 0, fail = 0;
   // 并发导入（每批10人同时处理，注册+入班一步完成）
-  for (var batch = 0; batch < toImport.length; batch += 10) {
-    var batchItems = toImport.slice(batch, batch + 10);
+  for (var batch = 0; batch < toImport.length; batch += 50) {
+    var batchItems = toImport.slice(batch, batch + 50);
     var results = await Promise.all(batchItems.map(function(s) {
       var no = s.studentNo || '';
       return accountAPI('POST', '/api/class/batch-register', { username: s.name, password: '123', studentNo: no, role: 'student', classId: cid })
