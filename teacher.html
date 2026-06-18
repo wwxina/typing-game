@@ -998,16 +998,25 @@ async function accountAPI(method, path, body) {
       // 教师批量注册学生并直接加入班级（一步完成，避免RLS拦截）
       var un=body.username, pw=body.password, role=body.role||"student", sno=body.studentNo||"";
       if (!un||!pw) throw new Error("用户名和密码不能为空");
-      var chk=await __db.from("profiles").select("user_id").eq("username",un);
-      if (chk.data&&chk.data.length>0) {
-        // 姓名已存在：跳过注册，直接加入班级
-        var existId=chk.data[0].user_id;
-        var classId2=body.classId||"";
-        if(classId2){
-          var cls4=await __db.from("classes").select("student_ids").eq("id",classId2).eq("teacher_id",uid).maybeSingle();
-          if(cls4.data){var ss2=(cls4.data.student_ids||[]).slice();if(ss2.indexOf(existId)<0){ss2.push(existId);await __db.from("classes").eq("id",classId2).update({student_ids:ss2});}}
+      // 只检查本班是否重名（不同班同名视为不同学生）
+      var duplicateId=null;
+      var classId3=body.classId||"";
+      if(classId3){
+        var clsChk=await __db.from("classes").select("student_ids").eq("id",classId3).eq("teacher_id",uid).maybeSingle();
+        if(clsChk.data){
+          var classSids=clsChk.data.student_ids||[];
+          if(classSids.length>0){
+            var dupProfiles=await __db.from("profiles").select("user_id,username").in("user_id",classSids);
+            if(dupProfiles.data){
+              var dup=dupProfiles.data.find(function(p){return p.username===un;});
+              if(dup) duplicateId=dup.user_id;
+            }
+          }
         }
-        return {userId:existId,username:un,existed:true};
+      }
+      if (duplicateId) {
+        // 本班已存在：跳过
+        return {userId:duplicateId,username:un,existed:true};
       }
       var nid="u_"+Date.now()+"_"+Math.random().toString(36).slice(2,8);
       var hash=await _hashPwd(pw,un);
