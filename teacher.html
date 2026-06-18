@@ -378,7 +378,7 @@ tr:hover td { background: var(--color-bg); }
     </div>
     <div class="header-right">
       <div class="account-wrap">
-        <button class="btn-account" id="btn-account" onclick="if(AccountUser&&AccountUser.token){document.getElementById('account-dropdown').classList.toggle('hidden')}else{document.getElementById('modal-account').classList.remove('hidden');document.getElementById('account-form-login').classList.remove('hidden');document.getElementById('account-form-register').classList.add('hidden')}">
+        <button class="btn-account" id="btn-account" onclick="try{var au=typeof AccountUser!=='undefined'?AccountUser:null;if(au&&au.token){document.getElementById('account-dropdown').classList.toggle('hidden')}else{var m=document.getElementById('modal-account');m.classList.remove('hidden');document.getElementById('account-form-login').classList.remove('hidden');document.getElementById('account-form-register').classList.add('hidden')}}catch(e){alert('登录错误：'+e.message)}">
           <span class="avatar">👤</span>
           <span class="username" id="label-username">未登录</span>
           <span>▾</span>
