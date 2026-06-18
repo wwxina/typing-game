@@ -4554,7 +4554,6 @@ function renderAllLessons() {
         '</div></div>';
     }).join('');
     return '<section class="grade-section" id="grade-sec-' + gi + '">' +
-      (gi === 0 ? '<button onclick="openToc()" style="position:sticky;top:68px;float:left;width:32px;height:32px;border-radius:50%;background:var(--color-accent);color:#fff;border:none;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.12);font-size:15px;margin-right:6px;margin-left:-40px;z-index:50;">☰</button>' : '') +
       '<h2 class="grade-heading">' + gradeGroup.grade + '</h2>' +
       '<div class="grade-section-grid">' + cardsHTML + '</div>' +
       '</section>';
@@ -6336,5 +6335,6 @@ function initTheme() {
 
 document.addEventListener('DOMContentLoaded', init);
 </script>
+<button onclick="openToc()" style="position:fixed;z-index:100;top:126px;left:max(16px,calc((100vw - 1000px)/2));width:32px;height:32px;border-radius:50%;background:var(--color-accent);color:#fff;border:none;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.12);font-size:15px;">☰</button>
 </body>
 </html>
