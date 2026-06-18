@@ -4553,9 +4553,9 @@ function renderAllLessons() {
         '<div class="card-title-wrap">' + lesson.title + '</div>' +
         '</div></div>';
     }).join('');
-    var tocBtn = (gi === 0) ? '<button onclick="openToc()" style="position:sticky;top:68px;flex-shrink:0;width:36px;height:36px;border-radius:50%;background:var(--color-accent);color:#fff;border:none;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.15);display:flex;align-items:center;justify-content:center;font-size:16px;">☰</button>' : '';
     return '<section class="grade-section" id="grade-sec-' + gi + '">' +
-      '<h2 class="grade-heading" style="display:flex;align-items:center;gap:8px;">' + tocBtn + gradeGroup.grade + '</h2>' +
+      (gi === 0 ? '<button onclick="openToc()" style="position:sticky;top:68px;float:left;z-index:50;width:36px;height:36px;border-radius:50%;background:var(--color-accent);color:#fff;border:none;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.15);display:flex;align-items:center;justify-content:center;font-size:16px;margin-right:8px;margin-left:-44px;">☰</button>' : '') +
+      '<h2 class="grade-heading">' + gradeGroup.grade + '</h2>' +
       '<div class="grade-section-grid">' + cardsHTML + '</div>' +
       '</section>';
   }).join('');
