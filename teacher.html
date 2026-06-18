@@ -1025,13 +1025,13 @@ async function accountAPI(method, path, body) {
     }
     if (path === "/api/class/delete-student" && method === "POST") {
       if (!body.studentId) throw new Error("缺少学生ID");
-      // 从所有班级移除
+      // 从班级中移除
       var allClasses=await __db.from("classes").select("id,student_ids");
       if(allClasses.data) for(var ci=0;ci<allClasses.data.length;ci++){
         var c=allClasses.data[ci];var ss=(c.student_ids||[]).filter(function(id){return id!==body.studentId;});
         if(ss.length!==(c.student_ids||[]).length) await __db.from("classes").eq("id",c.id).update({student_ids:ss});
       }
-      // 删除学生数据
+      // 删除学生数据（依赖 RLS DELETE 策略）
       await __db.from("profiles").eq("user_id",body.studentId).delete();
       await __db.from("user_data").eq("user_id",body.studentId).delete();
       return {success:true,message:"学生数据已彻底删除"};
@@ -1814,7 +1814,8 @@ async function batchDeleteStudents(){
   var ids=getSelectedIds();if(!ids.length){showToast('请先选择学生');return;}
   if(!confirm('⚠️ 将彻底删除 '+ids.length+' 名学生的所有数据，不可恢复！')) return;
   if(!confirm('再次确认：永久删除 '+ids.length+' 人？')) return;
-  await Promise.all(ids.map(function(sid){return accountAPI('POST','/api/class/delete-student',{studentId:sid});}));
+  // 顺序执行避免竞态（student_ids 并发修改冲突）
+  for(var i=0;i<ids.length;i++){await accountAPI('POST','/api/class/delete-student',{studentId:ids[i]});}
   showToast('已彻底删除 '+ids.length+' 人');await loadClassInfo();
 }
 function batchExport(){
