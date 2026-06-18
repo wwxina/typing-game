@@ -2722,9 +2722,12 @@ function showAccountModal() {
   document.getElementById('account-form-register').classList.add('hidden');
   document.getElementById('acct-login-error').classList.add('hidden');
   document.getElementById('acct-reg-error').classList.add('hidden');
-  // 重置角色复选框
+  // 重置角色复选框，显示班级下拉
   document.getElementById('acct-login-as-student').checked = true;
   document.getElementById('acct-login-as-teacher').checked = false;
+  document.getElementById('login-class-group').style.display = '';
+  document.getElementById('acct-login-class').value = '';
+  loadLoginClasses();
 }
 
 function hideAccountModal() {
