@@ -481,7 +481,6 @@ tr:hover td { background: var(--color-bg); }
                 <button class="btn btn-danger btn-sm" id="btn-batch-remove" style="padding:4px 12px;font-size:12px;">✕ 移出所选</button>
                 <button class="btn btn-danger btn-sm" id="btn-batch-delete" style="padding:4px 12px;font-size:12px;background:#b91c1c;border-color:#b91c1c;">🗑 彻底删除</button>
                 <button class="btn btn-secondary btn-sm" id="btn-batch-export" style="padding:4px 12px;font-size:12px;">📥 导出</button>
-                <button class="btn btn-primary btn-sm" id="btn-batch-import" style="padding:4px 12px;font-size:12px;">📂 批量导入</button>
               </div>
               <div class="table-wrap">
                 <table>
@@ -2673,7 +2672,6 @@ document.addEventListener('DOMContentLoaded', function() {
   var removeBtn=document.getElementById('btn-batch-remove');if(removeBtn)removeBtn.onclick=batchRemove;
   var delBtn=document.getElementById('btn-batch-delete');if(delBtn)delBtn.onclick=batchDeleteStudents;
   var exportBtn=document.getElementById('btn-batch-export');if(exportBtn)exportBtn.onclick=batchExport;
-  var importBtn=document.getElementById('btn-batch-import');if(importBtn)importBtn.onclick=showImportModal;
   var importBtnTop=document.getElementById('btn-batch-import-top');if(importBtnTop)importBtnTop.onclick=showImportModal;
   // 批量导入弹窗
   document.getElementById('btn-import-close').onclick=hideImportModal;
