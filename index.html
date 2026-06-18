@@ -1043,7 +1043,7 @@ input { font-family: inherit; }
 
 /* ===== THEME SWITCHER ===== */
 .theme-btn {
-  position: fixed; bottom: 24px; right: 24px; z-index: 500;
+  position: fixed; bottom: 24px; left: 16px; z-index: 500;
   width: 54px; height: 54px; border-radius: 50%;
   background: var(--color-accent); color: #fff;
   border: 3px solid var(--color-accent-dark);
@@ -6335,6 +6335,6 @@ function initTheme() {
 
 document.addEventListener('DOMContentLoaded', init);
 </script>
-<button onclick="openToc()" id="btn-toc-fixed" style="position:fixed;z-index:9999;top:126px;left:16px;width:32px;height:32px;border-radius:50%;background:#0ea5e9;color:#fff;border:none;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.2);font-size:15px;">☰</button>
+<button onclick="openToc()" id="btn-toc-fixed" style="position:fixed;z-index:9999;bottom:24px;right:16px;width:40px;height:40px;border-radius:50%;background:var(--color-accent);color:#fff;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.18);font-size:18px;z-index:500;">☰</button>
 </body>
 </html>
