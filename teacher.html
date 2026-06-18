@@ -1010,7 +1010,7 @@ async function accountAPI(method, path, body) {
       var cid=body.classId;
       var SR_KEY='sb_secret_VWbpnQWdLlRn2gMn4RAF1Q_uKA'+'43RfT';
       function _srFetch(method,table,qs,data){
-        var h={'apikey':SR_KEY,'Authorization':'Bearer '+SR_KEY,'Content-Type':'application/json'};
+        var h={'apikey':SR_KEY,'Authorization':'Bearer '+SR_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
         var opts={method:method,headers:h};if(data)opts.body=JSON.stringify(data);
         return fetch(_SB_URL+'/'+table+(qs||''),opts).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status+': '+table);return r.text().then(function(t){if(!t)return{};try{return JSON.parse(t)}catch(e){return t}})});
       }
