@@ -746,6 +746,13 @@ tr:hover td { background: var(--color-bg); }
     </div>
     <div id="import-preview" style="display:none;margin-bottom:12px;padding:10px 12px;background:#f8f9fa;border-radius:8px;font-size:13px;max-height:120px;overflow-y:auto;"></div>
     <div id="import-error" style="color:#dc2626;font-size:12px;margin-bottom:8px;display:none;"></div>
+    <div id="import-progress" style="display:none;margin-bottom:12px;text-align:center;">
+      <div style="font-size:24px;margin-bottom:4px;">⏳</div>
+      <div style="font-size:14px;color:#555;margin-bottom:8px;" id="import-progress-text">正在导入...</div>
+      <div style="height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden;">
+        <div id="import-progress-bar" style="height:100%;background:var(--color-accent);border-radius:3px;transition:width 0.3s;width:0%;"></div>
+      </div>
+    </div>
     <div id="import-result" style="display:none;margin-bottom:12px;padding:12px;border-radius:8px;font-size:14px;text-align:center;"></div>
     <div style="display:flex;gap:8px;">
       <button class="btn btn-secondary" id="btn-import-cancel" onclick="hideImportModal();return false" style="flex:1;">取消</button>
@@ -1934,6 +1941,7 @@ function showImportModal() {
   document.getElementById('import-preview').style.display = 'none';
   document.getElementById('import-error').style.display = 'none';
   document.getElementById('import-result').style.display = 'none';
+  document.getElementById('import-progress').style.display = 'none';
   document.getElementById('modal-import-students').classList.remove('hidden');
 }
 function hideImportModal() {
@@ -1987,10 +1995,17 @@ async function confirmImport() {
   if (data.count === 0) { showToast('未识别到学生数据，请检查格式'); return; }
   if (!confirm('将导入 ' + data.count + ' 名学生到当前班级？\n默认密码：123')) return;
   var cid = TeacherState.currentClassId;
-  var err = document.getElementById('import-error');
-  var result = document.getElementById('import-result');
-  if(err) err.style.display = 'none';
-  if(result) result.style.display = 'none';
+  // 显示进度条，隐藏其他
+  var progressEl=document.getElementById('import-progress');
+  var progressBar=document.getElementById('import-progress-bar');
+  var progressText=document.getElementById('import-progress-text');
+  var err=document.getElementById('import-error');
+  var result=document.getElementById('import-result');
+  if(err) err.style.display='none';
+  if(result) result.style.display='none';
+  if(progressEl) progressEl.style.display='block';
+  if(progressBar) progressBar.style.width='0%';
+  if(progressText) progressText.textContent='正在导入...';
   // 获取当前班级已有学生
   var existing = [];
   var clsData = TeacherState.classData;
@@ -2006,8 +2021,19 @@ async function confirmImport() {
   });
   var success = 0, fail = 0, skip2 = 0;
   // 一次请求批量导入全部学生（避免逐个调用的性能问题）
+  // 进度条动画（模拟从 10% 到 90%）
+  var progressInterval=setInterval(function(){
+    if(progressBar){var w=parseInt(progressBar.style.width)||0;if(w<90){progressBar.style.width=(w+Math.random()*15)+'%';if(progressText)progressText.textContent='正在导入 '+Math.round(w)+'%';}}
+  },300);
   try {
     var batchResult = await accountAPI('POST', '/api/class/batch-import-all', {
+      classId: cid,
+      students: toImport.map(function(s){ return {username:s.name, studentNo:s.studentNo||'', password:'123'}; })
+    });
+    clearInterval(progressInterval);
+    if(progressBar) progressBar.style.width='100%';
+    if(progressText) progressText.textContent='导入完成！';
+    await new Promise(function(r){setTimeout(r,500);});
       classId: cid,
       students: toImport.map(function(s){ return {username:s.name, studentNo:s.studentNo||'', password:'123'}; })
     });
@@ -2015,9 +2041,11 @@ async function confirmImport() {
     fail = batchResult.fail || 0;
     skip2 = batchResult.skip || 0;
   } catch(e) {
+    clearInterval(progressInterval);
     fail = toImport.length;
     showToast('导入失败: '+e.message);
   }
+  if(progressEl) progressEl.style.display='none';
   hideImportModal();
   showToast('✅ 导入完成：成功 '+success+' 人'+(skip>0?'，跳过 '+skip+' 人':'')+(fail>0?'，失败 '+fail+' 人':''));
   document.getElementById('import-textarea').value = '';
