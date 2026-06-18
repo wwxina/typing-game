@@ -1020,8 +1020,10 @@ async function accountAPI(method, path, body) {
           var teacherExs=[];classExs.forEach(function(e){teacherExs.push({exerciseId:e.id,classId:cid,title:e.title,text:e.text,completed:false,bestSpeed:0,bestAccuracy:0,stars:0});});
           await __db.from("user_data").insert({user_id:nid,pet:ip,scores:{},records:[],theme:"ocean",class_ids:[cid],teacher_exercises:teacherExs,student_no:s.studentNo||"",updated_at:Date.now()});
           curSids.push(nid);existingNames.push(s.username);success++;
-        }catch(e){fail++;}
+        }catch(e){console.log('import student fail: '+s.username,e.message||e);fail++;}
       }
+      // 先清空再重建，避免旧残留混入
+      await __db.from("classes").eq("id",cid).update({student_ids:[]});
       if(success>0) await __db.from("classes").eq("id",cid).update({student_ids:curSids});
       return {success:success,fail:fail,skip:skip};
     }
