@@ -1406,7 +1406,7 @@ input { font-family: inherit; }
         </label>
       </div>
       <p class="form-error hidden" id="acct-login-error"></p>
-      <button class="btn btn-primary acct-submit" id="btn-login">登录</button>
+      <button class="btn btn-primary acct-submit" id="btn-login" onclick="doLogin(this)">登录</button>
     </div>
     <div class="account-form hidden" id="account-form-register">
       <div class="form-group">
@@ -1428,7 +1428,7 @@ input { font-family: inherit; }
         </select>
       </div>
       <p class="form-error hidden" id="acct-reg-error"></p>
-      <button class="btn btn-primary acct-submit" id="btn-register">注册并登录</button>
+      <button class="btn btn-primary acct-submit" id="btn-register" onclick="doRegister(this)">注册并登录</button>
     </div>
     <!-- 我的信息（已登录时显示） -->
     <div class="account-form hidden" id="account-form-info">
@@ -2712,6 +2712,41 @@ async function loadLoginStudents() {
 }
 
 // 打开登录弹窗
+async function doLogin(btn) {
+  var user = document.getElementById('acct-login-user').value.trim();
+  var pass = document.getElementById('acct-login-pass').value;
+  var errEl = document.getElementById('acct-login-error');
+  if (!user) { errEl.textContent = '请输入姓名'; errEl.classList.remove('hidden'); return; }
+  if (!pass) { errEl.textContent = '请输入密码'; errEl.classList.remove('hidden'); return; }
+  var isStudent = document.getElementById('acct-login-as-student').checked;
+  var classId = null;
+  if (isStudent) {
+    classId = document.getElementById('acct-login-class').value;
+    if (!classId) { errEl.textContent = '请选择班级'; errEl.classList.remove('hidden'); return; }
+  }
+  errEl.classList.add('hidden');
+  btn.disabled = true; btn.textContent = '登录中...';
+  try { await accountLogin(user, pass, classId); }
+  catch(e) { errEl.textContent = e.message; errEl.classList.remove('hidden'); }
+  finally { btn.disabled = false; btn.textContent = '登录'; }
+}
+async function doRegister(btn) {
+  var user = document.getElementById('acct-reg-user').value.trim();
+  var pass = document.getElementById('acct-reg-pass').value;
+  var studentNo = document.getElementById('acct-reg-studentno').value.trim();
+  var errEl = document.getElementById('acct-reg-error');
+  if (!user || !pass) { errEl.textContent = '请填写姓名或学号和密码'; errEl.classList.remove('hidden'); return; }
+  if (!studentNo) { errEl.textContent = '请填写学号'; errEl.classList.remove('hidden'); return; }
+  var inviteCode = document.getElementById('acct-reg-class').value;
+  if (!inviteCode) { errEl.textContent = '请选择加入的班级'; errEl.classList.remove('hidden'); return; }
+  if (user.length < 2 || user.length > 20) { errEl.textContent = '姓名需要2-20个字符'; errEl.classList.remove('hidden'); return; }
+  if (pass.length < 3 || pass.length > 50) { errEl.textContent = '密码需要3-50个字符'; errEl.classList.remove('hidden'); return; }
+  errEl.classList.add('hidden');
+  btn.disabled = true; btn.textContent = '注册中...';
+  try { await accountRegister(user, pass, studentNo, inviteCode); }
+  catch(e) { errEl.textContent = e.message; errEl.classList.remove('hidden'); }
+  finally { btn.disabled = false; btn.textContent = '注册并登录'; }
+}
 function showAccountModal() {
   var modal = document.getElementById('modal-account');
   if (!modal) return;
