@@ -1029,9 +1029,15 @@ async function accountAPI(method, path, body) {
           curSids.push(nid);existingNames.push(s.username);success++;
         }catch(e){console.log('import fail: '+s.username,e.message||e);try{await __db.from("profiles").eq("user_id",nid).delete();}catch(e2){}fail++;}
       }
-      // 先清空再重建，避免旧残留混入
-      await __db.from("classes").eq("id",cid).update({student_ids:[]});
-      if(success>0) await __db.from("classes").eq("id",cid).update({student_ids:curSids});
+      // 验证每个学生 profile 确实存在，只加有效的
+      var validSids=[];
+      if(curSids.length>0){
+        var checkProfiles=await __db.from("profiles").select("user_id").in("user_id",curSids);
+        var validIds=(checkProfiles.data||[]).map(function(p){return p.user_id});
+        validSids=curSids.filter(function(id){return validIds.indexOf(id)>=0});
+        if(validSids.length!==curSids.length) console.log('Some profiles not found, filtered from '+curSids.length+' to '+validSids.length);
+      }
+      await __db.from("classes").eq("id",cid).update({student_ids:validSids});
       return {success:success,fail:fail,skip:skip};
     }
     if (path === "/api/class/batch-register" && method === "POST") {
