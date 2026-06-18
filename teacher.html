@@ -999,7 +999,16 @@ async function accountAPI(method, path, body) {
       var un=body.username, pw=body.password, role=body.role||"student", sno=body.studentNo||"";
       if (!un||!pw) throw new Error("用户名和密码不能为空");
       var chk=await __db.from("profiles").select("user_id").eq("username",un);
-      if (chk.data&&chk.data.length>0) throw new Error("该姓名已被注册");
+      if (chk.data&&chk.data.length>0) {
+        // 姓名已存在：跳过注册，直接加入班级
+        var existId=chk.data[0].user_id;
+        var classId2=body.classId||"";
+        if(classId2){
+          var cls4=await __db.from("classes").select("student_ids").eq("id",classId2).eq("teacher_id",uid).maybeSingle();
+          if(cls4.data){var ss2=(cls4.data.student_ids||[]).slice();if(ss2.indexOf(existId)<0){ss2.push(existId);await __db.from("classes").eq("id",classId2).update({student_ids:ss2});}}
+        }
+        return {userId:existId,username:un,existed:true};
+      }
       var nid="u_"+Date.now()+"_"+Math.random().toString(36).slice(2,8);
       var hash=await _hashPwd(pw,un);
       await __db.from("profiles").insert({user_id:nid,username:un,password_hash:hash,role:role,student_no:sno,created_at:Date.now()});
@@ -1928,11 +1937,10 @@ async function confirmImport() {
       var no = s.studentNo || '';
       return accountAPI('POST', '/api/class/batch-register', { username: s.name, password: '123', studentNo: no, role: 'student', classId: cid })
         .then(function(reg) { return reg && reg.userId ? 'ok' : 'fail'; })
-        .catch(function(e) { return (e.message||'').indexOf('已被注册')>=0 ? 'skip2' : 'fail'; });
+        .catch(function(e) { return 'fail'; });
     }));
     results.forEach(function(r) {
       if (r === 'ok') success++;
-      else if (r === 'skip2') skip++;
       else fail++;
     });
   }
