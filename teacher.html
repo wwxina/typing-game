@@ -994,6 +994,36 @@ async function accountAPI(method, path, body) {
       if(r2.data){var nc=(r2.data.class_ids||[]).filter(function(id){return id!==cid;});var ne=(r2.data.teacher_exercises||[]).filter(function(e){return e.classId!==cid;});await __db.from("user_data").eq("user_id",body.studentId).update({class_ids:nc,teacher_exercises:ne,updated_at:Date.now()});}
       return {success:true};
     }
+    if (path === "/api/class/batch-import-all" && method === "POST") {
+      // 服务器端批量导入全部学生
+      if (!body.classId) throw new Error("缺少班级ID");
+      if (!body.students||!body.students.length) throw new Error("学生列表为空");
+      var students=body.students;
+      var cid=body.classId;
+      var r=await __db.from("classes").select("student_ids,exercises").eq("id",cid).eq("teacher_id",uid).maybeSingle();
+      if(!r.data) throw new Error("班级不存在");
+      var existingSids=r.data.student_ids||[];
+      var existingNames=[];if(existingSids.length>0){var ep=await __db.from("profiles").select("username").in("user_id",existingSids);if(ep.data)existingNames=ep.data.map(function(p){return p.username;});}
+      var classExs=r.data.exercises||[];
+      var curSids=existingSids.slice();
+      var success=0,fail=0,skip=0;
+      for(var i=0;i<students.length;i++){
+        var s=students[i];
+        try{
+          if(existingNames.indexOf(s.username)>=0){skip++;continue;}
+          var nid="u_"+Date.now()+"_"+Math.random().toString(36).slice(2,8)+"_"+i;
+          var hash=await _hashPwd(s.password||"123",s.username);
+          await __db.from("profiles").insert({user_id:nid,username:s.username,password_hash:hash,role:"student",student_no:s.studentNo||"",created_at:Date.now()});
+          var ip={currentPet:0,food:0,totalXP:0,stars:0,ownedAccessories:[],pets:[],daily:{date:"",completed:[false,false,false],practiceCount:0,gotThreeStars:false,totalChars:0,challengeCount:0}};
+          [{type:"cat",name:"小橘猫"},{type:"dog",name:"小黄狗"},{type:"bunny",name:"小兔子"},{type:"panda",name:"小熊猫"},{type:"fox",name:"小狐狸"}].forEach(function(t){ip.pets.push({type:t.type,name:t.name,stage:0,xp:0,adopted:false,maxLevel:false,accessory:null});});
+          var teacherExs=[];classExs.forEach(function(e){teacherExs.push({exerciseId:e.id,classId:cid,title:e.title,text:e.text,completed:false,bestSpeed:0,bestAccuracy:0,stars:0});});
+          await __db.from("user_data").insert({user_id:nid,pet:ip,scores:{},records:[],theme:"ocean",class_ids:[cid],teacher_exercises:teacherExs,student_no:s.studentNo||"",updated_at:Date.now()});
+          curSids.push(nid);existingNames.push(s.username);success++;
+        }catch(e){fail++;}
+      }
+      if(success>0) await __db.from("classes").eq("id",cid).update({student_ids:curSids});
+      return {success:success,fail:fail,skip:skip};
+    }
     if (path === "/api/class/batch-register" && method === "POST") {
       // 教师批量注册学生并直接加入班级（一步完成，避免RLS拦截）
       var un=body.username, pw=body.password, role=body.role||"student", sno=body.studentNo||"";
@@ -1932,25 +1962,24 @@ async function confirmImport() {
     if (existing.indexOf(s.name) >= 0) { skip++; }
     else { toImport.push(s); existing.push(s.name); }
   });
-  var success = 0, fail = 0;
-  // 并发导入（每批10人同时处理，注册+入班一步完成）
-  for (var batch = 0; batch < toImport.length; batch += 50) {
-    var batchItems = toImport.slice(batch, batch + 50);
-    var results = await Promise.all(batchItems.map(function(s) {
-      var no = s.studentNo || '';
-      return accountAPI('POST', '/api/class/batch-register', { username: s.name, password: '123', studentNo: no, role: 'student', classId: cid })
-        .then(function(reg) { return reg && reg.userId ? 'ok' : 'fail'; })
-        .catch(function(e) { console.error('import error:',e.message); return 'fail:'+(e.message||'未知'); });
-    }));
-    results.forEach(function(r) {
-      if (r === 'ok') success++;
-      else { fail++; if(r!=='fail') console.log('import fail detail:',r); }
+  var success = 0, fail = 0, skip2 = 0;
+  // 一次请求批量导入全部学生（避免逐个调用的性能问题）
+  try {
+    var result = await accountAPI('POST', '/api/class/batch-import-all', {
+      classId: cid,
+      students: toImport.map(function(s){ return {username:s.name, studentNo:s.studentNo||'', password:'123'}; })
     });
+    success = result.success || 0;
+    fail = result.fail || 0;
+    skip2 = result.skip || 0;
+  } catch(e) {
+    fail = toImport.length;
+    showToast('导入失败: '+e.message);
   }
   result.style.display = 'block';
   result.innerHTML = '<div style="font-size:28px;margin-bottom:4px;">✅</div>' +
     '<div style="font-weight:700;">导入完成</div>' +
-    '<div style="font-size:13px;color:#666;">成功 ' + success + ' 人' + (skip>0?'，跳过 ' + skip + ' 人':'') + (fail>0?'，失败 ' + fail + ' 人':'') + '</div>';
+    '<div style="font-size:13px;color:#666;">成功 ' + success + ' 人' + (skip>0?'，重复跳过 ' + skip + ' 人':'') + (skip2>0?'，已在其他班 ' + skip2 + ' 人':'') + (fail>0?'，失败 ' + fail + ' 人':'') + '</div>';
   document.getElementById('import-textarea').value = '';
   setTimeout(function() { hideImportModal(); loadClassInfo(); }, 2000);
 }
