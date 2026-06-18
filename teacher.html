@@ -1869,8 +1869,13 @@ async function batchDeleteStudents(){
   if(!confirm('⚠️ 将彻底删除 '+ids.length+' 名学生的所有数据，不可恢复！')) return;
   if(!confirm('再次确认：永久删除 '+ids.length+' 人？')) return;
   // 顺序执行避免竞态（student_ids 并发修改冲突）
-  for(var i=0;i<ids.length;i++){await accountAPI('POST','/api/class/delete-student',{studentId:ids[i],classId:TeacherState.currentClassId});}
-  showToast('已彻底删除 '+ids.length+' 人');await loadClassInfo();
+  var deleted=0, failed=0;
+  for(var i=0;i<ids.length;i++){
+    try{await accountAPI('POST','/api/class/delete-student',{studentId:ids[i],classId:TeacherState.currentClassId});deleted++;}
+    catch(e){failed++;}
+  }
+  showToast('已删除 '+deleted+' 人'+(failed>0?'，失败 '+failed+' 人':''));
+  await loadClassInfo();
 }
 function batchExport(){
   var ids=getSelectedIds();if(!ids.length){showToast('请先选择学生');return;}
