@@ -1364,10 +1364,10 @@ input { font-family: inherit; }
     </nav>
     <div class="account-wrap" id="account-wrap">
       <button class="btn-join-class" id="btn-leaderboard" title="班级排行榜">🏆 排行榜</button>
-<button class="btn-account" id="btn-account" title="登录/注册" onclick="onAccountClick(event)">👤 登录</button>
+<button class="btn-account" id="btn-account" title="登录/注册">👤 登录</button>
       <div class="account-dropdown hidden" id="account-dropdown">
-        <button class="dropdown-item" id="btn-show-profile" onclick="document.getElementById('account-dropdown').classList.add('hidden');showAccountInfo()">👤 个人信息</button>
-        <button class="dropdown-item dropdown-item-danger" id="btn-dropdown-logout" onclick="document.getElementById('account-dropdown').classList.add('hidden');accountLogout()">🚪 退出登录</button>
+        <button class="dropdown-item" id="btn-show-profile">👤 个人信息</button>
+        <button class="dropdown-item dropdown-item-danger" id="btn-dropdown-logout">🚪 退出登录</button>
       </div>
     </div>
   </header>
@@ -2712,15 +2712,6 @@ async function loadLoginStudents() {
 }
 
 // 打开登录弹窗
-function onAccountClick(e) {
-  e.stopPropagation();
-  if (AccountUser && AccountUser.token) {
-    var dd = document.getElementById('account-dropdown');
-    if (dd) dd.classList.toggle('hidden');
-  } else {
-    showAccountModal();
-  }
-}
 function showAccountModal() {
   var modal = document.getElementById('modal-account');
   if (!modal) return;
