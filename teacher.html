@@ -1879,7 +1879,7 @@ function previewImport() {
   preview.style.display = 'block';
   var show = students.slice(0, 10);
   preview.innerHTML = '<div style="margin-bottom:4px;font-weight:600;">预览（共 ' + students.length + ' 人）：</div>' +
-    show.map(function(s, i) { return '<div>' + (i+1) + '. ' + (s.studentNo||'自动') + ' ' + s.name + '</div>'; }).join('') +
+    show.map(function(s, i) { return '<div>' + (i+1) + '. ' + (s.studentNo||'无') + ' ' + s.name + '</div>'; }).join('') +
     (students.length > 10 ? '<div style="color:#94a3b8;">... 还有 ' + (students.length - 10) + ' 人</div>' : '');
   return { students: students, count: students.length };
 }
@@ -1906,7 +1906,7 @@ async function confirmImport() {
       // 检查本班是否已有同名
       if (existing.indexOf(s.name) >= 0) { skip++; continue; }
       // 注册学生
-      var no = s.studentNo || ('S' + Date.now() + (i+1));
+      var no = s.studentNo || '';
       var reg = await accountAPI('POST', '/api/class/batch-register', { username: s.name, password: '123', studentNo: no, role: 'student' });
       // 加入班级
       if (reg.userId) {
