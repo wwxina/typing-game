@@ -4554,6 +4554,7 @@ function renderAllLessons() {
         '</div></div>';
     }).join('');
     return '<section class="grade-section" id="grade-sec-' + gi + '">' +
+      (gi === 0 ? '<button onclick="openToc()" style="float:left;width:36px;height:36px;border-radius:50%;background:var(--color-accent);color:#fff;border:none;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.15);display:flex;align-items:center;justify-content:center;font-size:16px;margin-right:8px;margin-left:-44px;">☰</button>' : '') +
       '<h2 class="grade-heading">' + gradeGroup.grade + '</h2>' +
       '<div class="grade-section-grid">' + cardsHTML + '</div>' +
       '</section>';
@@ -6335,6 +6336,5 @@ function initTheme() {
 
 document.addEventListener('DOMContentLoaded', init);
 </script>
-<button id="btn-toc-fixed" title="课程目录" onclick="openToc()" style="position:fixed;z-index:100;left:16px;top:68px;width:36px;height:36px;border-radius:50%;background:var(--color-accent);color:#fff;border:none;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.15);font-size:16px;">☰</button>
 </body>
 </html>
