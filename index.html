@@ -6386,6 +6386,17 @@ function initTheme() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+// 滚动紧凑模式（独立绑定，不受init错误影响）
+var _statsCompactTicking2 = false;
+window.addEventListener('scroll', function() {
+  if (!_statsCompactTicking2) {
+    requestAnimationFrame(function() {
+      if (typeof updateStatsCompact === 'function') updateStatsCompact();
+      _statsCompactTicking2 = false;
+    });
+    _statsCompactTicking2 = true;
+  }
+}, { passive: true });
 </script>
 <button onclick="window.scrollTo({top:0,behavior:'smooth'})" id="btn-scroll-top" style="position:fixed;z-index:500;bottom:24px;right:16px;width:40px;height:40px;border-radius:50%;background:var(--color-accent);color:#fff;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.18);font-size:18px;">⬆</button>
 <button onclick="toggleToc()" id="btn-toc-fixed" style="position:fixed;z-index:500;bottom:72px;right:16px;width:40px;height:40px;border-radius:50%;background:var(--color-accent);color:#fff;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.18);font-size:18px;">☰</button>
