@@ -1445,7 +1445,7 @@ input { font-family: inherit; }
         <div class="form-group">
           <label>我的班级</label>
           <div id="info-class-list" style="font-size:13px;color:var(--color-text-secondary);margin-bottom:4px;">加载中...</div>
-          <button class="btn btn-secondary btn-sm" id="btn-info-join-class" style="width:100%;">🏫 加入班级</button>
+          <button class="btn btn-secondary btn-sm" id="btn-info-join-class" onclick="hideAccountModal();showJoinClassModal()" style="width:100%;">🏫 加入班级</button>
         </div>
         <div class="info-meta">
           <div class="info-row"><span>⭐ 星星</span><span id="info-stars">0</span></div>
@@ -1458,7 +1458,7 @@ input { font-family: inherit; }
         <button class="btn btn-secondary" id="btn-info-logout" onclick="accountLogout()" style="margin-top:8px;width:100%;">🚪 退出登录</button>
       </div>
     </div>
-    <button class="account-close" id="btn-acct-close">✕</button>
+    <button class="account-close" id="btn-acct-close" onclick="hideAccountModal()">✕</button>
   </div>
 </div>
 
@@ -1483,7 +1483,7 @@ input { font-family: inherit; }
       <div id="join-class-list" style="display:flex;flex-direction:column;gap:var(--space-sm);max-height:300px;overflow-y:auto;"></div>
       <div id="join-class-empty" class="hidden" style="text-align:center;padding:20px;color:var(--color-text-muted);">尚未加入任何班级</div>
     </div>
-    <button class="account-close" id="btn-join-close">✕</button>
+    <button class="account-close" id="btn-join-close" onclick="hideJoinClassModal()">✕</button>
   </div>
 </div>
 
