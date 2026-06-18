@@ -999,9 +999,12 @@ async function accountAPI(method, path, body) {
       var un=body.username, pw=body.password, role=body.role||"student", sno=body.studentNo||"";
       if (!un||!pw) throw new Error("用户名和密码不能为空");
       // 重名检查由客户端完成，API 只负责注册+入班
+      // 临时清除 AccountUser，用 anon key 创建档案（绕过 RLS 教师无权创建学生档案的限制）
+      var savedAU=AccountUser;AccountUser=null;
       var nid="u_"+Date.now()+"_"+Math.random().toString(36).slice(2,8);
       var hash=await _hashPwd(pw,un);
       await __db.from("profiles").insert({user_id:nid,username:un,password_hash:hash,role:role,student_no:sno,created_at:Date.now()});
+      AccountUser=savedAU;
       var classId=body.classId||"";
       var cids=classId?[classId]:[];
       // 获取班级练习
@@ -1012,7 +1015,9 @@ async function accountAPI(method, path, body) {
       }
       var ip={currentPet:0,food:0,totalXP:0,stars:0,ownedAccessories:[],pets:[],daily:{date:"",completed:[false,false,false],practiceCount:0,gotThreeStars:false,totalChars:0,challengeCount:0}};
       [{type:"cat",name:"小橘猫"},{type:"dog",name:"小黄狗"},{type:"bunny",name:"小兔子"},{type:"panda",name:"小熊猫"},{type:"fox",name:"小狐狸"}].forEach(function(t){ip.pets.push({type:t.type,name:t.name,stage:0,xp:0,adopted:false,maxLevel:false,accessory:null});});
+      AccountUser=null;
       await __db.from("user_data").insert({user_id:nid,pet:ip,scores:{},records:[],theme:"ocean",class_ids:cids,teacher_exercises:teacherExs,student_no:sno,updated_at:Date.now()});
+      AccountUser=savedAU;
       // 加入班级
       if(classId){
         var sids2=(cls3.data?cls3.data.student_ids||[]:[]).slice();
