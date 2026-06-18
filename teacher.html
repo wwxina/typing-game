@@ -995,7 +995,7 @@ async function accountAPI(method, path, body) {
       return {success:true};
     }
     if (path === "/api/class/batch-register" && method === "POST") {
-      // 教师批量注册学生（绕过登录）
+      // 教师批量注册学生并直接加入班级（一步完成，避免RLS拦截）
       var un=body.username, pw=body.password, role=body.role||"student", sno=body.studentNo||"";
       if (!un||!pw) throw new Error("用户名和密码不能为空");
       var chk=await __db.from("profiles").select("user_id").eq("username",un);
@@ -1003,9 +1003,22 @@ async function accountAPI(method, path, body) {
       var nid="u_"+Date.now()+"_"+Math.random().toString(36).slice(2,8);
       var hash=await _hashPwd(pw,un);
       await __db.from("profiles").insert({user_id:nid,username:un,password_hash:hash,role:role,student_no:sno,created_at:Date.now()});
+      var classId=body.classId||"";
+      var cids=classId?[classId]:[];
+      // 获取班级练习
+      var teacherExs=[];
+      if(classId){
+        var cls3=await __db.from("classes").select("exercises").eq("id",classId).eq("teacher_id",uid).maybeSingle();
+        if(cls3.data){(cls3.data.exercises||[]).forEach(function(e){teacherExs.push({exerciseId:e.id,classId:classId,title:e.title,text:e.text,completed:false,bestSpeed:0,bestAccuracy:0,stars:0});});}
+      }
       var ip={currentPet:0,food:0,totalXP:0,stars:0,ownedAccessories:[],pets:[],daily:{date:"",completed:[false,false,false],practiceCount:0,gotThreeStars:false,totalChars:0,challengeCount:0}};
       [{type:"cat",name:"小橘猫"},{type:"dog",name:"小黄狗"},{type:"bunny",name:"小兔子"},{type:"panda",name:"小熊猫"},{type:"fox",name:"小狐狸"}].forEach(function(t){ip.pets.push({type:t.type,name:t.name,stage:0,xp:0,adopted:false,maxLevel:false,accessory:null});});
-      await __db.from("user_data").insert({user_id:nid,pet:ip,scores:{},records:[],theme:"ocean",class_ids:[],teacher_exercises:[],student_no:sno,updated_at:Date.now()});
+      await __db.from("user_data").insert({user_id:nid,pet:ip,scores:{},records:[],theme:"ocean",class_ids:cids,teacher_exercises:teacherExs,student_no:sno,updated_at:Date.now()});
+      // 加入班级
+      if(classId){
+        var sids2=(cls3.data?cls3.data.student_ids||[]:[]).slice();
+        if(sids2.indexOf(nid)<0){sids2.push(nid);await __db.from("classes").eq("id",classId).update({student_ids:sids2});}
+      }
       return {userId:nid,username:un};
     }
     if (path === "/api/class/force-join" && method === "POST") {
@@ -1908,22 +1921,14 @@ async function confirmImport() {
     else { toImport.push(s); existing.push(s.name); }
   });
   var success = 0, fail = 0;
-  // 并发导入（每批10人同时处理）
+  // 并发导入（每批10人同时处理，注册+入班一步完成）
   for (var batch = 0; batch < toImport.length; batch += 10) {
     var batchItems = toImport.slice(batch, batch + 10);
     var results = await Promise.all(batchItems.map(function(s) {
       var no = s.studentNo || '';
-      return accountAPI('POST', '/api/class/batch-register', { username: s.name, password: '123', studentNo: no, role: 'student' })
-        .then(function(reg) {
-          if (reg && reg.userId) {
-            return accountAPI('POST', '/api/class/force-join', { studentId: reg.userId, classId: cid }).then(function() { return 'ok'; });
-          }
-          return 'fail';
-        })
-        .catch(function(e) {
-          if (e.message && e.message.indexOf('已被注册') >= 0) return 'skip2';
-          return 'fail';
-        });
+      return accountAPI('POST', '/api/class/batch-register', { username: s.name, password: '123', studentNo: no, role: 'student', classId: cid })
+        .then(function(reg) { return reg && reg.userId ? 'ok' : 'fail'; })
+        .catch(function(e) { return (e.message||'').indexOf('已被注册')>=0 ? 'skip2' : 'fail'; });
     }));
     results.forEach(function(r) {
       if (r === 'ok') success++;
