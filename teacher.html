@@ -1908,8 +1908,9 @@ function previewImport() {
 }
 var _importPreviewTimer = 0;
 async function confirmImport() {
+  showToast('正在处理...');
   var data = previewImport();
-  if (data.count === 0) return;
+  if (data.count === 0) { showToast('未识别到学生数据，请检查格式'); return; }
   if (!confirm('将导入 ' + data.count + ' 名学生到当前班级？\n默认密码：123')) return;
   var cid = TeacherState.currentClassId;
   var err = document.getElementById('import-error');
