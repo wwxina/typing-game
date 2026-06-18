@@ -748,7 +748,7 @@ tr:hover td { background: var(--color-bg); }
     <div id="import-result" style="display:none;margin-bottom:12px;padding:12px;border-radius:8px;font-size:14px;text-align:center;"></div>
     <div style="display:flex;gap:8px;">
       <button class="btn btn-secondary" id="btn-import-cancel" onclick="hideImportModal();return false" style="flex:1;">取消</button>
-      <button class="btn btn-primary" id="btn-import-confirm" onclick="confirmImport();return false" style="flex:1;">✅ 确认导入</button>
+      <button class="btn btn-primary" id="btn-import-confirm" onclick="(function(){confirmImport()})();return false" style="flex:1;">✅ 确认导入</button>
     </div>
   </div>
 </div>
