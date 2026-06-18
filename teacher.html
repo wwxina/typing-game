@@ -748,7 +748,7 @@ tr:hover td { background: var(--color-bg); }
     <div id="import-result" style="display:none;margin-bottom:12px;padding:12px;border-radius:8px;font-size:14px;text-align:center;"></div>
     <div style="display:flex;gap:8px;">
       <button class="btn btn-secondary" id="btn-import-cancel" onclick="hideImportModal();return false" style="flex:1;">取消</button>
-      <button class="btn btn-primary" id="btn-import-confirm" onclick="(function(){confirmImport()})();return false" style="flex:1;">✅ 确认导入</button>
+      <button class="btn btn-primary" id="btn-import-confirm" style="flex:1;">✅ 确认导入</button>
     </div>
   </div>
 </div>
@@ -2731,11 +2731,13 @@ document.addEventListener('DOMContentLoaded', function() {
   var exportBtn=document.getElementById('btn-batch-export');if(exportBtn)exportBtn.onclick=batchExport;
   var importBtnTop=document.getElementById('btn-batch-import-top');if(importBtnTop)importBtnTop.onclick=showImportModal;
   // 批量导入弹窗
-  document.getElementById('btn-import-close').onclick=hideImportModal;
-  document.getElementById('btn-import-cancel').onclick=hideImportModal;
-  document.getElementById('btn-import-confirm').onclick=confirmImport;
-  document.getElementById('import-textarea').oninput=previewImport;
-  document.getElementById('modal-import-students').onclick=function(e){if(e.target===this)hideImportModal();};
+  var importClose=document.getElementById('btn-import-close');if(importClose){importClose.onclick=hideImportModal; importClose.setAttribute('onclick','hideImportModal()');}
+  var importCancel=document.getElementById('btn-import-cancel');if(importCancel){importCancel.onclick=hideImportModal; importCancel.setAttribute('onclick','hideImportModal()');}
+  var importConfirm=document.getElementById('btn-import-confirm');if(importConfirm){importConfirm.onclick=confirmImport; importConfirm.setAttribute('onclick','confirmImport()');}
+  var importTextarea=document.getElementById('import-textarea');if(importTextarea)importTextarea.oninput=previewImport;
+  // 导入弹窗背景点击关闭
+  var importModal=document.getElementById('modal-import-students');
+  if(importModal) importModal.addEventListener('click',function(e){if(e.target===importModal)hideImportModal();});
 
     // Escape 关闭弹窗
   document.addEventListener('keydown', function(e) {
