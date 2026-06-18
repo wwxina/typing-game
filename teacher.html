@@ -2040,9 +2040,6 @@ async function confirmImport() {
     if(progressBar) progressBar.style.width='100%';
     if(progressText) progressText.textContent='导入完成！';
     await new Promise(function(r){setTimeout(r,500);});
-      classId: cid,
-      students: toImport.map(function(s){ return {username:s.name, studentNo:s.studentNo||'', password:'123'}; })
-    });
     success = batchResult.success || 0;
     fail = batchResult.fail || 0;
     skip2 = batchResult.skip || 0;
