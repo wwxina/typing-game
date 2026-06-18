@@ -1899,25 +1899,36 @@ async function confirmImport() {
   if (clsData && clsData.students) {
     existing = clsData.students.map(function(s) { return s.username; });
   }
-  var success = 0, skip = 0, fail = 0;
-  for (var i = 0; i < data.students.length; i++) {
-    var s = data.students[i];
-    try {
-      // 检查本班是否已有同名
-      if (existing.indexOf(s.name) >= 0) { skip++; continue; }
-      // 注册学生
+  // 过滤本班重复
+  var toImport = [];
+  var skip = 0;
+  data.students.forEach(function(s) {
+    if (existing.indexOf(s.name) >= 0) { skip++; }
+    else { toImport.push(s); existing.push(s.name); }
+  });
+  var success = 0, fail = 0;
+  // 并发导入（每批10人同时处理）
+  for (var batch = 0; batch < toImport.length; batch += 10) {
+    var batchItems = toImport.slice(batch, batch + 10);
+    var results = await Promise.all(batchItems.map(function(s) {
       var no = s.studentNo || '';
-      var reg = await accountAPI('POST', '/api/class/batch-register', { username: s.name, password: '123', studentNo: no, role: 'student' });
-      // 加入班级
-      if (reg.userId) {
-        await accountAPI('POST', '/api/class/force-join', { studentId: reg.userId, classId: cid });
-        existing.push(s.name);
-        success++;
-      } else { fail++; }
-    } catch(e) {
-      if (e.message && e.message.indexOf('已被注册') >= 0) { skip++; }
-      else { fail++; }
-    }
+      return accountAPI('POST', '/api/class/batch-register', { username: s.name, password: '123', studentNo: no, role: 'student' })
+        .then(function(reg) {
+          if (reg && reg.userId) {
+            return accountAPI('POST', '/api/class/force-join', { studentId: reg.userId, classId: cid }).then(function() { return 'ok'; });
+          }
+          return 'fail';
+        })
+        .catch(function(e) {
+          if (e.message && e.message.indexOf('已被注册') >= 0) return 'skip2';
+          return 'fail';
+        });
+    }));
+    results.forEach(function(r) {
+      if (r === 'ok') success++;
+      else if (r === 'skip2') skip++;
+      else fail++;
+    });
   }
   result.style.display = 'block';
   result.innerHTML = '<div style="font-size:28px;margin-bottom:4px;">✅</div>' +
