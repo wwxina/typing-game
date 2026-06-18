@@ -479,7 +479,8 @@ tr:hover td { background: var(--color-bg); }
                 <span id="batch-count" style="font-weight:600;">已选 0 人</span>
                 <button class="btn btn-secondary btn-sm" id="btn-batch-resetpwd" style="padding:4px 12px;font-size:12px;">🔑 重置密码</button>
                 <button class="btn btn-danger btn-sm" id="btn-batch-remove" style="padding:4px 12px;font-size:12px;">✕ 移出所选</button>
-                <button class="btn btn-danger btn-sm" id="btn-batch-delete" onclick="batchDeleteStudents()" style="padding:4px 12px;font-size:12px;background:#b91c1c;border-color:#b91c1c;">🗑 彻底删除</button>
+                <button class="btn btn-danger btn-sm" id="btn-batch-delete" onclick="batchDeleteStudents()" style="padding:4px 12px;font-size:12px;background:#b91c1c;border-color:#b91c1c;">🗑 彻底删除所选</button>
+                <button class="btn btn-danger btn-sm" id="btn-batch-delete-all" onclick="deleteAllStudents()" style="padding:4px 12px;font-size:12px;background:#dc2626;border-color:#dc2626;">🗑 删除全班</button>
                 <button class="btn btn-secondary btn-sm" id="btn-batch-export" style="padding:4px 12px;font-size:12px;">📥 导出</button>
               </div>
               <div class="table-wrap">
@@ -1067,6 +1068,21 @@ async function accountAPI(method, path, body) {
       (cls2.data.exercises||[]).forEach(function(e){if(!exs.find(function(x){return x.exerciseId===e.id}))exs.push({exerciseId:e.id,classId:cid2,title:e.title,text:e.text,completed:false,bestSpeed:0,bestAccuracy:0,stars:0});});
       await __db.from("user_data").upsert({user_id:body.studentId,class_ids:cids,teacher_exercises:exs,updated_at:Date.now()});
       return {success:true};
+    }
+    if (path === "/api/class/delete-all-students" && method === "POST") {
+      var cid2=body.classId;if(!cid2) throw new Error("缺少班级ID");
+      var r2=await __db.from("classes").select("student_ids").eq("id",cid2).eq("teacher_id",uid).maybeSingle();
+      if(!r2.data) throw new Error("班级不存在");
+      var sids=r2.data.student_ids||[];
+      if(sids.length===0) return{deleted:0};
+      // 删除所有学生的 profile 和 user_data
+      for(var i=0;i<sids.length;i++){
+        try{await __db.from("profiles").eq("user_id",sids[i]).delete();}catch(e){}
+        try{await __db.from("user_data").eq("user_id",sids[i]).delete();}catch(e){}
+      }
+      // 清空班级 student_ids
+      await __db.from("classes").eq("id",cid2).update({student_ids:[]});
+      return {deleted:sids.length};
     }
     if (path === "/api/class/delete-student" && method === "POST") {
       if (!body.studentId) throw new Error("缺少学生ID");
@@ -1876,6 +1892,19 @@ async function batchDeleteStudents(){
   }
   showToast('已删除 '+deleted+' 人'+(failed>0?'，失败 '+failed+' 人':''));
   await loadClassInfo();
+}
+async function deleteAllStudents(){
+  var cid=TeacherState.currentClassId;
+  if(!cid){showToast('请先选择班级');return;}
+  var students=TeacherState.classData?TeacherState.classData.students:[];
+  if(students.length===0){showToast('班级没有学生');return;}
+  if(!confirm('⚠️ 将删除该班级全部 '+students.length+' 名学生！')) return;
+  if(!confirm('再次确认：删除全班 '+students.length+' 人？此操作不可恢复！')) return;
+  try{
+    var result=await accountAPI('POST','/api/class/delete-all-students',{classId:cid});
+    showToast('已删除 '+result.deleted+' 人');
+    await loadClassInfo();
+  }catch(e){showToast('删除失败：'+e.message);}
 }
 function batchExport(){
   var ids=getSelectedIds();if(!ids.length){showToast('请先选择学生');return;}
@@ -2733,6 +2762,7 @@ document.addEventListener('DOMContentLoaded', function() {
   var moveBtn=document.getElementById('btn-batch-resetpwd');if(moveBtn)moveBtn.onclick=batchResetPwd;
   var removeBtn=document.getElementById('btn-batch-remove');if(removeBtn)removeBtn.onclick=batchRemove;
   var delBtn=document.getElementById('btn-batch-delete');if(delBtn)delBtn.onclick=batchDeleteStudents;
+  var delAllBtn=document.getElementById('btn-batch-delete-all');if(delAllBtn)delAllBtn.onclick=deleteAllStudents;
   var exportBtn=document.getElementById('btn-batch-export');if(exportBtn)exportBtn.onclick=batchExport;
   var importBtnTop=document.getElementById('btn-batch-import-top');if(importBtnTop)importBtnTop.onclick=showImportModal;
   // 批量导入弹窗
