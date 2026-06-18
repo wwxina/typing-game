@@ -2793,8 +2793,8 @@ function showAccountInfo() {
   document.querySelectorAll('.account-tab').forEach(function(t) { t.style.display = 'none'; });
   document.getElementById('account-tabs-row').style.display = 'none';
   document.getElementById('info-edit-error').classList.add('hidden');
-  // 刷新班级状态（已加入则不显示加入按钮）
-  updateJoinClassUI(AccountUser&&AccountUser.classIds||[]);
+  // 从服务端获取最新班级信息
+  loadMyClassList().then(function(){}).catch(function(){});
   // Frame fields
   document.getElementById('info-edit-name').value = AccountUser ? (AccountUser.username || '') : '';
   document.getElementById('info-edit-sno').value = AccountUser ? (AccountUser.studentNo || '') : '';
@@ -2897,7 +2897,8 @@ async function accountAPI(path, body) {
           throw new Error("该学生不在所选班级中，请检查班级选择");
         }
       }
-      return {token:_mkToken(u.user_id,u.username,u.role),userId:u.user_id,username:u.username,role:u.role||"student",studentNo:u.student_no||""};
+      var cids=await __db.from("user_data").select("class_ids").eq("user_id",u.user_id).maybeSingle();
+      return {token:_mkToken(u.user_id,u.username,u.role),userId:u.user_id,username:u.username,role:u.role||"student",studentNo:u.student_no||"",classIds:(cids.data&&cids.data.class_ids)||[]};
     }
     if (path === "/api/sync" && body===undefined) {
       var r=await __db.from("user_data").select("*").eq("user_id",uid).maybeSingle();
@@ -3087,7 +3088,7 @@ async function accountLogin(username, password, classId) {
     var body = { username: username, password: password };
     if (classId) body.classId = classId;
     var result = await accountAPI('/api/login', body);
-    AccountUser = { token: result.token, userId: result.userId, username: result.username, role: result.role, studentNo: result.studentNo || '' };
+    AccountUser = { token: result.token, userId: result.userId, username: result.username, role: result.role, studentNo: result.studentNo || '', classIds: result.classIds || [] };
     _accountPassword = password;
   } else {
     AccountUser = { token: 'local_' + Date.now(), userId: 'local_' + username, username: username, role: 'student', studentNo: '' };
