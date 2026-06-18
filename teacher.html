@@ -1075,14 +1075,15 @@ async function accountAPI(method, path, body) {
       if(!r2.data) throw new Error("班级不存在");
       var sids=r2.data.student_ids||[];
       if(sids.length===0) return{deleted:0};
-      // 删除所有学生的 profile 和 user_data
+      // 先清空班级（立即可见）
+      await __db.from("classes").eq("id",cid2).update({student_ids:[]});
+      // 再逐个删除档案
+      var delCount=0;
       for(var i=0;i<sids.length;i++){
-        try{await __db.from("profiles").eq("user_id",sids[i]).delete();}catch(e){}
+        try{await __db.from("profiles").eq("user_id",sids[i]).delete();delCount++;}catch(e){}
         try{await __db.from("user_data").eq("user_id",sids[i]).delete();}catch(e){}
       }
-      // 清空班级 student_ids
-      await __db.from("classes").eq("id",cid2).update({student_ids:[]});
-      return {deleted:sids.length};
+      return {deleted:delCount};
     }
     if (path === "/api/class/delete-student" && method === "POST") {
       if (!body.studentId) throw new Error("缺少学生ID");
