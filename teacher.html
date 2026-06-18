@@ -470,7 +470,10 @@ tr:hover td { background: var(--color-bg); }
             <div class="card">
               <div class="section-header" style="padding-top:0;">
                 <h3 class="section-title" id="class-detail-title">👨‍🎓 学生列表</h3>
-                <button class="btn btn-secondary btn-sm" id="btn-close-detail-panel">✕ 关闭</button>
+                <div style="display:flex;gap:8px;">
+                  <button class="btn btn-primary btn-sm" id="btn-batch-import-top" style="padding:4px 12px;font-size:12px;">📂 批量导入</button>
+                  <button class="btn btn-secondary btn-sm" id="btn-close-detail-panel">✕ 关闭</button>
+                </div>
               </div>
               <div id="batch-bar" style="display:none;align-items:center;gap:8px;padding:8px 12px;margin-bottom:12px;background:var(--color-accent-light);border-radius:8px;font-size:13px;flex-wrap:wrap;">
                 <span id="batch-count" style="font-weight:600;">已选 0 人</span>
@@ -2671,6 +2674,7 @@ document.addEventListener('DOMContentLoaded', function() {
   var delBtn=document.getElementById('btn-batch-delete');if(delBtn)delBtn.onclick=batchDeleteStudents;
   var exportBtn=document.getElementById('btn-batch-export');if(exportBtn)exportBtn.onclick=batchExport;
   var importBtn=document.getElementById('btn-batch-import');if(importBtn)importBtn.onclick=showImportModal;
+  var importBtnTop=document.getElementById('btn-batch-import-top');if(importBtnTop)importBtnTop.onclick=showImportModal;
   // 批量导入弹窗
   document.getElementById('btn-import-close').onclick=hideImportModal;
   document.getElementById('btn-import-cancel').onclick=hideImportModal;
