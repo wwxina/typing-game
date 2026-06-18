@@ -417,7 +417,7 @@ tr:hover td { background: var(--color-bg); }
           <label for="login-as-teacher">👨‍🏫 我是老师</label>
         </div>
         <div class="form-error" id="login-error"></div>
-        <button type="submit" class="btn btn-primary btn-block btn-lg">登 录</button>
+        <button type="submit" class="btn btn-primary btn-block btn-lg" onclick="var u=document.getElementById('login-username').value.trim();var p=document.getElementById('login-password').value;var err=document.getElementById('login-error');if(!u||!p){err.textContent='请填写用户名和密码';err.style.display='block';return false;}err.style.display='none';accountLogin(u,p).catch(function(e){err.textContent=e.message;err.style.display='block'});return false">登 录</button>
       </form>
       <!-- Register Form -->
       <form class="hidden" id="account-form-register">
