@@ -1799,7 +1799,12 @@ function renderClassDetailPanel() {
   var sk=_detailSort.key, sa=_detailSort.asc;
   students.sort(function(a,b){
     var va, vb;
-    if(sk==="studentNo"||sk==="username"){va=(a[sk]||"");vb=(b[sk]||"");return sa?va.localeCompare(vb):vb.localeCompare(va);}
+    if(sk==="studentNo"){
+      va=parseInt(a[sk])||0;vb=parseInt(b[sk])||0;
+      if(isNaN(va)&&isNaN(vb)){va=a[sk]||"";vb=b[sk]||"";return sa?String(va).localeCompare(String(vb)):String(vb).localeCompare(String(va));}
+      return sa?va-vb:vb-va;
+    }
+    if(sk==="username"){va=(a[sk]||"");vb=(b[sk]||"");return sa?va.localeCompare(vb):vb.localeCompare(va);}
     if(sk==="exProgress"){va=(a.exerciseProgress?a.exerciseProgress.completed/a.exerciseProgress.total:0);vb=(b.exerciseProgress?b.exerciseProgress.completed/b.exerciseProgress.total:0);}
     else if(sk==="avgSpeed"||sk==="maxSpeed"||sk==="totalPractices"){va=a[sk]||0;vb=b[sk]||0;}
     else {va=a[sk]||"";vb=b[sk]||"";return sa?String(va).localeCompare(String(vb)):String(vb).localeCompare(String(va));}
