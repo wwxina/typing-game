@@ -1454,8 +1454,8 @@ input { font-family: inherit; }
           <div class="info-row"><span>🎨 主题</span><span id="info-theme">海洋</span></div>
         </div>
         <p class="form-error hidden" id="info-edit-error" style="color:var(--color-error);font-size:13px;"></p>
-        <button class="btn btn-primary" id="btn-info-save" style="width:100%;margin-top:8px;">💾 保存修改</button>
-        <button class="btn btn-secondary" id="btn-info-logout" style="margin-top:8px;width:100%;">🚪 退出登录</button>
+        <button class="btn btn-primary" id="btn-info-save" onclick="saveProfile()" style="width:100%;margin-top:8px;">💾 保存修改</button>
+        <button class="btn btn-secondary" id="btn-info-logout" onclick="accountLogout()" style="margin-top:8px;width:100%;">🚪 退出登录</button>
       </div>
     </div>
     <button class="account-close" id="btn-acct-close">✕</button>
@@ -1474,8 +1474,8 @@ input { font-family: inherit; }
       </div>
       <p class="form-error hidden" id="join-class-error"></p>
       <div style="display:flex;gap:var(--space-md);">
-        <button class="btn btn-secondary" id="btn-join-cancel" style="flex:1;">取消</button>
-        <button class="btn btn-primary" id="btn-join-submit" style="flex:1;">加入班级</button>
+        <button class="btn btn-secondary" id="btn-join-cancel" onclick="hideJoinClassModal()" style="flex:1;">取消</button>
+        <button class="btn btn-primary" id="btn-join-submit" onclick="joinClass()" style="flex:1;">加入班级</button>
       </div>
     </div>
     <div id="join-class-info-view" class="hidden">
@@ -1488,11 +1488,11 @@ input { font-family: inherit; }
 </div>
 
 <!-- 班级排行榜弹窗 -->
-<div id="modal-leaderboard" class="modal-overlay hidden">
+<div id="modal-leaderboard" class="modal-overlay hidden" onclick="if(event.target===this)hideLeaderboard()">
   <div class="modal-card" style="max-width:580px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
       <h3 id="leaderboard-title" style="margin:0;font-size:18px;">🏆 班级排行榜</h3>
-      <button class="account-close" id="btn-leaderboard-close" style="position:static;">✕</button>
+      <button class="account-close" id="btn-leaderboard-close" onclick="hideLeaderboard()" style="position:static;">✕</button>
     </div>
     <!-- 我的排名卡片 -->
     <div id="my-rank-card" style="display:none;background:linear-gradient(135deg,#e0f2fe,#f0fdf4);border:2px solid var(--color-accent);border-radius:12px;padding:14px 16px;margin-bottom:16px;align-items:center;gap:12px;">
