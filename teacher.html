@@ -378,7 +378,7 @@ tr:hover td { background: var(--color-bg); }
     </div>
     <div class="header-right">
       <div class="account-wrap">
-        <button class="btn-account" id="btn-account" onclick="AccountUser&&AccountUser.token?document.getElementById('account-dropdown').classList.toggle('hidden'):showAccountModal()">
+        <button class="btn-account" id="btn-account" onclick="if(AccountUser&&AccountUser.token){document.getElementById('account-dropdown').classList.toggle('hidden')}else{document.getElementById('modal-account').classList.remove('hidden');document.getElementById('account-form-login').classList.remove('hidden');document.getElementById('account-form-register').classList.add('hidden')}">
           <span class="avatar">👤</span>
           <span class="username" id="label-username">未登录</span>
           <span>▾</span>
