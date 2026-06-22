@@ -5215,6 +5215,13 @@ function processHiddenInputText() {
     hiddenInput.textContent = '';
     return;
   }
+  // 手写/触控检测：最近3秒有过非鼠标指针事件
+  var _recentPenOrTouch = Date.now() - _lastPointerTime < 3000 && (_lastPointerType === 'pen' || _lastPointerType === 'touch');
+  if (_recentPenOrTouch) {
+    showInputMethodWarning();
+    hiddenInput.textContent = '';
+    return;
+  }
   // 手写检测：组词完成但没有键盘参与
   if (chars.length >= 1 && _handwriting) {
     showInputMethodWarning();
