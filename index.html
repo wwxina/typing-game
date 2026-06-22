@@ -5205,10 +5205,18 @@ function processHiddenInputText() {
   var _hasKeyEv = Date.now() - _lastKeydownTime < 2000 || _keydownCount > 0;
   var _wasComposing = Date.now() - _lastCompositionEnd < 2000;
   var _hadPointer = Date.now() - _lastPointerTime < 2000 && _lastPointerType === 'mouse';
+  // 手写：组词期间没用键盘 = 不是拼音输入
+  var _handwriting = _wasComposing && !_keyDuringComposition && !_hasKeyEv;
 
   // Multi-char burst with no keyboard evidence = voice/handwriting
-  // 例外：刚结束IME组词、或用鼠标选词
+  // 例外：IME键盘组词完成、鼠标选词（排除手写）
   if (chars.length > 1 && !_hasKeyEv && !_wasComposing && !_hadPointer) {
+    showInputMethodWarning();
+    hiddenInput.textContent = '';
+    return;
+  }
+  // 手写检测：组词完成但没有键盘参与
+  if (chars.length >= 1 && _handwriting) {
     showInputMethodWarning();
     hiddenInput.textContent = '';
     return;
