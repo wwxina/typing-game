@@ -373,6 +373,7 @@ tr:hover td { background: var(--color-bg); }
         <button class="nav-tab active" data-tab="class">🏫 班级管理</button>
         <button class="nav-tab" data-tab="exercise">📝 练习分发</button>
         <button class="nav-tab" data-tab="dashboard">📊 学情看板</button>
+        <button class="nav-tab" data-tab="leaderboard">🏆 排行榜</button>
         <button class="nav-tab" data-tab="pet">🐱 宠物排行</button>
       </nav>
     </div>
@@ -588,7 +589,39 @@ tr:hover td { background: var(--color-bg); }
       </div>
     </div>
 
-    <!-- TAB 4: 宠物排行 -->
+    <!-- TAB 4: 排行榜 -->
+    <div id="tab-leaderboard" class="hidden">
+      <div class="section-header">
+        <h3 class="section-title">🏆 班级排行榜</h3>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <select id="leaderboard-class-select" onchange="loadLeaderboardData()" style="padding:6px 12px;border-radius:8px;border:1px solid var(--color-border);font-size:13px;">
+            <option value="">全部班级</option>
+          </select>
+          <select id="leaderboard-sort-select" onchange="renderLeaderboardTable()" style="padding:6px 12px;border-radius:8px;border:1px solid var(--color-border);font-size:13px;">
+            <option value="bestScore">综合得分</option>
+            <option value="avgSpeed">平均速度</option>
+            <option value="avgAccuracy">正确率</option>
+            <option value="totalPractices">练习次数</option>
+          </select>
+        </div>
+      </div>
+      <!-- 前三名 -->
+      <div id="leaderboard-top3" style="display:flex;gap:12px;margin-bottom:var(--space-lg);"></div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>排名</th><th>学号</th><th>姓名</th><th>综合得分</th><th>平均速度</th><th>正确率</th><th>练习次数</th></tr></thead>
+            <tbody id="leaderboard-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div id="leaderboard-empty" class="empty-state hidden">
+        <div class="empty-icon">📭</div>
+        <div class="empty-text">还没有练习数据</div>
+      </div>
+    </div>
+
+    <!-- TAB 5: 宠物排行 -->
     <div id="tab-pet" class="hidden">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
         <span style="font-weight:600;white-space:nowrap;">查看班级：</span>
@@ -1678,6 +1711,7 @@ function switchTab(tab) {
   document.getElementById('tab-class').classList.toggle('hidden', tab !== 'class');
   document.getElementById('tab-exercise').classList.toggle('hidden', tab !== 'exercise');
   document.getElementById('tab-dashboard').classList.toggle('hidden', tab !== 'dashboard');
+  document.getElementById('tab-leaderboard').classList.toggle('hidden', tab !== 'leaderboard');
   document.getElementById('tab-pet').classList.toggle('hidden', tab !== 'pet');
 
   renderCurrentTab();
@@ -1691,6 +1725,7 @@ function renderCurrentTab() {
     if (cid && !TeacherState.classData) loadClassInfoForExercise(cid);
     else renderExerciseTab();
   }
+  else if (TeacherState.currentTab === 'leaderboard'){initLeaderboardSelector();loadLeaderboardData();}
   else if (TeacherState.currentTab === 'dashboard') renderDashboard();
   else if (TeacherState.currentTab === 'pet') {
     if (!TeacherState.petRankingData) loadPetLeaderboard();
@@ -2224,6 +2259,65 @@ function exportCSV() {
 }
 
 // ---- 宠物排行 ----
+// ===== 排行榜 =====
+var _lbData=[];
+async function loadLeaderboardData(){
+  var cid=document.getElementById('leaderboard-class-select').value;
+  if(cid){
+    var cls=TeacherState.classList.find(function(c){return c.classId===cid});
+    if(!cls){showToast('班级不存在');return}
+    var data=await accountAPI('GET','/api/class/dashboard?classId='+cid);
+    _lbData=data.students||[];
+  }else{
+    // 全部班级
+    _lbData=[];
+    var allClasses=TeacherState.classList||[];
+    for(var j=0;j<allClasses.length;j++){
+      var data=await accountAPI('GET','/api/class/dashboard?classId='+allClasses[j].classId);
+      if(data.students)_lbData=_lbData.concat(data.students.map(function(s){s.className=allClasses[j].name;return s}));
+    }
+  }
+  renderLeaderboardTable();
+}
+function renderLeaderboardTable(){
+  var sk=document.getElementById('leaderboard-sort-select').value;
+  var sorted=_lbData.slice().sort(function(a,b){return(b[sk]||0)-(a[sk]||0)});
+  var top3=document.getElementById('leaderboard-top3');
+  var tbody=document.getElementById('leaderboard-tbody');
+  var empty=document.getElementById('leaderboard-empty');
+  if(sorted.length===0){top3.innerHTML='';tbody.innerHTML='';empty.classList.remove('hidden');return}
+  empty.classList.add('hidden');
+  // 前三名卡片
+  var emojis=['🥇','🥈','🥉'];var colors=['#fbbf24','#cbd5e1','#d97706'];
+  top3.innerHTML=sorted.slice(0,3).map(function(s,i){
+    return '<div style=\"flex:1;text-align:center;background:#fff;border:2px solid '+colors[i]+';border-radius:12px;padding:12px 8px;\">'+
+      '<div style=\"font-size:32px;\">'+emojis[i]+'</div>'+
+      '<div style=\"font-weight:700;font-size:14px;\">'+escHtml(s.username)+'</div>'+
+      '<div style=\"font-size:20px;font-weight:700;color:#0ea5e9;\">'+(s.bestScore||0)+'</div>'+
+      '<div style=\"font-size:11px;color:#94a3b8;\">'+s.avgSpeed+'字/分 · '+s.avgAccuracy+'%</div>'+
+      '</div>';
+  }).join('');
+  // 表格
+  tbody.innerHTML=sorted.map(function(s,i){
+    var rank=i<3?emojis[i]:(i+1);
+    return '<tr>'+
+      '<td style=\"text-align:center;\">'+rank+'</td>'+
+      '<td>'+escHtml(s.studentNo||'-')+'</td>'+
+      '<td><strong>'+escHtml(s.username)+'</strong>'+(s.className?' <span style=\"font-size:10px;color:#94a3b8;\">'+s.className+'</span>':'')+'</td>'+
+      '<td style=\"font-weight:700;color:#0ea5e9;\">'+(s.bestScore||0)+'</td>'+
+      '<td>'+s.avgSpeed+' 字/分</td>'+
+      '<td>'+s.avgAccuracy+'%</td>'+
+      '<td>'+s.totalPractices+' 次</td>'+
+      '</tr>';
+  }).join('');
+}
+// 初始化排行榜班级下拉
+function initLeaderboardSelector(){
+  var sel=document.getElementById('leaderboard-class-select');
+  if(!sel)return;
+  var classes=TeacherState.classList||[];
+  sel.innerHTML='<option value=\"\">全部班级</option>'+classes.map(function(c){return '<option value=\"'+c.classId+'\">'+c.name+'</option>'}).join('');
+}
 async function loadPetLeaderboard(cid) {
   cid = cid || TeacherState.currentClassId;
   if (!cid) {
