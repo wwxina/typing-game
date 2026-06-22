@@ -879,14 +879,18 @@ async function _fmtStudent(sid,classExercises){
     exerciseProgress:{completed:exCompleted,total:exTotal},exerciseStatus:est};
 }
 
-// 批量拉取全班学生数据（2次查询替代N+1次）
+// 批量拉取全班学生数据（分批查询避免URL超长）
 async function _fmtStudentsBulk(sids,classExercises){
   if(!sids||sids.length===0)return[];
+  var BATCH=20;
   var udMap={},pfMap={};
-  var r1=await __db.from("user_data").select("*").in("user_id",sids);
-  if(r1.data)r1.data.forEach(function(d){udMap[d.user_id]=d;});
-  var r2=await __db.from("profiles").select("*").in("user_id",sids);
-  if(r2.data)r2.data.forEach(function(d){pfMap[d.user_id]=d;});
+  for(var i=0;i<sids.length;i+=BATCH){
+    var batch=sids.slice(i,i+BATCH);
+    var r1=await __db.from("user_data").select("*").in("user_id",batch);
+    if(r1.data)r1.data.forEach(function(d){udMap[d.user_id]=d;});
+    var r2=await __db.from("profiles").select("*").in("user_id",batch);
+    if(r2.data)r2.data.forEach(function(d){pfMap[d.user_id]=d;});
+  }
   return sids.map(function(sid){return _buildStudentInfo(sid,udMap[sid],pfMap[sid],classExercises);});
 }
 function _buildStudentInfo(sid,ud,pf,classExercises){
