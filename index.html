@@ -5199,18 +5199,13 @@ function processHiddenInputText() {
   var _hasKeyEv = Date.now() - _lastKeydownTime < 2000 || _keydownCount > 0;
   var _wasComposing = Date.now() - _lastCompositionEnd < 2000;
   var _hadPointer = Date.now() - _lastPointerTime < 2000 && _lastPointerType === 'mouse';
-  // 手写：组词期间没用键盘 = 不是拼音输入
-  var _handwriting = _wasComposing && !_hadKeyDuringComposition;
 
   // Multi-char burst with no keyboard evidence = voice/handwriting
-  // 例外：IME键盘组词完成、鼠标选词（排除手写）
   if (chars.length > 1 && !_hasKeyEv && !_wasComposing && !_hadPointer) {
     showInputMethodWarning();
     hiddenInput.textContent = '';
     return;
   }
-  // 手写检测：组词期间没敲过键盘
-  if (_handwriting) {
     showInputMethodWarning();
     hiddenInput.textContent = '';
     return;
@@ -5233,18 +5228,26 @@ function processHiddenInputText() {
 }
 
 var _lastCompositionEnd = 0;
-var _hadKeyDuringComposition = false;
+var _compChars = 0;
 hiddenInput.addEventListener('compositionstart', () => {
   AppState.isComposing = true;
   _keyDuringComposition = false;
-  _hadKeyDuringComposition = false;
+  _compChars = 0;
   _compositionActive = true;
+});
+hiddenInput.addEventListener('compositionupdate', (e) => {
+  _compChars = Math.max(_compChars, (e.data||'').length);
 });
 hiddenInput.addEventListener('compositionend', (e) => {
   AppState.isComposing = false;
   _compositionActive = false;
   _lastCompositionEnd = Date.now();
-  _hadKeyDuringComposition = _keyDuringComposition;
+  // 出了字但组词期间没键盘事件 = 手写
+  if (_compChars > 0 && !_keyDuringComposition) {
+    showInputMethodWarning();
+    hiddenInput.textContent = '';
+    return;
+  }
   // IMM32 fix: on Win7, input event fires BEFORE compositionend,
   // so it gets blocked by isComposing check. Process any pending text now.
   setTimeout(function(){processHiddenInputText();}, 50);
