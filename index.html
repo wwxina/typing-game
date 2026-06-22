@@ -5176,6 +5176,11 @@ function restoreInputSnapshot(snap) {
   AppState.furthestGlobalIndex = snap.furthestGlobalIndex;
 }
 
+// 拦截复制粘贴
+hiddenInput.addEventListener('paste', function(e){e.preventDefault();showInputMethodWarning();});
+hiddenInput.addEventListener('copy', function(e){e.preventDefault();});
+hiddenInput.addEventListener('cut', function(e){e.preventDefault();});
+
 hiddenInput.addEventListener('compositionstart', () => {
   AppState.isComposing = true;
   _keyDuringComposition = false;
