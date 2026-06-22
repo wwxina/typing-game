@@ -1025,12 +1025,12 @@ async function accountAPI(method, path, body) {
           if(existingNames.indexOf(s.username)>=0){skip++;continue;}
           var nid="u_"+(Date.now()+i)+"_"+Math.random().toString(36).slice(2,8);
           var hash=await _hashPwd(s.password||"123",s.username);
-          var pRes=await __db.from("profiles").insert({user_id:nid,username:s.username,password_hash:hash,role:'student',student_no:s.studentNo||'',created_at:Date.now()});
+          var pRes=await __db.from("profiles").upsert({user_id:nid,username:s.username,password_hash:hash,role:'student',student_no:s.studentNo||'',created_at:Date.now()});
           if(pRes&&pRes.error)throw new Error('档案:'+pRes.error.message);
           var ip={currentPet:0,food:0,totalXP:0,stars:0,ownedAccessories:[],pets:[],daily:{date:"",completed:[false,false,false],practiceCount:0,gotThreeStars:false,totalChars:0,challengeCount:0}};
           [{type:"cat",name:"小橘猫"},{type:"dog",name:"小黄狗"},{type:"bunny",name:"小兔子"},{type:"panda",name:"小熊猫"},{type:"fox",name:"小狐狸"}].forEach(function(t){ip.pets.push({type:t.type,name:t.name,stage:0,xp:0,adopted:false,maxLevel:false,accessory:null});});
           var teacherExs=[];classExs.forEach(function(e){teacherExs.push({exerciseId:e.id,classId:cid,title:e.title,text:e.text,completed:false,bestSpeed:0,bestAccuracy:0,stars:0});});
-          var uRes=await __db.from("user_data").insert({user_id:nid,pet:ip,scores:{},records:[],theme:'ocean',class_ids:[cid],teacher_exercises:teacherExs,student_no:s.studentNo||'',updated_at:Date.now()});
+          var uRes=await __db.from("user_data").upsert({user_id:nid,pet:ip,scores:{},records:[],theme:'ocean',class_ids:[cid],teacher_exercises:teacherExs,student_no:s.studentNo||'',updated_at:Date.now()});
           if(uRes&&uRes.error)throw new Error('数据:'+uRes.error.message);
           curSids.push(nid);existingNames.push(s.username);success++;
         }catch(e){console.log('import fail: '+s.username,e.message||e);try{await __db.from("profiles").eq("user_id",nid).delete();}catch(e2){}fail++;}
