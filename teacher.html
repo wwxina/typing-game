@@ -1918,7 +1918,7 @@ async function batchDeleteStudents(){
     var result=await accountAPI('POST','/api/class/batch-delete',{studentIds:ids,classId:TeacherState.currentClassId});
     showToast('已删除 '+result.deleted+' 人');
   }catch(e){showToast('删除失败：'+e.message);}
-  await loadClassInfo();
+  setTimeout(function(){location.reload();},500);
 }
 async function deleteAllStudents(){
   var cid=TeacherState.currentClassId;
