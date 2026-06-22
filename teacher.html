@@ -835,7 +835,7 @@ var _SB_KEY="sb_publishable_ttaTO8y3ww7EjENHkj5rng_Wa1YQ8Oo";
 function _sbFetch(method,table,queryStr,body,extraHeaders){
   var h={"apikey":_SB_KEY,"Authorization":"Bearer "+_SB_KEY,"Content-Type":"application/json"};
   if(extraHeaders)Object.assign(h,extraHeaders);
-  var opts={method:method,headers:h};if(body)opts.body=JSON.stringify(body);
+  var opts={method:method,headers:h};if(body)opts.body=(typeof body==='string'?body:JSON.stringify(body));
   return fetch(_SB_URL+"/"+table+(queryStr||""),opts).then(function(r){
     if(r.status===404&&extraHeaders&&extraHeaders["Accept"])return{data:null,error:null};
     if(!r.ok)return r.text().then(function(t){return{data:null,error:{message:"HTTP "+r.status}};});
