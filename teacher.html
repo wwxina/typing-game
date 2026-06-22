@@ -2317,6 +2317,7 @@ function initLeaderboardSelector(){
   if(!sel)return;
   var classes=TeacherState.classList||[];
   sel.innerHTML='<option value=\"\">全部班级</option>'+classes.map(function(c){return '<option value=\"'+c.classId+'\">'+c.name+'</option>'}).join('');
+  sel.onchange=loadLeaderboardData;
 }
 async function loadPetLeaderboard(cid) {
   cid = cid || TeacherState.currentClassId;
