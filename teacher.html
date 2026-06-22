@@ -1008,12 +1008,6 @@ async function accountAPI(method, path, body) {
       if (!body.students||!body.students.length) throw new Error("学生列表为空");
       var students=body.students;
       var cid=body.classId;
-      var SR_KEY='sb_secret_VWbpnQWdLlRn2gMn4RAF1Q_uKA'+'43RfT';
-      function _srFetch(method,table,qs,data){
-        var h={'apikey':SR_KEY,'Authorization':'Bearer '+SR_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
-        var opts={method:method,headers:h};if(data)opts.body=JSON.stringify(data);
-        return fetch(_SB_URL+'/'+table+(qs||''),opts).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status+': '+table);return r.text().then(function(t){if(!t)return{};try{return JSON.parse(t)}catch(e){return t}})});
-      }
       var r=await __db.from("classes").select("student_ids,exercises").eq("id",cid).eq("teacher_id",uid).maybeSingle();
       if(!r.data) throw new Error("班级不存在");
       var existingSids=r.data.student_ids||[];
@@ -1027,22 +1021,22 @@ async function accountAPI(method, path, body) {
           if(existingNames.indexOf(s.username)>=0){skip++;continue;}
           var nid="u_"+(Date.now()+i)+"_"+Math.random().toString(36).slice(2,8);
           var hash=await _hashPwd(s.password||"123",s.username);
-          await _srFetch('POST','profiles','',{user_id:nid,username:s.username,password_hash:hash,role:'student',student_no:s.studentNo||'',created_at:Date.now()});
+          await __db.from("profiles").insert({user_id:nid,username:s.username,password_hash:hash,role:'student',student_no:s.studentNo||'',created_at:Date.now()});
           var ip={currentPet:0,food:0,totalXP:0,stars:0,ownedAccessories:[],pets:[],daily:{date:"",completed:[false,false,false],practiceCount:0,gotThreeStars:false,totalChars:0,challengeCount:0}};
           [{type:"cat",name:"小橘猫"},{type:"dog",name:"小黄狗"},{type:"bunny",name:"小兔子"},{type:"panda",name:"小熊猫"},{type:"fox",name:"小狐狸"}].forEach(function(t){ip.pets.push({type:t.type,name:t.name,stage:0,xp:0,adopted:false,maxLevel:false,accessory:null});});
           var teacherExs=[];classExs.forEach(function(e){teacherExs.push({exerciseId:e.id,classId:cid,title:e.title,text:e.text,completed:false,bestSpeed:0,bestAccuracy:0,stars:0});});
-          await _srFetch('POST','user_data','',{user_id:nid,pet:ip,scores:{},records:[],theme:'ocean',class_ids:[cid],teacher_exercises:teacherExs,student_no:s.studentNo||'',updated_at:Date.now()});
+          await __db.from("user_data").insert({user_id:nid,pet:ip,scores:{},records:[],theme:'ocean',class_ids:[cid],teacher_exercises:teacherExs,student_no:s.studentNo||'',updated_at:Date.now()});
           curSids.push(nid);existingNames.push(s.username);success++;
         }catch(e){console.log('import fail: '+s.username,e.message||e);try{await __db.from("profiles").eq("user_id",nid).delete();}catch(e2){}fail++;}
       }
-      // 用service_role验证+更新班级
+      // 验证+更新班级
       var validSids=[];
       if(curSids.length>0){
-        var checkRes=await _srFetch('GET','profiles','?select=user_id&user_id=in.('+curSids.map(encodeURIComponent).join(',')+')');
-        var validIds=(checkRes||[]).map(function(p){return p.user_id});
+        var checkRes=await __db.from("profiles").select("user_id").in("user_id",curSids);
+        var validIds=(checkRes.data||[]).map(function(p){return p.user_id});
         validSids=curSids.filter(function(id){return validIds.indexOf(id)>=0});
       }
-      await _srFetch('PATCH','classes','?id=eq.'+encodeURIComponent(cid),{student_ids:validSids});
+      await __db.from("classes").eq("id",cid).update({student_ids:validSids});
       return {success:success,fail:fail,skip:skip};
     }
     if (path === "/api/class/batch-register" && method === "POST") {
@@ -1050,10 +1044,9 @@ async function accountAPI(method, path, body) {
       var un=body.username, pw=body.password, role=body.role||"student", sno=body.studentNo||"";
       if (!un||!pw) throw new Error("用户名和密码不能为空");
       // 重名检查由客户端完成，API 只负责注册+入班
-      // 用 anon key 创建档案（绕过 RLS 教师无权创建学生档案的限制）
       var nid="u_"+Date.now()+"_"+Math.random().toString(36).slice(2,8);
       var hash=await _hashPwd(pw,un);
-      await _sbFetch('POST','profiles','',JSON.stringify({user_id:nid,username:un,password_hash:hash,role:role,student_no:sno,created_at:Date.now()}),null);
+      await __db.from("profiles").insert({user_id:nid,username:un,password_hash:hash,role:role,student_no:sno,created_at:Date.now()});
       var classId=body.classId||"";
       var cids=classId?[classId]:[];
       // 获取班级练习
@@ -1064,9 +1057,7 @@ async function accountAPI(method, path, body) {
       }
       var ip={currentPet:0,food:0,totalXP:0,stars:0,ownedAccessories:[],pets:[],daily:{date:"",completed:[false,false,false],practiceCount:0,gotThreeStars:false,totalChars:0,challengeCount:0}};
       [{type:"cat",name:"小橘猫"},{type:"dog",name:"小黄狗"},{type:"bunny",name:"小兔子"},{type:"panda",name:"小熊猫"},{type:"fox",name:"小狐狸"}].forEach(function(t){ip.pets.push({type:t.type,name:t.name,stage:0,xp:0,adopted:false,maxLevel:false,accessory:null});});
-      AccountUser=null;
-      await __db.from("user_data").upsert({user_id:nid,pet:ip,scores:{},records:[],theme:"ocean",class_ids:cids,teacher_exercises:teacherExs,student_no:sno,updated_at:Date.now()});
-      AccountUser=savedAU;
+      await __db.from("user_data").insert({user_id:nid,pet:ip,scores:{},records:[],theme:"ocean",class_ids:cids,teacher_exercises:teacherExs,student_no:sno,updated_at:Date.now()});
       // 加入班级
       if(classId){
         var sids2=(cls3.data?cls3.data.student_ids||[]:[]).slice();
