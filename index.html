@@ -5206,10 +5206,6 @@ function processHiddenInputText() {
     hiddenInput.textContent = '';
     return;
   }
-    showInputMethodWarning();
-    hiddenInput.textContent = '';
-    return;
-  }
 
   _keydownCount = Math.max(0, _keydownCount - chars.length);
   _directInputJustProcessed = true;
