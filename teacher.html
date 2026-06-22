@@ -839,11 +839,7 @@ function _sbFetch(method,table,queryStr,body,extraHeaders){
   return fetch(_SB_URL+"/"+table+(queryStr||""),opts).then(function(r){
     if(r.status===404&&extraHeaders&&extraHeaders["Accept"])return{data:null,error:null};
     if(!r.ok)return r.text().then(function(t){return{data:null,error:{message:"HTTP "+r.status}};});
-    // POST/DELETE 等可能返回空body，不算错误
-    return r.text().then(function(t){
-      if(!t||t.length===0)return{data:null,error:null};
-      try{return{data:JSON.parse(t),error:null}}catch(e){return{data:null,error:null}}
-    });
+    return r.json().then(function(j){return{data:j,error:null};}).catch(function(){return{data:null,error:null};});
   }).catch(function(e){return{data:null,error:{message:e.message||"网络错误"}};});
 }
 var __db={from:function(t){return _chain(t);}};
@@ -1029,13 +1025,11 @@ async function accountAPI(method, path, body) {
           if(existingNames.indexOf(s.username)>=0){skip++;continue;}
           var nid="u_"+(Date.now()+i)+"_"+Math.random().toString(36).slice(2,8);
           var hash=await _hashPwd(s.password||"123",s.username);
-          var ir=await __db.from("profiles").insert({user_id:nid,username:s.username,password_hash:hash,role:'student',student_no:s.studentNo||'',created_at:Date.now()});
-          if(ir.error)throw new Error(ir.error.message||'创建档案失败');
+          await __db.from("profiles").insert({user_id:nid,username:s.username,password_hash:hash,role:'student',student_no:s.studentNo||'',created_at:Date.now()});
           var ip={currentPet:0,food:0,totalXP:0,stars:0,ownedAccessories:[],pets:[],daily:{date:"",completed:[false,false,false],practiceCount:0,gotThreeStars:false,totalChars:0,challengeCount:0}};
           [{type:"cat",name:"小橘猫"},{type:"dog",name:"小黄狗"},{type:"bunny",name:"小兔子"},{type:"panda",name:"小熊猫"},{type:"fox",name:"小狐狸"}].forEach(function(t){ip.pets.push({type:t.type,name:t.name,stage:0,xp:0,adopted:false,maxLevel:false,accessory:null});});
           var teacherExs=[];classExs.forEach(function(e){teacherExs.push({exerciseId:e.id,classId:cid,title:e.title,text:e.text,completed:false,bestSpeed:0,bestAccuracy:0,stars:0});});
-          var ur=await __db.from("user_data").insert({user_id:nid,pet:ip,scores:{},records:[],theme:'ocean',class_ids:[cid],teacher_exercises:teacherExs,student_no:s.studentNo||'',updated_at:Date.now()});
-          if(ur.error)throw new Error(ur.error.message||'创建数据失败');
+          await __db.from("user_data").insert({user_id:nid,pet:ip,scores:{},records:[],theme:'ocean',class_ids:[cid],teacher_exercises:teacherExs,student_no:s.studentNo||'',updated_at:Date.now()});
           curSids.push(nid);existingNames.push(s.username);success++;
         }catch(e){console.log('import fail: '+s.username,e.message||e);try{await __db.from("profiles").eq("user_id",nid).delete();}catch(e2){}fail++;}
       }
