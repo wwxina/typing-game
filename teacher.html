@@ -986,6 +986,14 @@ async function accountAPI(method, path, body) {
       await __db.from("classes").insert({id:cid,name:body.name,teacher_id:uid,invite_code:code,student_ids:[],exercises:[],created_at:Date.now()});
       return {classId:cid,inviteCode:code};
     }
+    if (path === "/api/class/rename" && method === "POST") {
+      if (!body.classId||!body.name) throw new Error("缺少参数");
+      if (body.name.length<2||body.name.length>30) throw new Error("班级名称需要2-30个字符");
+      var r0=await __db.from("classes").select("id").eq("teacher_id",uid).eq("name",body.name).eq("id:neq."+body.classId).maybeSingle();
+      if (r0.data) throw new Error("班级名称已存在");
+      await __db.from("classes").eq("id",body.classId).eq("teacher_id",uid).update({name:body.name});
+      return {success:true};
+    }
     if (path === "/api/class/delete" && method === "POST") {
       var r=await __db.from("classes").select("*").eq("id",body.classId).eq("teacher_id",uid).maybeSingle();
       if (!r.data) throw new Error("无权操作此班级");
@@ -1754,7 +1762,10 @@ function renderClassTab() {
     return '<div class="class-card-item" data-cid="' + c.classId + '" style="background:' + (sel ? 'var(--color-accent-light)' : 'var(--color-surface)') + ';border:2px solid ' + (sel ? 'var(--color-accent)' : 'var(--color-border)') + ';border-radius:12px;padding:14px 16px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:12px;">' +
       '<div style="font-size:28px;">🏫</div>' +
       '<div style="flex:1;min-width:0;">' +
-        '<div style="font-weight:700;font-size:15px;">' + escHtml(c.name) + '</div>' +
+        '<div style="display:flex;align-items:center;gap:6px;">' +
+          '<span style="font-weight:700;font-size:15px;">' + escHtml(c.name) + '</span>' +
+          '<button onclick="event.stopPropagation();editClassName(\'' + c.classId + '\',\'' + escHtml(c.name) + '\')" style="width:20px;height:20px;border-radius:50%;border:1px solid var(--color-border);background:var(--color-bg);color:var(--color-text-muted);cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;" title="修改班级名称">✎</button>' +
+        '</div>' +
         '<div style="font-size:12px;color:var(--color-text-muted);margin-top:2px;">' + c.studentCount + ' 学生 · ' + (c.exerciseCount || 0) + ' 练习</div>' +
       '</div>' +
       '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">' +
@@ -2112,6 +2123,17 @@ async function manageClassDetail(classId) {
   await loadClassInfo();
 }
 
+async function editClassName(classId, oldName) {
+  var newName = prompt('修改班级名称：', oldName);
+  if (!newName || newName === oldName) return;
+  if (newName.length < 2 || newName.length > 30) { showToast('班级名称需要2-30个字符'); return; }
+  try {
+    await accountAPI('POST', '/api/class/rename', { classId: classId, name: newName });
+    showToast('已改为「' + newName + '」');
+    await loadClassList();
+    await loadClassInfo();
+  } catch(e) { showToast('修改失败：' + e.message); }
+}
 async function deleteClass(classId, className) {
   if (!confirm('确定要删除「' + className + '」吗？\n\n该班级的所有学生将被移出，练习将被清除。此操作不可恢复。')) return;
   try {
