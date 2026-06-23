@@ -1849,12 +1849,15 @@ function renderUnclassedDetail() {
       '<td>' + escHtml(s.studentNo || '-') + '</td>' +
       '<td><strong>' + escHtml(s.username) + '</strong></td>' +
       '<td>' + s.totalPractices + ' 次</td>' +
-      '<td>-</td><td>-</td>' +
-      '<td><span style="font-size:11px;color:var(--color-warning);">未分配</span></td>' +
+      '<td>-</td><td>-</td><td>-</td>' +
+      '<td><button class="btn btn-sm btn-outline edit-st-btn" data-sid="'+s.userId+'" data-sname="'+escHtml(s.username)+'" data-sno="'+escHtml(s.studentNo||'')+'">✏️</button> ' +
+      '<button class="btn btn-sm btn-danger del-st-btn" data-sid="'+s.userId+'" data-sname="'+escHtml(s.username)+'" style="background:#b91c1c;border-color:#b91c1c;">🗑删除</button></td>' +
       '</tr>';
   }).join('');
   var allBox=document.getElementById('select-all');if(allBox){allBox.checked=false;allBox.onchange=function(){tbody.querySelectorAll('.row-check').forEach(function(cb){cb.checked=allBox.checked;});updateBatchCount();};}
   tbody.querySelectorAll('.row-check').forEach(function(cb){cb.onchange=updateBatchCount;});
+  tbody.querySelectorAll('.edit-st-btn').forEach(function(btn){btn.addEventListener('click',function(){showEditStudentModal(this.dataset.sid,this.dataset.sname,this.dataset.sno);});});
+  tbody.querySelectorAll('.del-st-btn').forEach(function(btn){btn.addEventListener('click',function(){if(!confirm('⚠️ 确定要彻底删除「'+this.dataset.sname+'」吗？'))return;if(!confirm('再次确认：彻底删除 '+this.dataset.sname+'？'))return;deleteStudentForever(this.dataset.sid);});});
   updateBatchCount();
   document.querySelectorAll('.class-card-item').forEach(function(el) {
     var cur = el.dataset.cid === '_unclassed';
