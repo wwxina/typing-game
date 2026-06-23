@@ -1864,7 +1864,6 @@ function renderUnclassedDetail() {
       '<td>' + s.totalPractices + ' 次</td>' +
       '<td>-</td><td>-</td><td>-</td>' +
       '<td><button class="btn btn-sm btn-outline" onclick="showEditStudentModal(\''+s.userId+'\',\''+escHtml(s.username)+'\',\''+escHtml(s.studentNo||'')+'\')">✏️</button> ' +
-      '<button class="btn btn-sm btn-danger" onclick="if(confirm(\'确定要将「'+escHtml(s.username)+'」移出班级吗？\')){removeStudentFromClass(\''+s.userId+'\')}">✕移出</button> ' +
       '<button class="btn btn-sm btn-danger" onclick="if(confirm(\'⚠️ 确定要彻底删除「'+escHtml(s.username)+'」吗？\')&&confirm(\'再次确认：彻底删除 '+escHtml(s.username)+'？\')){deleteStudentForever(\''+s.userId+'\')}" style="background:#b91c1c;border-color:#b91c1c;">🗑删除</button></td>' +
       '</tr>';
   }).join('');
