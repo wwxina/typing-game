@@ -482,6 +482,7 @@ tr:hover td { background: var(--color-bg); }
                 <button class="btn btn-danger btn-sm" id="btn-batch-remove" style="padding:4px 12px;font-size:12px;">✕ 移出所选</button>
                 <button class="btn btn-danger btn-sm" id="btn-batch-delete" onclick="batchDeleteStudents()" style="padding:4px 12px;font-size:12px;background:#b91c1c;border-color:#b91c1c;">🗑 彻底删除所选</button>
                 <button class="btn btn-secondary btn-sm" id="btn-batch-export" style="padding:4px 12px;font-size:12px;">📥 导出</button>
+                <button class="btn btn-primary btn-sm" id="btn-batch-assign" style="padding:4px 12px;font-size:12px;display:none;">📦 分配班级</button>
               </div>
               <div class="table-wrap">
                 <table>
@@ -1839,6 +1840,7 @@ function renderUnclassedDetail() {
   document.getElementById('class-detail-content').classList.remove('hidden');
   document.getElementById('class-detail-title').textContent = '🏠 无班级学生';
   document.getElementById('batch-bar').style.display='flex';
+  var assignBtn=document.getElementById('btn-batch-assign');if(assignBtn)assignBtn.style.display='';
   var tbody = document.getElementById('class-detail-tbody');
   document.getElementById('class-detail-empty').classList.add('hidden');
   tbody.innerHTML = _unclassedStudents.map(function(s) {
@@ -1965,6 +1967,26 @@ async function batchRemove(){
   if(!confirm('将 '+ids.length+' 名学生移出班级？数据保留。')) return;
   await Promise.all(ids.map(function(sid){return accountAPI('POST','/api/class/remove-student',{studentId:sid,classId:TeacherState.currentClassId});}));
   showToast('已移除 '+ids.length+' 人');await loadClassInfo();
+}
+async function batchAssignStudents(){
+  var ids=getSelectedIds();if(!ids.length){showToast('请先选择学生');return;}
+  var classes=TeacherState.classList||[];
+  if(classes.length===0){showToast('请先创建班级');return;}
+  // 构建班级选择列表
+  var list=classes.map(function(c){return c.name+'（'+c.studentCount+'人）'}).join('\n');
+  var names=classes.map(function(c){return c.name}).join(',');
+  var cname=prompt('将 '+ids.length+' 名学生分配到哪个班级？\n\n可选班级：'+names,'');
+  if(!cname)return;
+  var cls=classes.find(function(c){return c.name===cname.trim()});
+  if(!cls){showToast('班级不存在');return;}
+  var ok=0;
+  for(var i=0;i<ids.length;i++){
+    try{await accountAPI('POST','/api/class/move-student',{studentId:ids[i],fromClassId:'',toClassId:cls.classId});ok++;}
+    catch(e){}
+  }
+  showToast('已分配 '+ok+' 人');
+  await loadUnclassedStudents();
+  renderUnclassedDetail();
 }
 async function batchDeleteStudents(){
   var ids=getSelectedIds();if(!ids.length){showToast('请先选择学生');return;}
@@ -2935,6 +2957,7 @@ document.addEventListener('DOMContentLoaded', function() {
   var delBtn=document.getElementById('btn-batch-delete');if(delBtn)delBtn.onclick=batchDeleteStudents;
   var delAllBtn=document.getElementById('btn-batch-delete-all');if(delAllBtn)delAllBtn.onclick=deleteAllStudents;
   var exportBtn=document.getElementById('btn-batch-export');if(exportBtn)exportBtn.onclick=batchExport;
+  var assignBtn=document.getElementById('btn-batch-assign');if(assignBtn)assignBtn.onclick=batchAssignStudents;
   var importBtnTop=document.getElementById('btn-batch-import-top');if(importBtnTop)importBtnTop.onclick=showImportModal;
   // 批量导入弹窗
   var importClose=document.getElementById('btn-import-close');if(importClose){importClose.onclick=hideImportModal; importClose.setAttribute('onclick','hideImportModal()');}
