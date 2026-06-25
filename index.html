@@ -1139,6 +1139,10 @@ input { font-family: inherit; }
 .daily-panel.collapsed .daily-toggle-icon { display: inline-block; transform: rotate(0deg); }
 .daily-panel:not(.collapsed) .daily-toggle-icon { display: inline-block; transform: rotate(90deg); }
 .daily-toggle-icon { font-size: 9px; transition: transform 0.2s; }
+.daily-task-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--color-text-secondary); margin-top: 2px; }
+.daily-task-icon { font-size: 12px; }
+.daily-task-reward { margin-left: auto; font-size: 10px; font-weight: 600; color: var(--color-accent); background: var(--color-accent-light); padding: 1px 6px; border-radius: 8px; white-space: nowrap; }
+.daily-task-reward:empty { display: none; }
 .daily-task-item {
   display: flex; align-items: center; gap: 4px;
   font-size: 10px; padding: 2px 0;
@@ -1613,8 +1617,9 @@ input { font-family: inherit; }
       <div class="pet-card-combo" id="pet-card-combo"></div>
       <div class="daily-task-single" id="daily-panel" style="display:none;">
         <div class="daily-task-item" id="daily-task-item">
-          <span class="daily-task-icon" id="daily-task-icon">🎯</span>
+          <span class="daily-task-icon" id="daily-task-icon">☐</span>
           <span class="daily-task-text" id="daily-task-text">完成3次练习</span>
+          <span class="daily-task-reward" id="daily-task-reward"></span>
         </div>
       </div>
     </div>
@@ -3821,6 +3826,7 @@ function renderDailyTasks() {
     container.style.display = '';
     document.getElementById('daily-task-icon').textContent = '☐';
     document.getElementById('daily-task-text').textContent = DAILY_TASKS[currentIdx].desc;
+    document.getElementById('daily-task-reward').textContent = DAILY_TASKS[currentIdx].reward;
     container.title = '每日任务 ' + completedCount + '/3';
   } else {
     // 全部完成
