@@ -3832,61 +3832,6 @@ function renderDailyTasks() {
     container.title = '每日任务 3/3';
   }
 
-  var titleEl = document.getElementById('daily-panel-title');
-  var panel = document.getElementById('daily-tasks-list');
-      updateChallengeProgress(PetState.daily.totalChars, AppState.correctCount, _challengeState.streakCombo, 0);
-    }
-    // 渲染两个随机挑战条目
-    var chHtml = '';
-    for (var s = 0; s < _challengeState.slots.length; s++) {
-      var slot = _challengeState.slots[s];
-      var ch = CHALLENGE_POOL[slot.index];
-      var done = slot.done;
-      var cls = done ? ' done' : '';
-      var checkbox = done ? '☑' : '☐';
-      var progressText = done ? '' : (' ' + slot.progress + '/' + ch.target);
-      chHtml += '<div class="challenge-item' + cls + '">';
-      chHtml += '<span class="dt-check">' + checkbox + '</span>';
-      chHtml += '<span class="dt-icon">' + ch.icon + '</span>';
-      chHtml += '<span class="dt-desc">' + ch.desc + '</span>';
-      chHtml += '<span class="dt-progress">' + progressText + '</span>';
-      chHtml += '<span class="dt-reward">' + ch.reward + '</span>';
-      chHtml += '</div>';
-    }
-    challengePanel.innerHTML = chHtml;
-    challengePanel.classList.remove('hidden');
-    if (titleEl) titleEl.innerHTML = '🎯 随机挑战';
-  } else {
-    // 显示每日任务
-    panel.classList.remove('hidden');
-    challengePanel.classList.add('hidden');
-    if (titleEl) titleEl.innerHTML = '📋 每日任务 <span id="daily-count">' + d.completed.filter(function(v){ return v; }).length + '/3</span>';
-
-    var html = '';
-    for (var i = 0; i < DAILY_TASKS.length; i++) {
-      var done = d.completed[i];
-      var cls = done ? ' done' : '';
-      var checkbox = done ? '☑' : '☐';
-      html += '<div class="daily-task-item' + cls + '">';
-      html += '<span class="dt-check">' + checkbox + '</span>';
-      html += '<span class="dt-icon">' + DAILY_TASKS[i].icon + '</span>';
-      html += '<span class="dt-desc">' + DAILY_TASKS[i].desc + '</span>';
-      html += '<span class="dt-reward">' + DAILY_TASKS[i].reward + '</span>';
-      html += '</div>';
-    }
-    panel.innerHTML = html;
-  }
-
-  var completed = d.completed.filter(function(v){ return v; }).length;
-  var countEl = document.getElementById('daily-count');
-  if (countEl) countEl.textContent = completed + '/3';
-
-  var bonus = document.getElementById('daily-bonus');
-  if (completed < 3) {
-    bonus.classList.remove('hidden');
-  } else {
-    bonus.classList.add('hidden');
-  }
 }
 
 function renderPetPage() {
