@@ -1613,12 +1613,10 @@ input { font-family: inherit; }
       </div>
       <div class="pet-card-xp-bar"><div class="pet-card-xp-fill" id="pet-card-xp-fill" style="width:0%"></div><span class="pet-card-xp-text" id="pet-card-xp-text"></span></div>
       <div class="pet-card-combo" id="pet-card-combo"></div>
-      <div class="daily-panel collapsed" id="daily-panel">
-        <div class="daily-panel-title" id="daily-panel-title" onclick="document.getElementById('daily-panel').classList.toggle('collapsed')" style="cursor:pointer;">📋 每日任务 <span id="daily-count">0/3</span> <span class="daily-toggle-icon">▸</span></div>
-        <div class="daily-panel-body" id="daily-panel-body">
-          <div id="daily-tasks-list"></div>
-          <div id="challenge-panel" class="hidden"></div>
-          <div class="daily-bonus hidden" id="daily-bonus">🎁 全部完成额外 +20 +🥩×3</div>
+      <div class="daily-task-single" id="daily-panel" style="display:none;">
+        <div class="daily-task-item" id="daily-task-item">
+          <span class="daily-task-icon" id="daily-task-icon">🎯</span>
+          <span class="daily-task-text" id="daily-task-text">完成3次练习</span>
         </div>
       </div>
     </div>
@@ -3808,21 +3806,34 @@ function updateChallengeProgress(chars, correct, combo, speed) {
 }
 
 function renderDailyTasks() {
-  var panel = document.getElementById('daily-tasks-list');
-  if (!panel) return;
   checkDailyRefresh();
   var d = PetState.daily;
+  var container = document.getElementById('daily-panel');
+  if (!container) return;
 
-  var allDone = d.completed[0] && d.completed[1] && d.completed[2];
-  var challengePanel = document.getElementById('challenge-panel');
+  // 找第一个未完成的任务
+  var currentIdx = -1;
+  var completedCount = 0;
+  for (var i = 0; i < 3; i++) {
+    if (d.completed[i]) completedCount++;
+    else if (currentIdx < 0) currentIdx = i;
+  }
+
+  if (currentIdx >= 0) {
+    container.style.display = '';
+    document.getElementById('daily-task-icon').textContent = DAILY_TASKS[currentIdx].icon || '🎯';
+    document.getElementById('daily-task-text').textContent = DAILY_TASKS[currentIdx].desc;
+    container.title = '每日任务 ' + completedCount + '/3';
+  } else {
+    // 全部完成
+    container.style.display = '';
+    document.getElementById('daily-task-icon').textContent = '🎁';
+    document.getElementById('daily-task-text').textContent = '全部完成！';
+    container.title = '每日任务 3/3';
+  }
+
   var titleEl = document.getElementById('daily-panel-title');
-
-  if (allDone) {
-    // 每日任务全部完成 → 显示随机挑战
-    panel.classList.add('hidden');
-    if (_challengeState.slots[0].index < 0) {
-      pickRandomChallenges();
-      // 用当前已有进度初始化（如当天已打过的字数）
+  var panel = document.getElementById('daily-tasks-list');
       updateChallengeProgress(PetState.daily.totalChars, AppState.correctCount, _challengeState.streakCombo, 0);
     }
     // 渲染两个随机挑战条目
