@@ -4308,6 +4308,8 @@ function navigateTo(page) {
   AppState.currentPage = page;
   document.getElementById('page-course-select').classList.toggle('hidden', page !== 'course-select');
   document.getElementById('page-typing-practice').classList.toggle('hidden', page !== 'typing-practice');
+  // 打字页隐藏回顶按钮
+  var scrollBtn=document.getElementById('btn-scroll-top');if(scrollBtn)scrollBtn.style.display=(page==='typing-practice')?'none':'';
   document.getElementById('page-records').classList.toggle('hidden', page !== 'records');
   var petPage = document.getElementById('page-pet'); if (petPage) petPage.classList.toggle('hidden', page !== 'pet');
   document.querySelectorAll('.nav-link').forEach(link => link.classList.toggle('active', link.dataset.page === page));
