@@ -4126,11 +4126,12 @@ function addCombo() {
   else ComboState.multiplier = 1;
 
   var comboEl = document.getElementById('pet-card-combo');
-  if (comboEl && ComboState.count >= 5) {
-    var icons = ComboState.count >= 20 ? '⚡' : '🔥';
-    comboEl.textContent = icons + ' ' + ComboState.count + '连击！×' + ComboState.multiplier;
+  if (comboEl && ComboState.count >= 3) {
+    var icons = ComboState.count >= 20 ? '⚡' : (ComboState.count >= 10 ? '💥' : '🔥');
+    comboEl.textContent = icons + ' ×' + ComboState.count;
     comboEl.classList.add('show');
-    setTimeout(function() { comboEl.classList.remove('show'); }, 1500);
+    clearTimeout(comboEl._hideTimer);
+    comboEl._hideTimer = setTimeout(function() { comboEl.classList.remove('show'); }, 1500);
   }
 }
 
