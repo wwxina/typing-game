@@ -1083,32 +1083,30 @@ input { font-family: inherit; }
 .pet-card {
   position: fixed;
   right: 20px; bottom: 20px;
-  width: 180px;
-  background: var(--color-surface);
-  border: 2px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-sm);
-  box-shadow: var(--shadow-md);
+  width: 160px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 4px;
+  box-shadow: none;
   z-index: 50;
   font-size: var(--font-size-xs);
   user-select: none;
 }
 .pet-card-avatar-wrap {
-  width: 80px; height: 80px; border-radius: 50%;
-  background: #fff; border: 3px solid var(--color-border);
-  margin: 0 auto 8px; display: flex; align-items: center; justify-content: center;
+  width: 100px; height: 100px; border-radius: 50%;
+  background: #fff; border: 3px solid var(--color-accent);
+  margin: 0 auto 6px; display: flex; align-items: center; justify-content: center;
   overflow: hidden; position: relative;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
 }
-.pet-card-emoji { font-size: 44px; line-height: 1; cursor:pointer; }
-.pet-card-emoji img { width: 80px !important; height: 80px !important; object-fit: contain; }
-.pet-card.minimized { width:52px; padding:6px; border-radius:50%; right:12px; bottom:12px; }
-.pet-card.minimized .pet-card-avatar-wrap { width:40px;height:40px;border-width:2px;margin:0; }
-.pet-card.minimized .pet-card-emoji { font-size:24px; }
-.pet-card.minimized .pet-card-name,
-.pet-card.minimized .pet-card-stage,
-.pet-card.minimized .pet-card-xp-bar,
-.pet-card.minimized .pet-card-combo,
-.pet-card.minimized .daily-panel { display:none !important; }
+.pet-card-emoji { font-size: 56px; line-height: 1; }
+.pet-card-emoji img { width: 100px !important; height: 100px !important; object-fit: contain; }
+.pet-card.minimized { width:52px;padding:6px;border-radius:50%;right:12px;bottom:12px; }
+.pet-card.minimized .pet-card-avatar-wrap { width:52px;height:52px;border-width:2px;margin:0; }
+.pet-card.minimized .pet-card-emoji { font-size:30px; }
+.pet-card.minimized .pet-card-emoji img { width:52px !important; height:52px !important; }
+.pet-card.minimized > :not(.pet-card-avatar-wrap) { display:none !important; }
 .pet-card-accessory { position: absolute; bottom:0; right:0; font-size: 16px; }
 .pet-card-stage { font-size: 10px; font-weight: 700; color: var(--color-accent); text-align: center; margin-bottom: 3px; }
 .pet-card.minimized .pet-card-stage { display: none; }
@@ -3734,7 +3732,7 @@ function renderPetCard() {
 
   var emojiEl=document.getElementById('pet-card-emoji');
   if (emojiEl) {
-    if (def.imgs) { emojiEl.innerHTML = '<img src="'+def.imgs[stage]+'" style="width:80px;height:80px;object-fit:contain;display:block;" alt="">'; }
+    if (def.imgs) { emojiEl.innerHTML = '<img src="'+def.imgs[stage]+'" style="width:100px;height:100px;object-fit:contain;display:block;" alt="">'; }
     else { emojiEl.textContent = def.stageEmojis[stage] || def.emoji; }
   }
   var accEl = document.getElementById('pet-card-accessory');
