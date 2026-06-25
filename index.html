@@ -1110,7 +1110,7 @@ input { font-family: inherit; }
 .pet-card.minimized .pet-card-combo,
 .pet-card.minimized .daily-panel { display:none !important; }
 .pet-card-accessory { position: absolute; bottom:0; right:0; font-size: 16px; }
-.pet-card-stage { position: absolute; top: 2px; left: 0; right: 0; text-align: center; font-size: 9px; font-weight: 700; color: #fff; background: rgba(0,0,0,0.45); padding: 1px 0; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+.pet-card-stage { font-size: 10px; font-weight: 700; color: var(--color-accent); text-align: center; margin-bottom: 3px; }
 .pet-card.minimized .pet-card-stage { display: none; }
 .pet-card-xp-bar {
   height: 14px; background: var(--color-border); border-radius: var(--radius-full);
@@ -1606,10 +1606,10 @@ input { font-family: inherit; }
       </div>
     <!-- 宠物卡片 -->
     <div class="pet-card hidden" id="pet-card">
+      <div class="pet-card-stage" id="pet-card-stage">Lv.1</div>
       <div class="pet-card-avatar-wrap" id="pet-card-avatar-wrap">
         <span class="pet-card-emoji" id="pet-card-emoji">🐱</span>
         <span class="pet-card-accessory hidden" id="pet-card-accessory"></span>
-        <span class="pet-card-stage" id="pet-card-stage">Lv.1</span>
       </div>
       <div class="pet-card-xp-bar"><div class="pet-card-xp-fill" id="pet-card-xp-fill" style="width:0%"></div><span class="pet-card-xp-text" id="pet-card-xp-text"></span></div>
       <div class="pet-card-combo" id="pet-card-combo"></div>
