@@ -3821,13 +3821,13 @@ function renderDailyTasks() {
 
   if (currentIdx >= 0) {
     container.style.display = '';
-    document.getElementById('daily-task-icon').textContent = DAILY_TASKS[currentIdx].icon || '🎯';
+    document.getElementById('daily-task-icon').textContent = '☐';
     document.getElementById('daily-task-text').textContent = DAILY_TASKS[currentIdx].desc;
     container.title = '每日任务 ' + completedCount + '/3';
   } else {
     // 全部完成
     container.style.display = '';
-    document.getElementById('daily-task-icon').textContent = '🎁';
+    document.getElementById('daily-task-icon').textContent = '☑';
     document.getElementById('daily-task-text').textContent = '全部完成！';
     container.title = '每日任务 3/3';
   }
