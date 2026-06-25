@@ -3746,7 +3746,7 @@ function renderPetCard() {
     else { accEl.classList.add('hidden'); }
   } else { accEl.classList.add('hidden'); }
   document.getElementById('pet-card').title = def.name;
-  document.getElementById('pet-card-stage').textContent = 'Lv.' + (stage + 1);
+  document.getElementById('pet-card-stage').textContent = 'Lv.' + (stage + 1) + ' ' + stageName;
 
   // XP 进度条
   var currentXP = petData.xp;
