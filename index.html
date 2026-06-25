@@ -1110,8 +1110,7 @@ input { font-family: inherit; }
 .pet-card.minimized .pet-card-combo,
 .pet-card.minimized .daily-panel { display:none !important; }
 .pet-card-accessory { position: absolute; bottom:0; right:0; font-size: 16px; }
-.pet-card-name { font-weight: 700; color: var(--color-text-primary); font-size: var(--font-size-sm); text-align: center; }
-.pet-card-stage { font-size: 10px; color: var(--color-accent); text-align: center; margin-bottom: 4px; }
+.pet-card-stage { font-size: 11px; font-weight: 600; color: var(--color-accent); text-align: center; margin-bottom: 4px; }
 .pet-card-xp-bar {
   height: 14px; background: var(--color-border); border-radius: var(--radius-full);
   margin: 4px 0; overflow: hidden; position: relative;
@@ -1610,8 +1609,7 @@ input { font-family: inherit; }
         <span class="pet-card-emoji" id="pet-card-emoji">🐱</span>
         <span class="pet-card-accessory hidden" id="pet-card-accessory"></span>
       </div>
-      <div class="pet-card-name" id="pet-card-name">小橘猫</div>
-      <div class="pet-card-stage" id="pet-card-stage">Lv.1 幼崽</div>
+      <div class="pet-card-stage" id="pet-card-stage">Lv.1</div>
       <div class="pet-card-xp-bar"><div class="pet-card-xp-fill" id="pet-card-xp-fill" style="width:0%"></div><span class="pet-card-xp-text" id="pet-card-xp-text"></span></div>
       <div class="pet-card-combo" id="pet-card-combo"></div>
       <div class="daily-panel collapsed" id="daily-panel">
@@ -3746,8 +3744,8 @@ function renderPetCard() {
     if (eqAcc) { accEl.textContent = eqAcc.emoji; accEl.classList.remove('hidden'); }
     else { accEl.classList.add('hidden'); }
   } else { accEl.classList.add('hidden'); }
-  document.getElementById('pet-card-name').textContent = def.name;
-  document.getElementById('pet-card-stage').textContent = 'Lv.' + (stage + 1) + ' ' + stageName;
+  document.getElementById('pet-card').title = def.name;
+  document.getElementById('pet-card-stage').textContent = 'Lv.' + (stage + 1) + ' · ' + stageName;
 
   // XP 进度条
   var currentXP = petData.xp;
