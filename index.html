@@ -4129,10 +4129,10 @@ function addCombo() {
 
   var comboEl = document.getElementById('pet-card-combo');
   if (comboEl && ComboState.count >= 3) {
-    if (ComboState.count >= 20) { comboEl.innerHTML = '⚡ 无敌了！×'+ComboState.count; }
-    else if (ComboState.count >= 10) { comboEl.innerHTML = '💥 超级厉害！×'+ComboState.count; }
-    else if (ComboState.count >= 5) { comboEl.innerHTML = '🔥 太棒了！×'+ComboState.count; }
-    else { comboEl.innerHTML = '🌟 不错哦！×'+ComboState.count; }
+    if (ComboState.count >= 20) { comboEl.innerHTML = '无敌了！×'+ComboState.count; }
+    else if (ComboState.count >= 10) { comboEl.innerHTML = '超级厉害！×'+ComboState.count; }
+    else if (ComboState.count >= 5) { comboEl.innerHTML = '太棒了！×'+ComboState.count; }
+    else { comboEl.innerHTML = '不错哦！×'+ComboState.count; }
     comboEl.classList.add('show');
     clearTimeout(comboEl._hideTimer);
     comboEl._hideTimer = setTimeout(function() { comboEl.classList.remove('show'); }, 2000);
