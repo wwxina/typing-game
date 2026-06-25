@@ -1101,21 +1101,19 @@ input { font-family: inherit; }
 .pet-card.minimized { width:52px; padding:6px; border-radius:50%; right:12px; bottom:12px; }
 .pet-card.minimized .pet-card-header > :not(.pet-card-emoji) { display:none; }
 .pet-card.minimized .pet-card-xp-bar,
-.pet-card.minimized .pet-card-food-text,
 .pet-card.minimized .pet-card-combo,
 .pet-card.minimized .daily-panel { display:none !important; }
 .pet-card.minimized .pet-card-emoji { font-size:32px; }
 .pet-card-accessory { font-size: 16px; margin-left: -2px; }
 .pet-card-info { flex: 1; }
 .pet-card-name { font-weight: 700; color: var(--color-text-primary); font-size: var(--font-size-sm); }
-.pet-card-stage { font-size: 10px; color: var(--color-accent); }
+.pet-card-stage { font-size: 10px; color: var(--color-accent); margin-left: auto; white-space: nowrap; }
 .pet-card-xp-bar {
-  height: 18px; background: var(--color-border); border-radius: var(--radius-full);
+  height: 14px; background: var(--color-border); border-radius: var(--radius-full);
   margin: 4px 0; overflow: hidden; position: relative;
 }
 .pet-card-xp-fill { height: 100%; background: var(--color-accent); border-radius: var(--radius-full); transition: width 0.4s ease; }
 .pet-card-xp-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.4); }
-.pet-card-food-text { font-size: 11px; font-weight: 600; color: #E65100; text-align: center; margin-bottom: 4px; }
 .pet-card-combo {
   margin-top: 4px; padding: 2px 6px; background: linear-gradient(135deg, #FFF3CD, #FFE082);
   border-radius: var(--radius-sm); font-size: 10px; font-weight: 700; color: #8D6E00;
@@ -1133,7 +1131,12 @@ input { font-family: inherit; }
   margin-top: 6px; padding-top: 6px;
   border-top: 1px dashed var(--color-border);
 }
-.daily-panel-title { font-size: 10px; font-weight: 700; color: var(--color-text-muted); margin-bottom: 4px; }
+.daily-panel-title { font-size: 10px; font-weight: 700; color: var(--color-text-muted); margin-bottom: 4px; user-select:none; }
+.daily-panel-title:hover { color: var(--color-accent); }
+.daily-panel.collapsed .daily-panel-body { display: none; }
+.daily-panel.collapsed .daily-toggle-icon { display: inline-block; transform: rotate(0deg); }
+.daily-panel:not(.collapsed) .daily-toggle-icon { display: inline-block; transform: rotate(90deg); }
+.daily-toggle-icon { font-size: 9px; transition: transform 0.2s; }
 .daily-task-item {
   display: flex; align-items: center; gap: 4px;
   font-size: 10px; padding: 2px 0;
@@ -1182,6 +1185,7 @@ input { font-family: inherit; }
   margin-bottom: var(--space-md);
 }
 .pet-detail-emoji { font-size: 72px; line-height: 1; margin-bottom: var(--space-sm); animation: petBreathe 2.5s ease-in-out infinite; }
+.pet-detail-emoji img { width: 72px !important; height: 72px !important; display: block; margin: 0 auto; }
 @keyframes petBreathe {
   0%,100% { transform: translateY(0) scale(1); }
   50% { transform: translateY(-8px) scale(1.06); }
@@ -1204,9 +1208,8 @@ input { font-family: inherit; }
   font-size: 24px; min-width: 52px; opacity: 0.3; transition: opacity 0.3s;
 }
 .evo-step.reached { opacity: 1; }
-.evo-step.current .evo-step-emoji {
-  transform: scale(1.35); filter: drop-shadow(0 0 6px var(--color-accent));
-}
+.evo-step-emoji img { width: 40px; height: 40px; vertical-align: middle; }
+.evo-step.current .evo-step-emoji img { transform: scale(1.15); }
 .evo-step-label { font-size: 9px; color: var(--color-text-muted); font-weight: 600; }
 .evo-arrow { font-size: 12px; color: var(--color-border); margin: 0 -2px; padding-bottom: 12px; }
 .evo-arrow.passed { color: var(--color-accent); }
@@ -1259,6 +1262,7 @@ input { font-family: inherit; }
 .pet-slot.locked { opacity: 0.45; }
 .pet-slot.locked .pet-slot-emoji { filter: grayscale(1); }
 .pet-slot-emoji { font-size: 32px; }
+.pet-slot-emoji img { width: 24px !important; height: 24px !important; vertical-align: middle; }
 .pet-slot-name { font-weight: 600; color: var(--color-text-primary); margin-top: 2px; }
 .pet-slot-status { font-size: 10px; color: var(--color-text-muted); }
 .pet-slot.max .pet-slot-status { color: var(--color-success); font-weight: 700; }
@@ -1603,17 +1607,18 @@ input { font-family: inherit; }
         <span class="pet-card-accessory hidden" id="pet-card-accessory"></span>
         <div class="pet-card-info">
           <div class="pet-card-name" id="pet-card-name">小橘猫</div>
-          <div class="pet-card-stage" id="pet-card-stage">Lv.1 幼崽</div>
         </div>
+        <div class="pet-card-stage" id="pet-card-stage">Lv.1 幼崽</div>
       </div>
       <div class="pet-card-xp-bar"><div class="pet-card-xp-fill" id="pet-card-xp-fill" style="width:0%"></div><span class="pet-card-xp-text" id="pet-card-xp-text"></span></div>
-      <div class="pet-card-food-text" id="pet-card-food-text"></div>
       <div class="pet-card-combo" id="pet-card-combo"></div>
-      <div class="daily-panel" id="daily-panel">
-        <div class="daily-panel-title" id="daily-panel-title">📋 每日任务 <span id="daily-count">0/3</span></div>
-        <div id="daily-tasks-list"></div>
-        <div id="challenge-panel" class="hidden"></div>
-        <div class="daily-bonus hidden" id="daily-bonus">🎁 全部完成额外 +20 +🥩×3</div>
+      <div class="daily-panel collapsed" id="daily-panel">
+        <div class="daily-panel-title" id="daily-panel-title" onclick="document.getElementById('daily-panel').classList.toggle('collapsed')" style="cursor:pointer;">📋 每日任务 <span id="daily-count">0/3</span> <span class="daily-toggle-icon">▸</span></div>
+        <div class="daily-panel-body" id="daily-panel-body">
+          <div id="daily-tasks-list"></div>
+          <div id="challenge-panel" class="hidden"></div>
+          <div class="daily-bonus hidden" id="daily-bonus">🎁 全部完成额外 +20 +🥩×3</div>
+        </div>
       </div>
     </div>
     <div id="click-to-start" class="input-hint"><span>请使用拼音输入法打字</span></div>
@@ -3347,7 +3352,7 @@ function autoSyncAccount() {
 
 /* ===== 宠物养成系统 ===== */
 const PET_DEFS = [
-  { type:'cat', name:'小橘猫', emoji:'🐱', stageEmojis:['🥚','🐱','😺','😸','👑'], xpMax:2000 },
+  { type:'cat', name:'小橘猫', emoji:'🐱', imgs:['cat-stage-1.png','cat-stage-2.png','cat-stage-3.png','cat-stage-4.png','cat-stage-5.png'], stageEmojis:['🥚','🐱','😺','😸','👑'], xpMax:2000 },
   { type:'dog', name:'小黄狗', emoji:'🐶', stageEmojis:['🥚','🐶','🐕','🦮','👑'], xpMax:2000 },
   { type:'bunny', name:'小兔子', emoji:'🐰', stageEmojis:['🥚','🐰','🐇','💪','👑'], xpMax:2500 },
   { type:'panda', name:'小熊猫', emoji:'🐼', stageEmojis:['🥚','🐼','🧸','💪','👑'], xpMax:2500 },
@@ -3377,6 +3382,13 @@ function getPetStageDef(petDef) {
 
 function getPetStageName(stageIdx) {
   return STAGE_NAMES[stageIdx] || '王者';
+}
+function getPetIcon(def, stage) {
+  stage = stage || 0;
+  if (def.imgs && def.imgs[stage]) {
+    return '<img src="'+def.imgs[stage]+'" style="object-fit:contain;" alt="">';
+  }
+  return def.stageEmojis ? (def.stageEmojis[stage] || def.emoji) : (def.emoji || '🐾');
 }
 
 // 宠物数据
@@ -3721,7 +3733,11 @@ function renderPetCard() {
   var stage = petData.stage;
   var stageName = getPetStageName(stage);
 
-  document.getElementById('pet-card-emoji').textContent = def.stageEmojis[stage] || def.emoji;
+  var emojiEl=document.getElementById('pet-card-emoji');
+  if (emojiEl) {
+    if (def.imgs) { emojiEl.innerHTML = '<img src="'+def.imgs[stage]+'" style="width:28px;height:28px;object-fit:contain;" alt="">'; }
+    else { emojiEl.textContent = def.stageEmojis[stage] || def.emoji; }
+  }
   var accEl = document.getElementById('pet-card-accessory');
   if (petData.accessory) {
     var eqAcc = getAccessoryById(petData.accessory);
@@ -3738,7 +3754,6 @@ function renderPetCard() {
   var progress = petData.maxLevel ? 100 : Math.round((currentXP - stageStartXP) / (nextXP - stageStartXP) * 100);
   document.getElementById('pet-card-xp-fill').style.width = progress + '%';
   document.getElementById('pet-card-xp-text').textContent = petData.maxLevel ? '已满级' : (currentXP + '/' + nextXP);
-  document.getElementById('pet-card-food-text').textContent = '🥩×' + PetState.food;
 
   renderDailyTasks();
 }
@@ -3912,7 +3927,8 @@ function renderPetPage() {
   var nextName = petData.maxLevel ? '已满级' : getPetStageName(stage + 1);
 
   html += '<div class="pet-detail-card">';
-  html += '<div class="pet-detail-emoji">' + (def.stageEmojis[stage] || def.emoji) + '</div>';
+  var detailIcon = def.imgs ? '<img src="'+def.imgs[stage]+'" style="width:72px;height:72px;object-fit:contain;display:block;margin:0 auto;" alt="">' : (def.stageEmojis[stage] || def.emoji);
+  html += '<div class="pet-detail-emoji">' + detailIcon + '</div>';
   // 已装备装扮
   if (petData.accessory) {
     var eqAcc = getAccessoryById(petData.accessory);
@@ -3930,7 +3946,7 @@ function renderPetPage() {
     var reached = si <= stage;
     var isCurrent = si === stage;
     html += '<div class="evo-step' + (reached ? ' reached' : '') + (isCurrent ? ' current' : '') + '">';
-    html += '<span class="evo-step-emoji">' + (def.stageEmojis[si] || '❓') + '</span>';
+    html += '<span class="evo-step-emoji">' + getPetIcon(def, si) + '</span>';
     html += '<span class="evo-step-label">' + STAGE_NAMES[si] + '</span>';
     html += '</div>';
   }
@@ -4004,7 +4020,7 @@ function renderPetPage() {
     }
 
     html += '<div class="pet-slot' + slotCls + '" data-pet-idx="' + i + '">';
-    html += '<div class="pet-slot-emoji">' + slotEmoji + '</div>';
+    html += '<div class="pet-slot-emoji">' + getPetIcon(pdef, pd.adopted ? (pd.stage||0) : 0) + '</div>';
     html += '<div class="pet-slot-name">' + pdef.name + '</div>';
     html += '<div class="pet-slot-status">' + slotStatus + '</div>';
     html += '</div>';
@@ -4088,7 +4104,8 @@ function showEvolveModal(fromStage, toStage) {
 
   if (!overlay) return;
 
-  emojiEl.textContent = def.stageEmojis[toStage] || def.emoji;
+  if (def.imgs) { emojiEl.innerHTML = '<img src="'+def.imgs[toStage]+'" style="width:100%;height:100%;object-fit:contain;" alt="">'; }
+  else { emojiEl.textContent = def.stageEmojis[toStage] || def.emoji; }
 
   if (fromStage < 0) {
     // 领养
@@ -6438,7 +6455,7 @@ window.addEventListener('scroll', function() {
   }
 }, { passive: true });
 </script>
-<button onclick="window.scrollTo({top:0,behavior:'smooth'})" id="btn-scroll-top" style="position:fixed;z-index:500;bottom:24px;right:16px;width:40px;height:40px;border-radius:50%;background:var(--color-accent);color:#fff;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.18);font-size:18px;">⬆</button>
 <button onclick="toggleToc()" id="btn-toc-fixed" style="position:fixed;z-index:500;bottom:72px;right:16px;width:40px;height:40px;border-radius:50%;background:var(--color-accent);color:#fff;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.18);font-size:18px;">☰</button>
+<button onclick="window.scrollTo({top:0,behavior:'smooth'})" id="btn-scroll-top" style="position:fixed;z-index:500;bottom:24px;right:16px;width:40px;height:40px;border-radius:50%;background:var(--color-accent);color:#fff;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.18);font-size:18px;">⬆</button>
 </body>
 </html>
