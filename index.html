@@ -1094,6 +1094,7 @@ input { font-family: inherit; }
   user-select: none;
 }
 .pet-card-avatar-wrap {
+  position: relative;
   width: 100px; height: 100px; border-radius: 50%;
   background: #fff; border: 3px solid var(--color-accent);
   margin: 0 auto 6px; display: flex; align-items: center; justify-content: center;
@@ -1117,15 +1118,23 @@ input { font-family: inherit; }
 .pet-card-xp-fill { height: 100%; background: var(--color-accent); border-radius: var(--radius-full); transition: width 0.4s ease; }
 .pet-card-xp-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.4); }
 .pet-card-combo {
-  margin-top: 4px; padding: 2px 6px; background: linear-gradient(135deg, #FFF3CD, #FFE082);
-  border-radius: var(--radius-sm); font-size: 10px; font-weight: 700; color: #8D6E00;
-  text-align: center; opacity: 0; transition: opacity 0.2s ease;
+  position: absolute; top: -28px; left: 50%; transform: translateX(-50%);
+  padding: 2px 10px; background: rgba(0,0,0,0.75); color: #fff;
+  border-radius: 12px; font-size: 11px; font-weight: 700;
+  text-align: center; opacity: 0; pointer-events: none;
+  white-space: nowrap; transition: opacity 0.2s ease;
+}
+.pet-card-combo::after {
+  content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
+  width: 0; height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid rgba(0,0,0,0.75);
 }
 .pet-card-combo.show { opacity: 1; animation: comboPopIn 0.3s ease; }
 @keyframes comboPopIn {
-  0% { transform: scale(0.7); opacity: 0; }
-  60% { transform: scale(1.15); }
-  100% { transform: scale(1); opacity: 1; }
+  0% { transform: translateX(-50%) translateY(8px); opacity: 0; }
+  100% { transform: translateX(-50%) translateY(0); opacity: 1; }
 }
 
 /* 每日任务面板 */
@@ -1610,11 +1619,11 @@ input { font-family: inherit; }
     <div class="pet-card hidden" id="pet-card">
       <div class="pet-card-stage" id="pet-card-stage">Lv.1</div>
       <div class="pet-card-avatar-wrap" id="pet-card-avatar-wrap">
+        <div class="pet-card-combo" id="pet-card-combo"></div>
         <span class="pet-card-emoji" id="pet-card-emoji">🐱</span>
         <span class="pet-card-accessory hidden" id="pet-card-accessory"></span>
       </div>
       <div class="pet-card-xp-bar"><div class="pet-card-xp-fill" id="pet-card-xp-fill" style="width:0%"></div><span class="pet-card-xp-text" id="pet-card-xp-text"></span></div>
-      <div class="pet-card-combo" id="pet-card-combo"></div>
       <div class="daily-task-single" id="daily-panel" style="display:none;">
         <div class="daily-task-item" id="daily-task-item">
           <span class="daily-task-icon" id="daily-task-icon">☐</span>
