@@ -1093,21 +1093,25 @@ input { font-family: inherit; }
   font-size: var(--font-size-xs);
   user-select: none;
 }
-.pet-card-header {
-  display: flex; align-items: center; gap: 6px;
-  margin-bottom: 4px;
+.pet-card-avatar-wrap {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: #fff; border: 3px solid var(--color-border);
+  margin: 0 auto 8px; display: flex; align-items: center; justify-content: center;
+  overflow: hidden; position: relative;
 }
-.pet-card-emoji { font-size: 28px; line-height: 1; cursor:pointer; }
+.pet-card-emoji { font-size: 44px; line-height: 1; cursor:pointer; }
+.pet-card-emoji img { width: 80px !important; height: 80px !important; object-fit: contain; }
 .pet-card.minimized { width:52px; padding:6px; border-radius:50%; right:12px; bottom:12px; }
-.pet-card.minimized .pet-card-header > :not(.pet-card-emoji) { display:none; }
+.pet-card.minimized .pet-card-avatar-wrap { width:40px;height:40px;border-width:2px;margin:0; }
+.pet-card.minimized .pet-card-emoji { font-size:24px; }
+.pet-card.minimized .pet-card-name,
+.pet-card.minimized .pet-card-stage,
 .pet-card.minimized .pet-card-xp-bar,
 .pet-card.minimized .pet-card-combo,
 .pet-card.minimized .daily-panel { display:none !important; }
-.pet-card.minimized .pet-card-emoji { font-size:32px; }
-.pet-card-accessory { font-size: 16px; margin-left: -2px; }
-.pet-card-info { flex: 1; }
-.pet-card-name { font-weight: 700; color: var(--color-text-primary); font-size: var(--font-size-sm); }
-.pet-card-stage { font-size: 10px; color: var(--color-accent); margin-left: auto; white-space: nowrap; }
+.pet-card-accessory { position: absolute; bottom:0; right:0; font-size: 16px; }
+.pet-card-name { font-weight: 700; color: var(--color-text-primary); font-size: var(--font-size-sm); text-align: center; }
+.pet-card-stage { font-size: 10px; color: var(--color-accent); text-align: center; margin-bottom: 4px; }
 .pet-card-xp-bar {
   height: 14px; background: var(--color-border); border-radius: var(--radius-full);
   margin: 4px 0; overflow: hidden; position: relative;
@@ -1602,14 +1606,12 @@ input { font-family: inherit; }
       </div>
     <!-- 宠物卡片 -->
     <div class="pet-card hidden" id="pet-card">
-      <div class="pet-card-header">
+      <div class="pet-card-avatar-wrap" id="pet-card-avatar-wrap">
         <span class="pet-card-emoji" id="pet-card-emoji">🐱</span>
         <span class="pet-card-accessory hidden" id="pet-card-accessory"></span>
-        <div class="pet-card-info">
-          <div class="pet-card-name" id="pet-card-name">小橘猫</div>
-        </div>
-        <div class="pet-card-stage" id="pet-card-stage">Lv.1 幼崽</div>
       </div>
+      <div class="pet-card-name" id="pet-card-name">小橘猫</div>
+      <div class="pet-card-stage" id="pet-card-stage">Lv.1 幼崽</div>
       <div class="pet-card-xp-bar"><div class="pet-card-xp-fill" id="pet-card-xp-fill" style="width:0%"></div><span class="pet-card-xp-text" id="pet-card-xp-text"></span></div>
       <div class="pet-card-combo" id="pet-card-combo"></div>
       <div class="daily-panel collapsed" id="daily-panel">
@@ -3735,7 +3737,7 @@ function renderPetCard() {
 
   var emojiEl=document.getElementById('pet-card-emoji');
   if (emojiEl) {
-    if (def.imgs) { emojiEl.innerHTML = '<img src="'+def.imgs[stage]+'" style="width:28px;height:28px;object-fit:contain;" alt="">'; }
+    if (def.imgs) { emojiEl.innerHTML = '<img src="'+def.imgs[stage]+'" style="width:80px;height:80px;object-fit:contain;display:block;" alt="">'; }
     else { emojiEl.textContent = def.stageEmojis[stage] || def.emoji; }
   }
   var accEl = document.getElementById('pet-card-accessory');
