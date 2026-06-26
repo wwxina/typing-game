@@ -3748,7 +3748,12 @@ function renderPetCard() {
 
   var emojiEl=document.getElementById('pet-card-emoji');
   if (emojiEl) {
-    if (def.imgs) { emojiEl.innerHTML = '<img src="'+def.imgs[stage]+'" style="width:100px;height:100px;border-radius:50%;object-fit:contain;display:block;" alt="">'; }
+    if (def.imgs) {
+      var curSrc=def.imgs[stage];
+      var existingImg=emojiEl.querySelector('img');
+      if (existingImg && existingImg.getAttribute('data-src')===curSrc) { /* already showing this stage, skip */ }
+      else { emojiEl.innerHTML = '<img src="'+curSrc+'" data-src="'+curSrc+'" loading="lazy" style="width:100px;height:100px;border-radius:50%;object-fit:cover;display:block;" alt="">'; }
+    }
     else { emojiEl.textContent = def.stageEmojis[stage] || def.emoji; }
   }
   var accEl = document.getElementById('pet-card-accessory');
