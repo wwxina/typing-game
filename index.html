@@ -3884,7 +3884,7 @@ function renderPetPage() {
     for (var i = 0; i < PET_DEFS.length; i++) {
       var d = PET_DEFS[i];
       html += '<div style="text-align:center;padding:16px 12px;border:2px solid var(--color-border);border-radius:12px;cursor:pointer;transition:all 0.2s;" class="pet-choose-card" data-pet-idx="' + i + '" onmouseover="this.style.borderColor=\'var(--color-accent)\';this.style.background=\'var(--color-accent-light)\'" onmouseout="this.style.borderColor=\'var(--color-border)\';this.style.background=\'transparent\'">';
-      html += '<div style="font-size:36px;">' + d.emoji + '</div>';
+      html += '<div style="font-size:36px;">' + getPetIcon(d, 2) + '</div>';
       html += '<div style="font-weight:600;font-size:14px;">' + d.name + '</div>';
       html += '</div>';
     }
