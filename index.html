@@ -3400,7 +3400,7 @@ function getPetStageName(stageIdx) {
 function getPetIcon(def, stage) {
   stage = stage || 0;
   if (def.imgs && def.imgs[stage]) {
-    return '<img src="'+def.imgs[stage]+'" loading="lazy" style="border-radius:50%;object-fit:cover;" alt="">';
+    return '<img src="'+def.imgs[stage]+'" loading="lazy" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" alt="">';
   }
   return def.stageEmojis ? (def.stageEmojis[stage] || def.emoji) : (def.emoji || '🐾');
 }
