@@ -2935,29 +2935,51 @@ async function accountAPI(path, body) {
       if (un.length<2||un.length>20) throw new Error("姓名需要2-20个字符");
       if (pw.length<3||pw.length>50) throw new Error("密码需要3-50个字符");
       if (role==="student"&&!sno) throw new Error("学号不能为空");
-      var chk=await __db.from("profiles").select("user_id").eq("username",un).maybeSingle();
-      if (chk.data!==null) throw new Error("该姓名已被注册");
+      // 查重范围：学生只查目标班级内（允许不同班同名），教师才全库查
+      var inv=body.inviteCode||"", dup=false;
+      if (role==="student"&&inv) {
+        var _cl=await __db.from("classes").select("student_ids").eq("invite_code",inv.toUpperCase()).maybeSingle();
+        if (!_cl.data) throw new Error("邀请码无效，请重新选择班级");
+        var _sids=_cl.data.student_ids||[];
+        if (_sids.length>0) {
+          var _ck=await __db.from("profiles").select("user_id").eq("username",un).in("user_id",_sids);
+          dup=!!(_ck.data&&_ck.data.length>0);
+        }
+      } else {
+        var _ck2=await __db.from("profiles").select("user_id").eq("username",un);
+        dup=!!(_ck2.data&&_ck2.data.length>0);
+      }
+      if (dup) throw new Error(role==="student"?"该班级已有同名学生，请找老师确认":"该姓名已被注册");
       var nid="u_"+Date.now()+"_"+Math.random().toString(36).slice(2,8);
       var hash=await _hashPwd(pw,un);
-      await __db.from("profiles").insert({user_id:nid,username:un,password_hash:hash,role:role,student_no:sno,created_at:Date.now()});
+      var pRes=await __db.from("profiles").insert({user_id:nid,username:un,password_hash:hash,role:role,student_no:sno,created_at:Date.now()});
+      if(pRes&&pRes.error)throw new Error("账号创建失败："+(pRes.error.message||"数据库拒绝写入"));
       var ip={currentPet:0,food:0,totalXP:0,stars:0,ownedAccessories:[],pets:[],daily:{date:"",completed:[false,false,false],practiceCount:0,gotThreeStars:false,totalChars:0,challengeCount:0}};
       [{type:"cat",name:"小橘猫"},{type:"dog",name:"小黄狗"},{type:"bunny",name:"小兔子"},{type:"panda",name:"小熊猫"},{type:"fox",name:"小狐狸"}].forEach(function(t){ip.pets.push({type:t.type,name:t.name,stage:0,xp:0,adopted:false,maxLevel:false,accessory:null});});
-      await __db.from("user_data").insert({user_id:nid,pet:ip,scores:{},records:[],theme:"ocean",class_ids:[],teacher_exercises:[],student_no:sno,updated_at:Date.now()});
+      var uRes=await __db.from("user_data").insert({user_id:nid,pet:ip,scores:{},records:[],theme:"ocean",class_ids:[],teacher_exercises:[],student_no:sno,updated_at:Date.now()});
+      if(uRes&&uRes.error){await __db.from("profiles").delete().eq("user_id",nid);throw new Error("初始数据创建失败："+(uRes.error.message||"数据库拒绝写入"));}
       return {token:_mkToken(nid,un,role),userId:nid,username:un,role:role};
     }
     if (path === "/api/login") {
-      var r=await __db.from("profiles").select("*").eq("username",body.username);
-      if (!r.data||r.data.length===0) throw new Error("姓名不存在");
-      var u=r.data[0];
       var h=await _hashPwd(body.password,body.username);
-      if (h!==u.password_hash) throw new Error("密码错误");
-      // 学生登录验证班级归属
-      if (body.classId && u.role !== 'teacher') {
+      var r;
+      if (body.classId) {
+        // 学生：先用所选班级限定范围，再在名单内匹配姓名（支持不同班同名）
         var cls=await __db.from("classes").select("student_ids").eq("id",body.classId).maybeSingle();
-        if (!cls.data || (cls.data.student_ids||[]).indexOf(u.user_id)===-1) {
-          throw new Error("该学生不在所选班级中，请检查班级选择");
-        }
+        if (!cls.data) throw new Error("班级不存在，请重新选择");
+        var sids=cls.data.student_ids||[];
+        if (sids.length===0) throw new Error("该班级暂无学生，请检查班级选择");
+        r=await __db.from("profiles").select("*").eq("username",body.username).in("user_id",sids);
+        if (!r.data||r.data.length===0) throw new Error("该班级中没有此姓名，请检查班级选择");
+      } else {
+        // 教师：只匹配教师账号，避免与学生同名时登错
+        r=await __db.from("profiles").select("*").eq("username",body.username).eq("role","teacher");
+        if (!r.data||r.data.length===0) throw new Error("教师账号不存在，请确认勾选「我是老师」");
       }
+      // 同名候选可能有多个，用密码哈希挑出正确的那一个
+      var u=null;
+      for (var _li=0;_li<r.data.length;_li++){ if(r.data[_li].password_hash===h){u=r.data[_li];break;} }
+      if (!u) throw new Error("密码错误");
       var cids=await __db.from("user_data").select("class_ids").eq("user_id",u.user_id).maybeSingle();
       return {token:_mkToken(u.user_id,u.username,u.role),userId:u.user_id,username:u.username,role:u.role||"student",studentNo:u.student_no||"",classIds:(cids.data&&cids.data.class_ids)||[]};
     }
@@ -3185,7 +3207,7 @@ async function accountLogin(username, password, classId) {
 // 注册
 async function accountRegister(username, password, studentNo, inviteCode) {
   if (ACCOUNT_API) {
-    var result = await accountAPI('/api/register', { username: username, password: password, studentNo: studentNo });
+    var result = await accountAPI('/api/register', { username: username, password: password, studentNo: studentNo, inviteCode: inviteCode });
     AccountUser = { token: result.token, userId: result.userId, username: result.username, studentNo: result.studentNo };
     _accountPassword = password;
   } else {
