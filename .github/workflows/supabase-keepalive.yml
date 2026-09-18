@@ -1,0 +1,33 @@
+name: Supabase 保活
+
+# 作用：防止免费版 Supabase 项目因闲置超过 7 天被自动暂停。
+# 原理：每 12 小时查询一次数据库，刷新 Supabase 的活跃计时器。
+#      必须是真的查表，只 ping 健康检查端点不算数。
+# 手动触发：仓库 → Actions → 左侧「Supabase 保活」→ Run workflow
+#
+# 注意：GitHub 会在仓库 60 天没有任何提交时自动停掉定时任务，
+#      停用前会发邮件通知。收到通知就随便改一下仓库里任意文件提交即可恢复。
+
+on:
+  schedule:
+    - cron: '23 */12 * * *'   # 每 12 小时一次（避开整点，减轻服务器压力）
+  workflow_dispatch: {}       # 允许手动运行
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 唤醒 Supabase 数据库
+        run: |
+          URL='https://brgyyohuagoxodqbvgdc.supabase.co/rest/v1/profiles?select=user_id&limit=1'
+          KEY='sb_publishable_ttaTO8y3ww7EjENHkj5rng_Wa1YQ8Oo'
+          CODE=$(curl -sS -o /tmp/body.txt -w '%{http_code}' --max-time 30 \
+            "$URL" -H "apikey: $KEY" -H "Authorization: Bearer $KEY" || echo "000")
+          echo "Supabase 保活 -> HTTP $CODE"
+          head -c 200 /tmp/body.txt 2>/dev/null || true
+          echo
+          if [ "$CODE" != "200" ]; then
+            echo "::error::保活失败（HTTP $CODE）。项目可能已被暂停，请登录 https://supabase.com/dashboard/projects 点 Restore project 恢复。"
+            exit 1
+          fi
+          echo "✅ 数据库已唤醒，闲置计时器重置成功"
