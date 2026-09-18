@@ -973,17 +973,22 @@ async function accountAPI(method, path, body) {
       if (chk.data!==null&&chk.data.length>0) throw new Error("用户名已被注册");
       var nid="u_"+Date.now()+"_"+Math.random().toString(36).slice(2,8);
       var hash=await _hashPwd(pw,un);
-      await __db.from("profiles").upsert({user_id:nid,username:un,password_hash:hash,role:role,student_no:sno,created_at:Date.now()});
+      var pRes=await __db.from("profiles").upsert({user_id:nid,username:un,password_hash:hash,role:role,student_no:sno,created_at:Date.now()});
+      if(pRes&&pRes.error)throw new Error("账号创建失败："+(pRes.error.message||"数据库拒绝写入"));
       var ip={currentPet:0,food:0,totalXP:0,stars:0,ownedAccessories:[],pets:[],daily:{date:"",completed:[false,false,false],practiceCount:0,gotThreeStars:false,totalChars:0,challengeCount:0}};
       [{type:"cat",name:"小橘猫"},{type:"dog",name:"小黄狗"},{type:"bunny",name:"小兔子"},{type:"panda",name:"小熊猫"},{type:"fox",name:"小狐狸"}].forEach(function(t){ip.pets.push({type:t.type,name:t.name,stage:0,xp:0,adopted:false,maxLevel:false,accessory:null});});
-      await __db.from("user_data").upsert({user_id:nid,pet:ip,scores:{},records:[],theme:"ocean",class_ids:[],teacher_exercises:[],student_no:sno,updated_at:Date.now()});
+      var uRes=await __db.from("user_data").upsert({user_id:nid,pet:ip,scores:{},records:[],theme:"ocean",class_ids:[],teacher_exercises:[],student_no:sno,updated_at:Date.now()});
+      if(uRes&&uRes.error){await __db.from("profiles").delete().eq("user_id",nid);throw new Error("初始数据创建失败："+(uRes.error.message||"数据库拒绝写入"));}
       return {token:_mkToken(nid,un,role),userId:nid,username:un,role:role};
     }
     if (path === "/api/login" && method === "POST") {
-      var r=await __db.from("profiles").select("*").eq("username",body.username);
-      if (!r.data||r.data.length===0) throw new Error("姓名不存在");
-      var u=r.data[0];var h=await _hashPwd(body.password,body.username);
-      if (h!==u.password_hash) throw new Error("密码错误");
+      // 教师端只匹配教师账号，避免与学生同名时登错
+      var r=await __db.from("profiles").select("*").eq("username",body.username).eq("role","teacher");
+      if (!r.data||r.data.length===0) throw new Error("教师账号不存在");
+      var h=await _hashPwd(body.password,body.username);
+      var u=null;
+      for (var _li=0;_li<r.data.length;_li++){ if(r.data[_li].password_hash===h){u=r.data[_li];break;} }
+      if (!u) throw new Error("密码错误");
       return {token:_mkToken(u.user_id,u.username,u.role),userId:u.user_id,username:u.username,role:u.role||"student",studentNo:u.student_no||""};
     }
     if (path === "/api/class/list") {
@@ -1089,7 +1094,7 @@ async function accountAPI(method, path, body) {
           curSids.push(nid);existingNames.push(s.username);success++;
         }catch(e){
           // 409=档案已存在，直接在全校查找并加入班级
-          var found=await __db.from("profiles").select("user_id").eq("username",s.username).maybeSingle();
+          var found=await __db.from("profiles").select("user_id").eq("username",s.username).eq("role","student").maybeSingle();
           if(found&&found.data){
             curSids.push(found.data.user_id);existingNames.push(s.username);success++;
           }else{fail++;}
